@@ -54,9 +54,9 @@
         }
     </style>
 </head>
-<body class="bg-slate-900 text-white min-h-screen font-sans flex flex-col">
+<body class="bg-slate-900 text-white min-h-screen font-sans">
 
-<div id="app" v-cloak class="flex-grow flex items-center justify-center p-4">
+<div id="app" v-cloak class="flex items-center justify-center min-h-screen p-4">
 
     <div v-if="!gameStarted" class="w-full max-w-md bg-slate-800 p-8 rounded-3xl shadow-2xl border border-slate-700 text-center">
         <h1 class="text-5xl font-black italic tracking-tighter mb-2 text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-red-500">
@@ -79,7 +79,7 @@
         </div>
     </div>
 
-    <div v-else class="flex flex-col lg:flex-row gap-8 items-start w-full max-w-6xl justify-center">
+    <div v-else class="flex flex-col lg:flex-row gap-8 items-center w-full max-w-6xl">
 
         <div class="w-full lg:w-72 space-y-4 order-2 lg:order-1">
             <div class="bg-slate-800 p-6 rounded-2xl border border-slate-700 shadow-xl">
@@ -90,26 +90,11 @@
                     <button @click="gameStarted = false" class="text-xs text-slate-500 hover:text-white transition">Quit Game</button>
                 </div>
 
-                <div class="flex items-center justify-between p-4 bg-slate-900 rounded-xl border border-slate-700 mb-4">
-                    <span class="text-xs font-bold text-slate-400 uppercase">Points</span>
-                    <div class="flex flex-col items-end">
-                        <span class="text-sm font-bold">W: {{ scores.w }}</span>
-                        <span class="text-sm font-bold text-cyan-400">B: {{ scores.b }}</span>
-                    </div>
-                </div>
-
                 <div class="flex items-center justify-between p-4 bg-slate-900 rounded-xl border border-slate-700">
                     <span class="text-sm font-bold text-slate-400 uppercase">Turn</span>
                     <div class="flex items-center gap-3">
                         <span class="font-black text-xl uppercase">{{ turn === 'w' ? 'White' : 'Black' }}</span>
                         <div :class="turn === 'w' ? 'bg-white' : 'bg-black'" class="w-4 h-4 rounded shadow-sm border border-slate-600"></div>
-                    </div>
-                </div>
-
-                <div class="mt-4">
-                    <p class="text-[10px] font-bold text-slate-500 uppercase mb-2">Captured</p>
-                    <div class="flex flex-wrap gap-1 p-2 bg-slate-950 rounded-lg min-h-[50px]">
-                        <img v-for="(p, i) in captured" :key="i" :src="getPieceURL(p)" class="w-5 h-5 opacity-70">
                     </div>
                 </div>
 
@@ -159,11 +144,6 @@
     </div>
 </div>
 
-<footer class="w-full py-8 border-t border-slate-800 text-center space-y-1">
-    <a href="https://sites.google.com/view/codyferd" target="_blank" class="text-slate-400 hover:text-cyan-400 transition font-bold text-lg">Luca's Website</a>
-    <p class="text-slate-600 text-sm">sites.google.com/view/codyferd</p>
-</footer>
-
 <script>
 const { createApp, ref, computed } = Vue;
 
@@ -178,8 +158,6 @@ createApp({
         const gameOver = ref(false);
         const inCheck = ref(false);
         const winMessage = ref('');
-        const scores = ref({ w: 0, b: 0 });
-        const captured = ref([]);
 
         const initGame = (type) => {
             mode.value = type;
@@ -202,9 +180,6 @@ createApp({
                     else winMessage.value = "Stalemate / Draw";
                 }
             } else {
-                captured.value = [...game.value.captured];
-                scores.value.w = game.value.getPoints('w');
-                scores.value.b = game.value.getPoints('b');
                 const warriorResult = game.value.isGameOver();
                 if (warriorResult) {
                     gameOver.value = true;
@@ -218,20 +193,24 @@ createApp({
             const piece = boardState.value[r][c];
 
             if (selected.value) {
+                // If clicking another of your own pieces, switch selection
                 if (piece && piece.color === game.value.turn()) {
                     selected.value = pos;
                     return;
                 }
 
+                // Attempt Move
                 const moveResult = game.value.move({ from: selected.value, to: pos, promotion: 'q' });
                 if (moveResult) {
                     flipped.value = !flipped.value;
                     syncState();
                     selected.value = null;
                 } else {
+                    // Invalid move - deselect
                     selected.value = null;
                 }
             } else {
+                // Pick up piece
                 if (piece && piece.color === game.value.turn()) {
                     selected.value = pos;
                 }
@@ -257,7 +236,7 @@ createApp({
         return {
             gameStarted, mode, boardState, getPieceURL, handleSquareClick,
             isSelected, flipped, gameOver, inCheck, winMessage,
-            turn, initGame, resetMatch, scores, captured
+            turn, initGame, resetMatch
         };
     }
 }).mount('#app');

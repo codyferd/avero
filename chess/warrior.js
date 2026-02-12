@@ -67,4 +67,3 @@ class WarriorChess {
         return { r: 8 - parseInt(str[1]), c: str.charCodeAt(0) - 97 };
     }
 }
-
