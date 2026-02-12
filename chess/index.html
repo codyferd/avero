@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chess</title>
+    <script src="../lib/vue.js"></script>
+    <script src="../lib/tailwind.js"></script>
+    <script src="../lib/chess.js"></script>
+    <script src="warrior.js"></script>
+    <style>
+        [v-cloak] { display: none; }
+
+        .board-grid {
+            display: grid;
+            grid-template-columns: repeat(8, 1fr);
+            grid-template-rows: repeat(8, 1fr);
+            aspect-ratio: 1 / 1;
+            width: 100%;
+            max-width: 600px;
+        }
+
+        .board-container {
+            perspective: 1000px;
+        }
+
+        .chess-board-wrapper {
+            transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+            transform-style: preserve-3d;
+        }
+
+        .flipped {
+            transform: rotate(180deg);
+        }
+
+        /* Prevent pieces from looking upside down when board flips */
+        .piece-img {
+            transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+            width: 85%;
+            height: 85%;
+            user-select: none;
+        }
+
+        .flipped .piece-img {
+            transform: rotate(180deg);
+        }
+
+        .square {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body class="bg-slate-900 text-white min-h-screen font-sans flex flex-col">
+
+<div id="app" v-cloak class="flex-grow flex items-center justify-center p-4">
+
+    <div v-if="!gameStarted" class="w-full max-w-md bg-slate-800 p-8 rounded-3xl shadow-2xl border border-slate-700 text-center">
+        <h1 class="text-5xl font-black italic tracking-tighter mb-2 text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-red-500">
+            CHESS
+        </h1>
+        <p class="text-slate-400 mb-8 font-medium">Select your game variant</p>
+
+        <div class="space-y-4">
+            <button @click="initGame('standard')"
+                class="w-full group bg-slate-700 hover:bg-blue-600 p-6 rounded-2xl transition-all duration-300 text-left border border-slate-600 hover:border-blue-400 shadow-lg">
+                <h3 class="text-xl font-bold group-hover:text-white">Standard Chess</h3>
+                <p class="text-sm text-slate-400 group-hover:text-blue-100">Classic rules with Kings and Checkmate.</p>
+            </button>
+
+            <button @click="initGame('warrior')"
+                class="w-full group bg-slate-700 hover:bg-red-600 p-6 rounded-2xl transition-all duration-300 text-left border border-slate-600 hover:border-red-400 shadow-lg">
+                <h3 class="text-xl font-bold group-hover:text-white">Warrior Mode</h3>
+                <p class="text-sm text-slate-400 group-hover:text-red-100">No Kings. Double Queens. Capture everything.</p>
+            </button>
+        </div>
+    </div>
+
+    <div v-else class="flex flex-col lg:flex-row gap-8 items-start w-full max-w-6xl justify-center">
+
+        <div class="w-full lg:w-72 space-y-4 order-2 lg:order-1">
+            <div class="bg-slate-800 p-6 rounded-2xl border border-slate-700 shadow-xl">
+                <div class="flex justify-between items-center mb-6">
+                    <span class="px-3 py-1 rounded-full bg-slate-900 text-[10px] font-black uppercase tracking-widest text-blue-400 border border-blue-900/50">
+                        {{ mode }} Mode
+                    </span>
+                    <button @click="gameStarted = false" class="text-xs text-slate-500 hover:text-white transition">Quit Game</button>
+                </div>
+
+                <div class="flex items-center justify-between p-4 bg-slate-900 rounded-xl border border-slate-700 mb-4">
+                    <span class="text-xs font-bold text-slate-400 uppercase">Points</span>
+                    <div class="flex flex-col items-end">
+                        <span class="text-sm font-bold">W: {{ scores.w }}</span>
+                        <span class="text-sm font-bold text-cyan-400">B: {{ scores.b }}</span>
+                    </div>
+                </div>
+
+                <div class="flex items-center justify-between p-4 bg-slate-900 rounded-xl border border-slate-700">
+                    <span class="text-sm font-bold text-slate-400 uppercase">Turn</span>
+                    <div class="flex items-center gap-3">
+                        <span class="font-black text-xl uppercase">{{ turn === 'w' ? 'White' : 'Black' }}</span>
+                        <div :class="turn === 'w' ? 'bg-white' : 'bg-black'" class="w-4 h-4 rounded shadow-sm border border-slate-600"></div>
+                    </div>
+                </div>
+
+                <div class="mt-4">
+                    <p class="text-[10px] font-bold text-slate-500 uppercase mb-2">Captured</p>
+                    <div class="flex flex-wrap gap-1 p-2 bg-slate-950 rounded-lg min-h-[50px]">
+                        <img v-for="(p, i) in captured" :key="i" :src="getPieceURL(p)" class="w-5 h-5 opacity-70">
+                    </div>
+                </div>
+
+                <div v-if="inCheck && !gameOver" class="mt-4 p-3 bg-red-500/20 border border-red-500 rounded-lg text-red-500 text-center font-black animate-pulse">
+                    ⚠️ KING IN CHECK
+                </div>
+            </div>
+
+            <button @click="resetMatch" class="w-full py-4 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-2xl font-bold transition shadow-lg">
+                Reset Match
+            </button>
+        </div>
+
+        <div class="relative order-1 lg:order-2 board-container w-full max-w-[600px]">
+            <div :class="['chess-board-wrapper bg-slate-800 p-3 rounded-lg shadow-2xl', flipped ? 'flipped' : '']">
+                <div class="board-grid">
+                    <template v-for="(row, rIdx) in boardState">
+                        <div v-for="(square, sIdx) in row"
+                             :key="rIdx + '-' + sIdx"
+                             @click="handleSquareClick(rIdx, sIdx)"
+                             :class="[
+                                'square',
+                                (rIdx + sIdx) % 2 === 0 ? 'bg-[#ebecd0]' : 'bg-[#779556]',
+                                isSelected(rIdx, sIdx) ? 'ring-4 ring-inset ring-cyan-400 z-10' : ''
+                             ]">
+
+                            <img v-if="square"
+                                 :src="getPieceURL(square)"
+                                 class="piece-img z-10">
+                        </div>
+                    </template>
+                </div>
+            </div>
+
+            <div v-if="gameOver" class="absolute inset-0 bg-slate-900/95 backdrop-blur-md flex flex-col items-center justify-center z-50 rounded-lg text-center p-8">
+                <div class="text-7xl mb-6">🏆</div>
+                <h2 class="text-5xl font-black uppercase tracking-tighter mb-2">Game Over</h2>
+                <p class="text-xl text-slate-400 mb-10 font-medium">{{ winMessage }}</p>
+
+                <div class="flex gap-4 w-full max-w-xs">
+                    <button @click="resetMatch" class="flex-1 bg-white text-black py-4 rounded-2xl font-black hover:scale-105 transition">Rematch</button>
+                    <button @click="gameStarted = false" class="flex-1 bg-slate-700 text-white py-4 rounded-2xl font-black hover:bg-slate-600 transition">Menu</button>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<footer class="w-full py-8 border-t border-slate-800 text-center space-y-1">
+    <a href="https://sites.google.com/view/codyferd" target="_blank" class="text-slate-400 hover:text-cyan-400 transition font-bold text-lg">Luca's Website</a>
+    <p class="text-slate-600 text-sm">sites.google.com/view/codyferd</p>
+</footer>
+
+<script>
+const { createApp, ref, computed } = Vue;
+
+createApp({
+    setup() {
+        const gameStarted = ref(false);
+        const mode = ref('standard');
+        const game = ref(null);
+        const boardState = ref([]);
+        const selected = ref(null);
+        const flipped = ref(false);
+        const gameOver = ref(false);
+        const inCheck = ref(false);
+        const winMessage = ref('');
+        const scores = ref({ w: 0, b: 0 });
+        const captured = ref([]);
+
+        const initGame = (type) => {
+            mode.value = type;
+            game.value = type === 'standard' ? new Chess() : new WarriorChess();
+            gameStarted.value = true;
+            syncState();
+            gameOver.value = false;
+            flipped.value = false;
+            selected.value = null;
+        };
+
+        const syncState = () => {
+            boardState.value = game.value.board();
+            inCheck.value = mode.value === 'standard' ? game.value.in_check() : false;
+
+            if (mode.value === 'standard') {
+                if (game.value.game_over()) {
+                    gameOver.value = true;
+                    if (game.value.in_checkmate()) winMessage.value = `${game.value.turn() === 'w' ? 'Black' : 'White'} Wins by Checkmate!`;
+                    else winMessage.value = "Stalemate / Draw";
+                }
+            } else {
+                captured.value = [...game.value.captured];
+                scores.value.w = game.value.getPoints('w');
+                scores.value.b = game.value.getPoints('b');
+                const warriorResult = game.value.isGameOver();
+                if (warriorResult) {
+                    gameOver.value = true;
+                    winMessage.value = warriorResult;
+                }
+            }
+        };
+
+        const handleSquareClick = (r, c) => {
+            const pos = String.fromCharCode(97 + c) + (8 - r);
+            const piece = boardState.value[r][c];
+
+            if (selected.value) {
+                if (piece && piece.color === game.value.turn()) {
+                    selected.value = pos;
+                    return;
+                }
+
+                const moveResult = game.value.move({ from: selected.value, to: pos, promotion: 'q' });
+                if (moveResult) {
+                    flipped.value = !flipped.value;
+                    syncState();
+                    selected.value = null;
+                } else {
+                    selected.value = null;
+                }
+            } else {
+                if (piece && piece.color === game.value.turn()) {
+                    selected.value = pos;
+                }
+            }
+        };
+
+        const getPieceURL = (p) => {
+            const map = {
+                wp: '4/45/Chess_plt45.svg', wr: '7/72/Chess_rlt45.svg', wn: '7/70/Chess_nlt45.svg', wb: 'b/b1/Chess_blt45.svg', wq: '1/15/Chess_qlt45.svg', wk: '4/42/Chess_klt45.svg',
+                bp: 'c/c7/Chess_pdt45.svg', br: 'f/ff/Chess_rdt45.svg', bn: 'e/ef/Chess_ndt45.svg', bb: '9/98/Chess_bdt45.svg', bq: '4/47/Chess_qdt45.svg', bk: 'f/f0/Chess_kdt45.svg'
+            };
+            return `https://upload.wikimedia.org/wikipedia/commons/${map[p.color + p.type]}`;
+        };
+
+        const isSelected = (r, c) => {
+            const pos = String.fromCharCode(97 + c) + (8 - r);
+            return selected.value === pos;
+        };
+
+        const turn = computed(() => game.value ? game.value.turn() : 'w');
+        const resetMatch = () => initGame(mode.value);
+
+        return {
+            gameStarted, mode, boardState, getPieceURL, handleSquareClick,
+            isSelected, flipped, gameOver, inCheck, winMessage,
+            turn, initGame, resetMatch, scores, captured
+        };
+    }
+}).mount('#app');
+</script>
+</body>
+</html>
