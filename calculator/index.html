@@ -1,0 +1,121 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Calculator</title><script src="../cdn.js"></script><style type="text/tailwindcss">@layer components {
+            .panel { @apply bg-[#0d1117] border border-slate-800 shadow-2xl overflow-hidden flex flex-col rounded-lg; }
+            .terminal-input { @apply bg-black/60 border-b-2 border-slate-700 text-emerald-400 font-mono focus:border-emerald-500 outline-none transition-all; }
+            .key { @apply flex items-center justify-center py-3 rounded bg-slate-800/40 text-slate-300 font-mono text-[11px] border border-transparent hover:border-slate-500 hover:bg-slate-700 transition-all active:scale-95; }
+            .key-sci { @apply text-indigo-400 bg-indigo-950/10 hover:bg-indigo-900/30; }
+            .key-op { @apply text-amber-500 bg-amber-950/10; }
+            .key-exec { @apply bg-emerald-600 text-white hover:bg-emerald-500 font-bold; }
+            .si-tab { @apply px-3 py-1 text-[10px] border border-slate-700 rounded-full hover:bg-emerald-900/20 hover:text-emerald-400 cursor-pointer transition-all; }
+        }
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { @apply bg-slate-700 rounded; }
+        body { background-color: #010409; }</style></head><body class="text-slate-400 min-h-screen p-4 font-sans flex flex-col"><div id="app" class="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-4 flex-grow w-full"><div class="lg:col-span-3 space-y-4"><div class="panel h-full"><div class="p-3 bg-slate-900/50 border-b border-slate-800 text-[10px] font-bold tracking-widest text-slate-500 uppercase">SI Conversion Matrix</div><div class="p-4 space-y-4 overflow-y-auto custom-scrollbar h-[580px]"><div v-for="(units, category) in siMatrix" :key="category"><label class="text-[9px] uppercase text-slate-600 mb-2 block font-bold tracking-tighter">{{ category }}</label><div class="flex flex-wrap gap-2 mb-4"><div v-for="u in units" @click="append(` to ${u}`)" class="si-tab">{{ u }}</div></div></div></div></div></div><div class="lg:col-span-6 space-y-4"><div class="panel p-6"><div class="flex justify-between items-center mb-4"><div class="flex items-center gap-2"><div class="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_#10b981]"></div><span class="text-[9px] font-mono tracking-[0.2em] uppercase text-slate-500">Core.Compute.Active</span></div><span class="text-[9px] font-mono text-slate-600">SI_STANDARD_OFFSETS_LOADED</span></div><div class="relative mb-6"><input type="text" v-model="currentInput" @keyup.enter="calculate" class="w-full p-4 text-4xl terminal-input" placeholder="f(x) or unit conversion..." ref="terminal"><div class="mt-2 text-right h-6 text-slate-500 font-mono text-sm italic">{{ displayFormula }}</div></div><div class="grid grid-cols-5 gap-2"><button @click="append('sin(')" class="key key-sci">sin</button><button @click="append('cos(')" class="key key-sci">cos</button><button @click="append('tan(')" class="key key-sci">tan</button><button @click="append('log(')" class="key key-sci">ln</button><button @click="deleteLast" class="key text-rose-500">DEL</button><button @click="append('asin(')" class="key key-sci">asin</button><button @click="append('acos(')" class="key key-sci">acos</button><button @click="append('atan(')" class="key key-sci">atan</button><button @click="append('^')" class="key key-sci">xʸ</button><button @click="clear" class="key text-rose-500 font-bold">AC</button><button v-for="n in ['7','8','9']" @click="append(n)" class="key">{{n}}</button><button @click="append('/')" class="key key-op">÷</button><button @click="append('sqrt(')" class="key key-op">√</button><button v-for="n in ['4','5','6']" @click="append(n)" class="key">{{n}}</button><button @click="append('*')" class="key key-op">×</button><button @click="append('pi')" class="key key-op">π</button><button v-for="n in ['1','2','3']" @click="append(n)" class="key">{{n}}</button><button @click="append('-')" class="key key-op">−</button><button @click="drawGraph" class="key bg-indigo-600 text-white row-span-2 shadow-lg shadow-indigo-900/20">PLOT</button><button @click="append('0')" class="key col-span-2">0</button><button @click="append('.')" class="key">.</button><button @click="append('+')" class="key key-op">+</button><button @click="calculate" class="key key-exec col-span-5 py-4 mt-1 border-t border-emerald-400/20 uppercase tracking-widest text-[12px]">Run Command</button></div></div><div class="panel h-[280px] bg-black relative border-slate-700"><canvas id="graphCanvas" class="w-full h-full"></canvas><div class="absolute bottom-4 left-4 flex flex-col gap-1"><div class="bg-black/80 px-2 py-1 border border-slate-800 rounded text-[9px] font-mono uppercase"><span class="text-indigo-400">Target:</span>{{ lastFunction || 'Idle' }}</div></div></div></div><div class="lg:col-span-3 space-y-4"><div class="panel flex-grow h-[420px]"><div class="p-3 bg-slate-900/50 border-b border-slate-800 text-[10px] font-bold tracking-widest text-slate-500 uppercase">Data Log</div><div class="overflow-y-auto custom-scrollbar"><div v-for="(h, i) in history" :key="i" @click="currentInput = h.result" class="p-3 border-b border-slate-900 hover:bg-slate-800/40 cursor-pointer transition-colors"><div class="text-[10px] text-slate-600 truncate mb-1">{{ h.exp }}</div><div class="text-emerald-500 font-mono text-xs">> {{ h.result }}</div></div></div></div><div class="panel p-4"><label class="text-[9px] uppercase text-slate-600 mb-3 block font-bold">Physical Constants</label><div class="space-y-1"><div v-for="(val, name) in siConstants" @click="append(name)" class="flex justify-between p-2 bg-black/40 border border-slate-800 rounded text-[10px] cursor-pointer hover:border-emerald-500 group transition-all"><span class="text-slate-300 group-hover:text-emerald-400">{{ name }}</span><span class="text-slate-600 italic font-mono">{{ val }}</span></div></div></div></div></div><footer class="mt-8 mb-4 text-center border-t border-slate-900 pt-6"><div class="text-slate-500 font-mono text-sm tracking-widest uppercase mb-1">Luca's Website</div><a href="https://sites.google.com/view/codyferd" target="_blank" class="text-emerald-600 font-mono text-xs hover:text-emerald-400 transition-colors">sites.google.com/view/codyferd</a></footer><script>const { createApp, ref, onMounted } = Vue;
+
+        createApp({
+            setup() {
+                const currentInput = ref('');
+                const displayFormula = ref('');
+                const lastFunction = ref('');
+                const history = ref([]);
+                const terminal = ref(null);
+
+                const siMatrix = {
+                    thermodynamics: ['kelvin', 'celsius', 'fahrenheit'],
+                    length: ['meter', 'km', 'cm', 'mm', 'inch', 'foot', 'mile'],
+                    mass: ['kg', 'gram', 'mg', 'ton', 'lb', 'oz'],
+                    force: ['newton', 'lbf'],
+                    pressure: ['pascal', 'bar', 'psi', 'atm'],
+                    energy: ['joule', 'kcal', 'Wh']
+                };
+
+                const siConstants = {
+                    'c': '2.997e8',
+                    'G': '6.674e-11',
+                    'h': '6.626e-34',
+                    'k': '1.380e-23',
+                    'e': '1.602e-19'
+                };
+
+                const append = (v) => {
+                    currentInput.value += v;
+                    terminal.value.focus();
+                };
+
+                const clear = () => { currentInput.value = ''; displayFormula.value = ''; };
+                const deleteLast = () => currentInput.value = currentInput.value.slice(0, -1);
+
+                const calculate = () => {
+                    if (!currentInput.value) return;
+                    try {
+                        const res = math.evaluate(currentInput.value);
+                        const formatted = math.format(res, { precision: 12 });
+                        displayFormula.value = currentInput.value;
+                        history.value.unshift({ exp: currentInput.value, result: formatted.toString() });
+                        currentInput.value = formatted.toString();
+                    } catch (e) {
+                        currentInput.value = "ERR: SYSTEM_FAIL";
+                        setTimeout(() => currentInput.value = "", 1200);
+                    }
+                };
+
+                const drawGraph = () => {
+                    const canvas = document.getElementById('graphCanvas');
+                    const ctx = canvas.getContext('2d');
+                    const w = canvas.width = canvas.offsetWidth;
+                    const h = canvas.height = canvas.offsetHeight;
+
+                    ctx.clearRect(0, 0, w, h);
+
+                    // Technical Grid
+                    ctx.strokeStyle = '#0f172a';
+                    ctx.lineWidth = 1;
+                    ctx.beginPath();
+                    for(let i=0; i<w; i+=25){ ctx.moveTo(i,0); ctx.lineTo(i,h); }
+                    for(let i=0; i<h; i+=25){ ctx.moveTo(0,i); ctx.lineTo(w,i); }
+                    ctx.stroke();
+
+                    // Main Axes
+                    ctx.strokeStyle = '#1e293b';
+                    ctx.lineWidth = 2;
+                    ctx.beginPath();
+                    ctx.moveTo(w/2, 0); ctx.lineTo(w/2, h);
+                    ctx.moveTo(0, h/2); ctx.lineTo(w, h/2);
+                    ctx.stroke();
+
+                    // Plot Function
+                    ctx.strokeStyle = '#4f46e5';
+                    ctx.lineWidth = 3;
+                    ctx.beginPath();
+
+                    try {
+                        const expr = math.compile(currentInput.value);
+                        lastFunction.value = currentInput.value;
+
+                        let first = true;
+                        for (let px = 0; px < w; px++) {
+                            const x = (px - w/2) / 25;
+                            const y = expr.evaluate({ x: x });
+                            const py = h/2 - (y * 25);
+
+                            if (isNaN(py) || Math.abs(py) > h * 2) {
+                                first = true;
+                                continue;
+                            }
+
+                            if (first) { ctx.moveTo(px, py); first = false; }
+                            else { ctx.lineTo(px, py); }
+                        }
+                        ctx.stroke();
+                    } catch (e) {
+                        lastFunction.value = "Invalid Plottable";
+                    }
+                };
+
+                onMounted(() => {
+                    terminal.value.focus();
+                    drawGraph(); // Initial grid
+                });
+
+                return { currentInput, displayFormula, lastFunction, history, siMatrix, siConstants, append, clear, deleteLast, calculate, drawGraph, terminal };
+            }
+        }).mount('#app');</script></body></html>
