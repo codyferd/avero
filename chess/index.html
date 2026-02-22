@@ -1,108 +1,383 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Chess</title><script src="../cdn.js"></script><style>[v-cloak]{display:none}.board-container{position:relative;padding:40px;background:#1e293b;border-radius:12px;box-shadow:0 25px 50px -12px rgba(0,0,0,.5)}.board-grid{display:grid;grid-template-columns:repeat(8,1fr);grid-template-rows:repeat(8,1fr);aspect-ratio:1/1;width:85vh;max-width:1000px;min-width:320px;border:4px solid #334155}.chess-board-wrapper{transition:transform .8s cubic-bezier(.4,0,.2,1);transform-style:preserve-3d}.flipped{transform:rotate(180deg)}.piece-img{transition:transform .8s;width:90%;height:90%;user-select:none;z-index:10}.flipped .piece-img{transform:rotate(180deg)}.square{display:flex;align-items:center;justify-content:center;position:relative;cursor:pointer}.coord{position:absolute;font-size:14px;font-weight:900;color:#64748b;text-transform:uppercase}.coord-rank{left:-25px;width:20px;text-align:center}.coord-file{bottom:-30px;width:100%;text-align:center}.capture-dot{position:absolute;width:30%;height:30%;background:rgba(239,68,68,.8);border-radius:50%;border:2px solid #fff;z-index:30;pointer-events:none;box-shadow:0 0 15px rgba(0,0,0,.5)}.explorer-bar{height:6px;border-radius:3px;overflow:hidden;display:flex;margin-top:4px}.custom-scrollbar::-webkit-scrollbar{width:4px}.custom-scrollbar::-webkit-scrollbar-track{background:0 0}.custom-scrollbar::-webkit-scrollbar-thumb{background:#334155;border-radius:10px}</style></head><body class="bg-slate-900 text-white min-h-screen font-sans flex flex-col"><div id="app" v-cloak class="flex-grow flex items-center justify-center p-6"><div v-if="!gameStarted" class="w-full max-w-md bg-slate-800 p-10 rounded-3xl shadow-2xl border border-slate-700 text-center"><h1 class="text-6xl font-black italic tracking-tighter mb-8 text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-red-500">CHESS</h1><button @click="initGame" class="w-full bg-blue-600 hover:bg-blue-500 p-8 rounded-2xl font-black transition shadow-lg text-2xl uppercase tracking-widest">Start Match</button></div><div v-else class="flex flex-col xl:flex-row gap-10 items-center xl:items-start w-full justify-center"><div class="flex flex-col gap-6 w-full xl:w-72 order-2 xl:order-1"><div class="bg-slate-800 p-5 rounded-2xl border border-slate-700 shadow-xl"><div class="flex justify-between items-center mb-4"><span class="text-xs font-black text-slate-500 uppercase tracking-widest">Graveyard</span><div :class="turn === 'w' ? 'bg-white' : 'bg-black'" class="w-4 h-4 rounded shadow border border-slate-600"></div></div><div class="space-y-4"><div><div class="flex justify-between text-[10px] font-bold mb-1 uppercase text-slate-400">White Advantage:<span class="text-white">{{ scores.w }}</span></div><div class="flex flex-wrap gap-1 p-2 bg-slate-950 rounded-lg min-h-[50px] content-start"><img v-for="(p, i) in capturedByWhite" :src="getPieceURL({type: p, color: 'b'})" class="w-6 h-6"></div></div><div><div class="flex justify-between text-[10px] font-bold mb-1 uppercase text-slate-400">Black Advantage:<span class="text-white">{{ scores.b }}</span></div><div class="flex flex-wrap gap-1 p-2 bg-slate-950 rounded-lg min-h-[50px] content-start"><img v-for="(p, i) in capturedByBlack" :src="getPieceURL({type: p, color: 'w'})" class="w-6 h-6"></div></div></div></div><button @click="gameStarted = false" class="w-full py-4 bg-slate-800 hover:bg-red-900/40 border border-slate-700 rounded-xl font-bold transition text-xs uppercase tracking-widest">Resign Game</button></div><div class="board-container order-1 xl:order-2"><div :class="['chess-board-wrapper', flipped ? 'flipped' : '']"><div class="board-grid"><template v-for="(row, rIdx) in boardState"><div v-for="(square, sIdx) in row" :key="rIdx+'-'+sIdx" @click="handleSquareClick(rIdx, sIdx)" :class="['square', (rIdx + sIdx) % 2 === 0 ? 'bg-[#ebecd0]' : 'bg-[#779556]', isSelected(rIdx, sIdx) ? 'ring-8 ring-inset ring-cyan-400 z-40' : '']"><div v-if="sIdx === 0" class="coord coord-rank" :class="flipped ? 'flipped' : ''">{{ 8 - rIdx }}</div><div v-if="rIdx === 7" class="coord coord-file" :class="flipped ? 'flipped' : ''">{{ String.fromCharCode(97 + sIdx) }}</div><div v-if="isPotentialCapture(rIdx, sIdx)" class="capture-dot"></div><img v-if="square" :src="getPieceURL(square)" class="piece-img"></div></template></div></div></div><div class="w-full xl:w-80 order-3"><div class="bg-slate-800 p-6 rounded-2xl border border-slate-700 shadow-xl flex flex-col h-[600px] xl:h-[85vh]"><h2 class="text-sm font-black text-blue-400 uppercase tracking-widest mb-4">Lichess Explorer</h2><div class="mb-6 p-4 bg-slate-900 rounded-xl border border-slate-700"><p class="text-[10px] text-slate-500 font-bold uppercase mb-1">Opening</p><p class="text-sm font-black text-white leading-tight italic">{{ currentOpening }}</p></div><div class="flex-grow overflow-y-auto space-y-3 pr-2 custom-scrollbar"><div v-for="m in explorerMoves" :key="m.san" class="bg-slate-950 p-4 rounded-xl border border-slate-800"><div class="flex justify-between items-center mb-2"><span class="text-lg font-black text-blue-400">{{ m.san }}</span><span class="text-[10px] text-slate-500 font-mono">{{ (m.white + m.draws + m.black).toLocaleString() }} games</span></div><div class="explorer-bar"><div class="bg-white" :style="{ width: (m.white / (m.white + m.draws + m.black) * 100) + '%' }"></div><div class="bg-slate-500" :style="{ width: (m.draws / (m.white + m.draws + m.black) * 100) + '%' }"></div><div class="bg-black" :style="{ width: (m.black / (m.white + m.draws + m.black) * 100) + '%' }"></div></div></div></div></div></div></div></div><footer class="w-full py-8 border-t border-slate-800 text-center mt-auto bg-slate-900/50"><a href="https://sites.google.com/view/codyferd" target="_blank" class="text-slate-400 hover:text-cyan-400 transition font-bold text-lg uppercase tracking-widest">Luca's Website</a></footer><script>const { createApp, ref, computed } = Vue;
-
-createApp({
-    setup() {
-        const gameStarted = ref(false);
-        const game = ref(null);
-        const boardState = ref([]);
-        const selected = ref(null);
-        const potentialCaptures = ref([]);
-        const flipped = ref(false);
-        const capturedByWhite = ref([]);
-        const capturedByBlack = ref([]);
-        const currentOpening = ref("Starting Position");
-        const explorerMoves = ref([]);
-        const scores = ref({ w: 0, b: 0 });
-
-        const initGame = () => {
-            game.value = new Chess();
-            gameStarted.value = true;
-            flipped.value = false;
-            selected.value = null;
-            potentialCaptures.value = [];
-            capturedByWhite.value = [];
-            capturedByBlack.value = [];
-            fetchExplorerData();
-            syncState();
-        };
-
-        const calculateScore = () => {
-            const vals = { p: 1, n: 3, b: 3, r: 5, q: 9, k: 0 };
-            let w = 0, b = 0;
-            game.value.board().forEach(row => {
-                row.forEach(s => {
-                    if (s) {
-                        if (s.color === 'w') w += vals[s.type];
-                        else b += vals[s.type];
-                    }
-                });
-            });
-            scores.value = { w, b };
-        };
-
-        const fetchExplorerData = async () => {
-            const fen = game.value.fen();
-            try {
-                const res = await fetch(`https://explorer.lichess.ovh/masters?fen=${encodeURIComponent(fen)}`);
-                const data = await res.json();
-                explorerMoves.value = data.moves || [];
-                if (data.opening) currentOpening.value = data.opening.name;
-                else if (game.value.history().length === 0) currentOpening.value = "Starting Position";
-            } catch (e) { console.error(e); }
-        };
-
-        const syncState = () => {
-            boardState.value = game.value.board();
-            calculateScore();
-        };
-
-        const handleSquareClick = (r, c) => {
-            const pos = String.fromCharCode(97 + c) + (8 - r);
-            const piece = boardState.value[r][c];
-
-            if (selected.value) {
-                if (piece && piece.color === game.value.turn()) {
-                    updateSelection(pos);
-                    return;
-                }
-                const moveResult = game.value.move({ from: selected.value, to: pos, promotion: 'q' });
-                if (moveResult) {
-                    if (moveResult.captured) {
-                        if (moveResult.color === 'w') capturedByWhite.value.push(moveResult.captured);
-                        else capturedByBlack.value.push(moveResult.captured);
-                    }
-                    flipped.value = !flipped.value;
-                    syncState();
-                    fetchExplorerData();
-                }
-                selected.value = null;
-                potentialCaptures.value = [];
-            } else if (piece && piece.color === game.value.turn()) {
-                updateSelection(pos);
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width,initial-scale=1" />
+        <title>Chess</title>
+        <script src="../cdn.js"></script>
+        <style>
+            [v-cloak] {
+                display: none;
             }
-        };
+            .board-container {
+                position: relative;
+                padding: 40px;
+                background: #1e293b;
+                border-radius: 12px;
+                box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            }
+            .board-grid {
+                display: grid;
+                grid-template-columns: repeat(8, 1fr);
+                grid-template-rows: repeat(8, 1fr);
+                aspect-ratio: 1/1;
+                width: 85vh;
+                max-width: 1000px;
+                min-width: 320px;
+                border: 4px solid #334155;
+            }
+            .chess-board-wrapper {
+                transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+                transform-style: preserve-3d;
+            }
+            .flipped {
+                transform: rotate(180deg);
+            }
+            .piece-img {
+                transition: transform 0.8s;
+                width: 90%;
+                height: 90%;
+                user-select: none;
+                z-index: 10;
+            }
+            .flipped .piece-img {
+                transform: rotate(180deg);
+            }
+            .square {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                position: relative;
+                cursor: pointer;
+            }
+            .coord {
+                position: absolute;
+                font-size: 14px;
+                font-weight: 900;
+                color: #64748b;
+                text-transform: uppercase;
+            }
+            .coord-rank {
+                left: -25px;
+                width: 20px;
+                text-align: center;
+            }
+            .coord-file {
+                bottom: -30px;
+                width: 100%;
+                text-align: center;
+            }
+            .capture-dot {
+                position: absolute;
+                width: 30%;
+                height: 30%;
+                background: rgba(239, 68, 68, 0.8);
+                border-radius: 50%;
+                border: 2px solid #fff;
+                z-index: 30;
+                pointer-events: none;
+                box-shadow: 0 0 15px rgba(0, 0, 0, 0.5);
+            }
+            .explorer-bar {
+                height: 6px;
+                border-radius: 3px;
+                overflow: hidden;
+                display: flex;
+                margin-top: 4px;
+            }
+            .custom-scrollbar::-webkit-scrollbar {
+                width: 4px;
+            }
+            .custom-scrollbar::-webkit-scrollbar-track {
+                background: 0 0;
+            }
+            .custom-scrollbar::-webkit-scrollbar-thumb {
+                background: #334155;
+                border-radius: 10px;
+            }
+        </style>
+    </head>
+    <body class="bg-slate-900 text-white min-h-screen font-sans flex flex-col">
+        <div id="app" v-cloak class="flex-grow flex items-center justify-center p-6">
+            <div
+                v-if="!gameStarted"
+                class="w-full max-w-md bg-slate-800 p-10 rounded-3xl shadow-2xl border border-slate-700 text-center"
+            >
+                <h1
+                    class="text-6xl font-black italic tracking-tighter mb-8 text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-red-500"
+                >
+                    CHESS
+                </h1>
+                <button
+                    @click="initGame"
+                    class="w-full bg-blue-600 hover:bg-blue-500 p-8 rounded-2xl font-black transition shadow-lg text-2xl uppercase tracking-widest"
+                >
+                    Start Match
+                </button>
+            </div>
+            <div v-else class="flex flex-col xl:flex-row gap-10 items-center xl:items-start w-full justify-center">
+                <div class="flex flex-col gap-6 w-full xl:w-72 order-2 xl:order-1">
+                    <div class="bg-slate-800 p-5 rounded-2xl border border-slate-700 shadow-xl">
+                        <div class="flex justify-between items-center mb-4">
+                            <span class="text-xs font-black text-slate-500 uppercase tracking-widest">Graveyard</span>
+                            <div
+                                :class="turn === 'w' ? 'bg-white' : 'bg-black'"
+                                class="w-4 h-4 rounded shadow border border-slate-600"
+                            ></div>
+                        </div>
+                        <div class="space-y-4">
+                            <div>
+                                <div class="flex justify-between text-[10px] font-bold mb-1 uppercase text-slate-400">
+                                    White Advantage:<span class="text-white">{{ scores.w }}</span>
+                                </div>
+                                <div
+                                    class="flex flex-wrap gap-1 p-2 bg-slate-950 rounded-lg min-h-[50px] content-start"
+                                >
+                                    <img
+                                        v-for="(p, i) in capturedByWhite"
+                                        :src="getPieceURL({type: p, color: 'b'})"
+                                        class="w-6 h-6"
+                                    />
+                                </div>
+                            </div>
+                            <div>
+                                <div class="flex justify-between text-[10px] font-bold mb-1 uppercase text-slate-400">
+                                    Black Advantage:<span class="text-white">{{ scores.b }}</span>
+                                </div>
+                                <div
+                                    class="flex flex-wrap gap-1 p-2 bg-slate-950 rounded-lg min-h-[50px] content-start"
+                                >
+                                    <img
+                                        v-for="(p, i) in capturedByBlack"
+                                        :src="getPieceURL({type: p, color: 'w'})"
+                                        class="w-6 h-6"
+                                    />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <button
+                        @click="gameStarted = false"
+                        class="w-full py-4 bg-slate-800 hover:bg-red-900/40 border border-slate-700 rounded-xl font-bold transition text-xs uppercase tracking-widest"
+                    >
+                        Resign Game
+                    </button>
+                </div>
+                <div class="board-container order-1 xl:order-2">
+                    <div :class="['chess-board-wrapper', flipped ? 'flipped' : '']">
+                        <div class="board-grid">
+                            <template v-for="(row, rIdx) in boardState"
+                                ><div
+                                    v-for="(square, sIdx) in row"
+                                    :key="rIdx+'-'+sIdx"
+                                    @click="handleSquareClick(rIdx, sIdx)"
+                                    :class="['square', (rIdx + sIdx) % 2 === 0 ? 'bg-[#ebecd0]' : 'bg-[#779556]', isSelected(rIdx, sIdx) ? 'ring-8 ring-inset ring-cyan-400 z-40' : '']"
+                                >
+                                    <div v-if="sIdx === 0" class="coord coord-rank" :class="flipped ? 'flipped' : ''">
+                                        {{ 8 - rIdx }}
+                                    </div>
+                                    <div v-if="rIdx === 7" class="coord coord-file" :class="flipped ? 'flipped' : ''">
+                                        {{ String.fromCharCode(97 + sIdx) }}
+                                    </div>
+                                    <div v-if="isPotentialCapture(rIdx, sIdx)" class="capture-dot"></div>
+                                    <img v-if="square" :src="getPieceURL(square)" class="piece-img" /></div
+                            ></template>
+                        </div>
+                    </div>
+                </div>
+                <div class="w-full xl:w-80 order-3">
+                    <div
+                        class="bg-slate-800 p-6 rounded-2xl border border-slate-700 shadow-xl flex flex-col h-[600px] xl:h-[85vh]"
+                    >
+                        <h2 class="text-sm font-black text-blue-400 uppercase tracking-widest mb-4">
+                            Lichess Explorer
+                        </h2>
+                        <div class="mb-6 p-4 bg-slate-900 rounded-xl border border-slate-700">
+                            <p class="text-[10px] text-slate-500 font-bold uppercase mb-1">Opening</p>
+                            <p class="text-sm font-black text-white leading-tight italic">{{ currentOpening }}</p>
+                        </div>
+                        <div class="flex-grow overflow-y-auto space-y-3 pr-2 custom-scrollbar">
+                            <div
+                                v-for="m in explorerMoves"
+                                :key="m.san"
+                                class="bg-slate-950 p-4 rounded-xl border border-slate-800"
+                            >
+                                <div class="flex justify-between items-center mb-2">
+                                    <span class="text-lg font-black text-blue-400">{{ m.san }}</span
+                                    ><span class="text-[10px] text-slate-500 font-mono"
+                                        >{{ (m.white + m.draws + m.black).toLocaleString() }} games</span
+                                    >
+                                </div>
+                                <div class="explorer-bar">
+                                    <div
+                                        class="bg-white"
+                                        :style="{ width: (m.white / (m.white + m.draws + m.black) * 100) + '%' }"
+                                    ></div>
+                                    <div
+                                        class="bg-slate-500"
+                                        :style="{ width: (m.draws / (m.white + m.draws + m.black) * 100) + '%' }"
+                                    ></div>
+                                    <div
+                                        class="bg-black"
+                                        :style="{ width: (m.black / (m.white + m.draws + m.black) * 100) + '%' }"
+                                    ></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <footer class="w-full py-8 border-t border-slate-800 text-center mt-auto bg-slate-900/50">
+            <a
+                href="https://sites.google.com/view/codyferd"
+                target="_blank"
+                class="text-slate-400 hover:text-cyan-400 transition font-bold text-lg uppercase tracking-widest"
+                >Luca's Website</a
+            >
+        </footer>
+        <script>
+            const { createApp, ref, computed } = Vue;
 
-        const updateSelection = (pos) => {
-            selected.value = pos;
-            const moves = game.value.moves({ square: pos, verbose: true });
-            potentialCaptures.value = moves
-                .filter(m => m.flags.includes('c') || m.flags.includes('e'))
-                .map(m => m.to);
-        };
+            createApp({
+                setup() {
+                    const gameStarted = ref(false);
+                    const game = ref(null);
+                    const boardState = ref([]);
+                    const selected = ref(null);
+                    const potentialCaptures = ref([]);
+                    const flipped = ref(false);
+                    const capturedByWhite = ref([]);
+                    const capturedByBlack = ref([]);
+                    const currentOpening = ref("Starting Position");
+                    const explorerMoves = ref([]);
+                    const scores = ref({ w: 0, b: 0 });
 
-        const isPotentialCapture = (r, s) => {
-            const pos = String.fromCharCode(97 + s) + (8 - r);
-            return potentialCaptures.value.includes(pos);
-        };
+                    const initGame = () => {
+                        game.value = new Chess();
+                        gameStarted.value = true;
+                        flipped.value = false;
+                        selected.value = null;
+                        potentialCaptures.value = [];
+                        capturedByWhite.value = [];
+                        capturedByBlack.value = [];
+                        fetchExplorerData();
+                        syncState();
+                    };
 
-        const getPieceURL = (p) => {
-            const map = { wp:'4/45/Chess_plt45.svg', wr:'7/72/Chess_rlt45.svg', wn:'7/70/Chess_nlt45.svg', wb:'b/b1/Chess_blt45.svg', wq:'1/15/Chess_qlt45.svg', wk:'4/42/Chess_klt45.svg', bp:'c/c7/Chess_pdt45.svg', br:'f/ff/Chess_rdt45.svg', bn:'e/ef/Chess_ndt45.svg', bb:'9/98/Chess_bdt45.svg', bq:'4/47/Chess_qdt45.svg', bk:'f/f0/Chess_kdt45.svg' };
-            return `https://upload.wikimedia.org/wikipedia/commons/${map[p.color + p.type]}`;
-        };
+                    const calculateScore = () => {
+                        const vals = { p: 1, n: 3, b: 3, r: 5, q: 9, k: 0 };
+                        let w = 0,
+                            b = 0;
+                        game.value.board().forEach((row) => {
+                            row.forEach((s) => {
+                                if (s) {
+                                    if (s.color === "w") w += vals[s.type];
+                                    else b += vals[s.type];
+                                }
+                            });
+                        });
+                        scores.value = { w, b };
+                    };
 
-        const isSelected = (r, c) => selected.value === (String.fromCharCode(97 + c) + (8 - r));
-        const turn = computed(() => game.value ? game.value.turn() : 'w');
+                    const fetchExplorerData = async () => {
+                        const fen = game.value.fen();
+                        try {
+                            const res = await fetch(
+                                `https://explorer.lichess.ovh/masters?fen=${encodeURIComponent(fen)}`
+                            );
+                            const data = await res.json();
+                            explorerMoves.value = data.moves || [];
+                            if (data.opening) currentOpening.value = data.opening.name;
+                            else if (game.value.history().length === 0) currentOpening.value = "Starting Position";
+                        } catch (e) {
+                            console.error(e);
+                        }
+                    };
 
-        return { gameStarted, boardState, getPieceURL, handleSquareClick, isSelected, isPotentialCapture, flipped, turn, capturedByWhite, capturedByBlack, currentOpening, explorerMoves, scores, initGame };
-    }
-}).mount('#app');</script></body></html>
+                    const syncState = () => {
+                        boardState.value = game.value.board();
+                        calculateScore();
+                    };
+
+                    const handleSquareClick = (r, c) => {
+                        const pos = String.fromCharCode(97 + c) + (8 - r);
+                        const piece = boardState.value[r][c];
+
+                        if (selected.value) {
+                            if (piece && piece.color === game.value.turn()) {
+                                updateSelection(pos);
+                                return;
+                            }
+                            const moveResult = game.value.move({ from: selected.value, to: pos, promotion: "q" });
+                            if (moveResult) {
+                                if (moveResult.captured) {
+                                    if (moveResult.color === "w") capturedByWhite.value.push(moveResult.captured);
+                                    else capturedByBlack.value.push(moveResult.captured);
+                                }
+                                flipped.value = !flipped.value;
+                                syncState();
+                                fetchExplorerData();
+                            }
+                            selected.value = null;
+                            potentialCaptures.value = [];
+                        } else if (piece && piece.color === game.value.turn()) {
+                            updateSelection(pos);
+                        }
+                    };
+
+                    const updateSelection = (pos) => {
+                        selected.value = pos;
+                        const moves = game.value.moves({ square: pos, verbose: true });
+                        potentialCaptures.value = moves
+                            .filter((m) => m.flags.includes("c") || m.flags.includes("e"))
+                            .map((m) => m.to);
+                    };
+
+                    const isPotentialCapture = (r, s) => {
+                        const pos = String.fromCharCode(97 + s) + (8 - r);
+                        return potentialCaptures.value.includes(pos);
+                    };
+
+                    const getPieceURL = (p) => {
+                        const map = {
+                            wp: "4/45/Chess_plt45.svg",
+                            wr: "7/72/Chess_rlt45.svg",
+                            wn: "7/70/Chess_nlt45.svg",
+                            wb: "b/b1/Chess_blt45.svg",
+                            wq: "1/15/Chess_qlt45.svg",
+                            wk: "4/42/Chess_klt45.svg",
+                            bp: "c/c7/Chess_pdt45.svg",
+                            br: "f/ff/Chess_rdt45.svg",
+                            bn: "e/ef/Chess_ndt45.svg",
+                            bb: "9/98/Chess_bdt45.svg",
+                            bq: "4/47/Chess_qdt45.svg",
+                            bk: "f/f0/Chess_kdt45.svg",
+                        };
+                        return `https://upload.wikimedia.org/wikipedia/commons/${map[p.color + p.type]}`;
+                    };
+
+                    const isSelected = (r, c) => selected.value === String.fromCharCode(97 + c) + (8 - r);
+                    const turn = computed(() => (game.value ? game.value.turn() : "w"));
+
+                    return {
+                        gameStarted,
+                        boardState,
+                        getPieceURL,
+                        handleSquareClick,
+                        isSelected,
+                        isPotentialCapture,
+                        flipped,
+                        turn,
+                        capturedByWhite,
+                        capturedByBlack,
+                        currentOpening,
+                        explorerMoves,
+                        scores,
+                        initGame,
+                    };
+                },
+            }).mount("#app");
+        </script>
+    </body>
+</html>
