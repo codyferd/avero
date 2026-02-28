@@ -1,6 +1,35 @@
 <!DOCTYPE html>
-<html>
-<body style="margin:0;">
-    <iframe src="main/index.html" style="width:100vw; height:100vh; border:none;"></iframe>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Avero</title>
+    <style>
+        /* 2. Reset everything and hide overflow */
+        html, body {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: #000; /* Match your app's background to avoid white flashes */
+        }
+
+        /* 3. Use fixed positioning to bypass address bar issues */
+        iframe {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border: none;
+            
+            /* Performance & Smoothness */
+            -webkit-overflow-scrolling: touch;
+        }
+    </style>
+</head>
+<body>
+    <iframe src="desktop/index.html" allow="fullscreen"></iframe>
 </body>
 </html>
