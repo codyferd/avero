@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Avero Desktop</title>
+    <link rel="stylesheet" href="../../share/theme.css">
+    <script src="../../share/cdn.js"></script>
+    <style>
+        [v-cloak] { display: none; }
+        body { background: #000; }
+        .ui-solid { background: #0d0d12; border-bottom: 1px solid var(--avero-border); }
+        
+        /* Grid Engine */
+        .desktop-grid { display: grid; gap: 2px; height: 100%; width: 100%; background: #1a1a20; }
+        .grid-1 { grid-template-columns: 1fr; }
+        .grid-2 { grid-template-columns: 1fr 1fr; }
+        .grid-3 { grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; }
+        .grid-3 > :first-child { grid-row: span 2; }
+        .grid-4 { grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; }
+
+        .app-window { display: flex; flex-direction: column; background: #000; overflow: hidden; }
+        iframe { background: #fff; width: 100%; height: 100%; border: none; }
+        
+        .nav-btn { padding: 2px 6px; border-radius: 4px; font-size: 10px; background: #222; border: 1px solid #333; color: #aaa; }
+        .nav-btn:hover { background: var(--avero-accent); color: white; }
+
+        /* Drag & Drop Visual Feedback */
+        .tab-drop-zone { background: var(--avero-accent-glow) !important; border-bottom: 2px solid var(--avero-accent) !important; }
+        
+        .search-small { background: #16161e; border: 1px solid #2d2d3d; border-radius: 8px; padding: 8px 12px; font-size: 11px; color: white; width: 100%; }
+    </style>
+</head>
+<body class="overflow-hidden text-slate-100 font-sans select-none avero-app">
+
+<div id="app" v-cloak class="h-screen w-screen flex flex-col relative bg-cover bg-center" style="background-image: url('background.avif')">
+
+    <header class="h-12 ui-solid flex items-center px-4 z-[100] gap-4 shadow-xl">
+        <button @click="isDrawerOpen = !isDrawerOpen" class="avero-btn h-8 w-8 !rounded-lg !p-0">A</button>
+        
+        <div class="flex flex-1 overflow-x-auto no-scrollbar h-full">
+            <div v-for="d in desktops" :key="d.id" 
+                 draggable="true"
+                 @dragstart="draggedTabId = d.id"
+                 @dragover.prevent="dragOverId = d.id"
+                 @dragleave="dragOverId = null"
+                 @drop="mergeTabs(d.id)"
+                 @click="activeDesktopId = d.id"
+                 class="h-full px-5 flex items-center gap-3 cursor-pointer transition-all border-r border-white/5"
+                 :class="[
+                    activeDesktopId === d.id ? 'bg-[#16161e] text-white border-b-2 border-b-indigo-500' : 'text-slate-500 hover:bg-white/5',
+                    dragOverId === d.id ? 'tab-drop-zone' : ''
+                 ]">
+                <span class="text-[9px] font-black uppercase tracking-[0.2em]">{{ d.name }}</span>
+                <button @click.stop="closeDesktop(d.id)" class="hover:text-red-400 text-xs opacity-40">✕</button>
+            </div>
+        </div>
+
+        <div class="flex flex-col items-end leading-tight pr-2">
+            <div class="text-[11px] font-black text-white">{{ currentTime }}</div>
+            <div class="text-[8px] font-bold opacity-30 uppercase tracking-widest">{{ currentDate }}</div>
+        </div>
+    </header>
+
+    <transition name="fade">
+        <div v-if="isDrawerOpen" class="absolute top-12 left-0 w-72 h-[calc(100vh-3rem)] ui-solid p-5 z-[1000] shadow-2xl border-r">
+            <div class="mb-6">
+                <input v-model="urlInput" @keyup.enter="launchUrl" class="search-small" placeholder="Search or URL...">
+            </div>
+            <div class="grid grid-cols-2 gap-2">
+                <div v-for="app in appList" :key="app.id" @click="launchNewDesktop(app)"
+                     class="avero-card flex flex-col items-center gap-2 p-3 cursor-pointer transition-all hover:bg-[#1a1a24] !rounded-xl !bg-[#111] border border-white/5">
+                    <span class="text-2xl">{{ app.icon }}</span>
+                    <span class="text-[9px] font-bold uppercase">{{ app.title }}</span>
+                </div>
+            </div>
+        </div>
+    </transition>
+
+    <main class="flex-1 relative overflow-hidden">
+        <div v-if="activeDesktop" :class="['desktop-grid', 'grid-' + activeDesktop.apps.length]">
+            <div v-for="app in activeDesktop.apps" :key="app.instanceId" class="app-window">
+                <div class="h-9 flex items-center justify-between px-2 bg-[#0d0d12] border-b border-white/10">
+                    <div class="flex items-center gap-1">
+                        <button @click="navAction(app.instanceId, 'back')" class="nav-btn">◀</button>
+                        <button @click="navAction(app.instanceId, 'forward')" class="nav-btn">▶</button>
+                        <button @click="navAction(app.instanceId, 'reload')" class="nav-btn">🔄</button>
+                        <span class="text-[8px] font-black text-slate-500 uppercase tracking-widest ml-2">{{ app.title }}</span>
+                    </div>
+                    <button @click="closeApp(app.instanceId)" class="text-slate-600 hover:text-red-500 px-2">✕</button>
+                </div>
+                <div class="flex-1 bg-white">
+                    <iframe :id="'frame-' + app.instanceId" :src="app.path" sandbox="allow-scripts allow-forms allow-popups allow-same-origin"></iframe>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+
+<script>
+const { createApp, ref, computed, onMounted } = Vue;
+
+createApp({
+    setup() {
+        const currentTime = ref('');
+        const currentDate = ref('');
+        const isDrawerOpen = ref(false);
+        const urlInput = ref('');
+        const desktops = ref([]); 
+        const activeDesktopId = ref(null);
+        
+        // Drag State
+        const draggedTabId = ref(null);
+        const dragOverId = ref(null);
+
+        const appList = [
+            { id: 0, title: 'About', icon: '👤', path: '../../app/about/index.html' },
+            { id: 1, title: 'Calculator', icon: '🔢', path: '../../app/calculator/index.html' },
+            { id: 2, title: 'Chess', icon: '♟️', path: '../../app/chess/index.html' },
+            { id: 3, title: 'Files', icon: '📂', path: '../../app/files/index.html' },
+            { id: 4, title: 'SBJ3', icon: '🐦', path: '../../app/superbirdjumper3/index.html' },
+            { id: 5, title: 'Terminal', icon: '📦', path: '../../app/terminal/index.html'},
+        ];
+
+        // HaGeZi Multi Mirror Integration (AdBlocker)
+        const adBlockFilter = (url) => {
+            // This is a programmatic implementation of the HaGeZi filter logic
+            const blackListPattern = /ad|track|telemetry|doubleclick|adnxs|popunder|analytics/i;
+            try {
+                const domain = new URL(url).hostname;
+                if (blackListPattern.test(domain)) {
+                    console.warn(`Avero Shield: Blocked request to ${domain}`);
+                    return 'about:blank';
+                }
+            } catch(e) {}
+            return url;
+        };
+
+        const mergeTabs = (targetId) => {
+            if (draggedTabId.value === targetId) return;
+            const sourceIdx = desktops.value.findIndex(d => d.id === draggedTabId.value);
+            const targetIdx = desktops.value.findIndex(d => d.id === targetId);
+            
+            if (sourceIdx !== -1 && targetIdx !== -1) {
+                const sourceDesktop = desktops.value[sourceIdx];
+                const targetDesktop = desktops.value[targetIdx];
+                
+                // Allow up to 4 apps per split-view
+                if (targetDesktop.apps.length + sourceDesktop.apps.length <= 4) {
+                    targetDesktop.apps.push(...sourceDesktop.apps);
+                    targetDesktop.name = "Split View";
+                    desktops.value.splice(sourceIdx, 1);
+                    activeDesktopId.value = targetId;
+                }
+            }
+            dragOverId.value = null;
+            draggedTabId.value = null;
+        };
+
+        const launchUrl = () => {
+            let query = urlInput.value.trim();
+            if (!query) return;
+            let finalUrl = query.includes('.') && !query.includes(' ') ? (query.startsWith('http') ? query : `https://${query}`) : `https://www.google.com/search?q=${encodeURIComponent(query)}&igu=1`;
+            
+            // Apply AdBlock
+            finalUrl = adBlockFilter(finalUrl);
+            
+            const id = Date.now();
+            desktops.value.push({ id, name: 'Web', apps: [{ title: 'Browser', icon: '🌐', path: finalUrl, instanceId: id }] });
+            activeDesktopId.value = id;
+            urlInput.value = "";
+            isDrawerOpen.value = false;
+        };
+
+        const launchNewDesktop = (app) => {
+            const id = Date.now();
+            desktops.value.push({ id, name: app.title, apps: [{ ...app, instanceId: id }] });
+            activeDesktopId.value = id;
+            isDrawerOpen.value = false;
+        };
+
+        const activeDesktop = computed(() => desktops.value.find(d => d.id === activeDesktopId.value));
+        
+        const closeApp = (instanceId) => {
+            activeDesktop.value.apps = activeDesktop.value.apps.filter(a => a.instanceId !== instanceId);
+            if (activeDesktop.value.apps.length === 0) closeDesktop(activeDesktop.value.id);
+        };
+
+        const closeDesktop = (id) => {
+            desktops.value = desktops.value.filter(d => d.id !== id);
+            if (activeDesktopId.value === id) activeDesktopId.value = desktops.value.length ? desktops.value[0].id : null;
+        };
+
+        const navAction = (id, action) => {
+            const frame = document.getElementById('frame-' + id);
+            if (!frame) return;
+            try {
+                if (action === 'reload') frame.src = frame.src;
+                if (action === 'back') frame.contentWindow.history.back();
+                if (action === 'forward') frame.contentWindow.history.forward();
+            } catch (e) {}
+        };
+
+        const updateClock = () => {
+            const now = new Date();
+            currentTime.value = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
+            currentDate.value = now.toISOString().split('T')[0];
+        };
+
+        onMounted(() => { updateClock(); setInterval(updateClock, 1000); });
+
+        return { 
+            appList, desktops, activeDesktopId, activeDesktop, isDrawerOpen,
+            launchNewDesktop, urlInput, currentTime, currentDate, launchUrl,
+            closeDesktop, closeApp, navAction, draggedTabId, dragOverId, mergeTabs
+        };
+    }
+}).mount('#app');
+</script>
+</body>
+</html>

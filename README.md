@@ -1,1 +1,1 @@
-Luca's Original Games
+This is the official codebase of Avero.

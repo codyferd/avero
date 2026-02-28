@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Avero Terminal</title>
+    <link rel="stylesheet" href="../../share/theme.css">
+    <script src="../../share/cdn.js"></script>
+    <style>
+        [v-cloak] { display: none; }
+        
+        body { 
+            background: #050508; 
+            font-family: 'Fira Code', 'Cascadia Code', monospace; 
+        }
+
+        .term-container {
+            background: var(--avero-surface);
+            border: 1px solid var(--avero-border);
+            backdrop-filter: blur(40px);
+        }
+
+        .prompt-user { color: var(--avero-accent); font-weight: 800; }
+        .prompt-dir { color: #4ade80; }
+        
+        /* Custom scrollbar for terminal feel */
+        .term-scroll::-webkit-scrollbar { width: 4px; }
+        .term-scroll::-webkit-scrollbar-thumb { background: var(--avero-border); border-radius: 10px; }
+
+        input {
+            caret-color: var(--avero-accent);
+            text-shadow: 0 0 5px var(--avero-accent-glow);
+        }
+
+        .output-line {
+            animation: textReveal 0.1s ease-out forwards;
+        }
+
+        @keyframes textReveal {
+            from { opacity: 0; transform: translateX(-4px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+    </style>
+</head>
+<body class="avero-app p-4 sm:p-8 h-screen flex flex-col overflow-hidden">
+
+<div id="app" v-cloak 
+     class="flex-1 flex flex-col term-container rounded-[2rem] p-6 sm:p-10 shadow-2xl overflow-hidden" 
+     @click="focusInput">
+    
+    <div ref="outputArea" class="flex-1 overflow-y-auto space-y-4 text-xs sm:text-sm term-scroll">
+        <div class="flex justify-between items-center opacity-30 text-[9px] uppercase tracking-[0.3em] mb-8 border-b border-white/5 pb-2">
+            <span>Avero Terminal Shell v1.0.4</span>
+            <span>Kernel: Web-A1</span>
+        </div>
+
+        <div v-for="(entry, idx) in history" :key="idx" class="output-line">
+            <div class="flex gap-3">
+                <span class="prompt-user">avero@system</span>
+                <span class="prompt-dir">{{ entry.path }} $</span>
+                <span class="text-white font-bold">{{ entry.input }}</span>
+            </div>
+            <div v-if="entry.output" class="text-slate-400 whitespace-pre-wrap ml-6 mt-2 border-l-2 border-white/5 pl-4 py-1">
+                {{ entry.output }}
+            </div>
+        </div>
+
+        <div class="flex gap-3 items-center">
+            <span class="prompt-user">avero@system</span>
+            <span class="prompt-dir">{{ currentPathStr }} $</span>
+            <input 
+                ref="inputField"
+                v-model="currentInput" 
+                @keyup.enter="handleCommand"
+                @keyup.up="historyStep(-1)"
+                @keyup.down="historyStep(1)"
+                class="flex-1 bg-transparent border-none outline-none text-white font-bold"
+                spellcheck="false"
+                autocomplete="off"
+                autofocus
+            >
+        </div>
+    </div>
+</div>
+
+<script type="module">
+// Assuming commands.js handles the logic for ls, cd, mkdir, touch, etc.
+import { Commands } from './commands.js';
+const { createApp, ref, computed, nextTick, onMounted } = Vue;
+
+createApp({
+    setup() {
+        const history = ref([]);
+        const commandStack = ref([]);
+        const stackIdx = ref(-1);
+        const currentInput = ref("");
+        const path = ref(['avero', 'user']);
+        
+        // Connect to the shared filesystem
+        const fs = ref([]);
+        const loadFS = () => {
+            const data = localStorage.getItem('avero_fs_local');
+            fs.value = data ? JSON.parse(data) : [{ id: 'root', name: 'user', path: 'avero', isDir: true }];
+        };
+
+        const inputField = ref(null);
+        const outputArea = ref(null);
+
+        const currentPathStr = computed(() => `/${path.value.join('/')}`);
+
+        const handleCommand = async () => {
+            const raw = currentInput.value.trim();
+            if (!raw) return;
+
+            // Add to command history stack (for up/down arrow usage)
+            commandStack.value.push(raw);
+            stackIdx.value = commandStack.value.length;
+
+            const [name, ...args] = raw.split(/\s+/);
+            let result = "";
+
+            if (name === "clear") {
+                history.value = [];
+            } else if (Commands[name]) {
+                // Pass dependencies to the command processor
+                result = await Commands[name](args, fs.value, { path: path.value });
+            } else if (name === "help") {
+                result = "Available: ls, cd, mkdir, touch, rm, clear, help, sysinfo";
+            } else {
+                result = `ERR: Command '${name}' not recognized by Avero Shell.`;
+            }
+
+            if (name !== "clear") {
+                history.value.push({ 
+                    input: raw, 
+                    output: result, 
+                    path: currentPathStr.value 
+                });
+            }
+            
+            currentInput.value = "";
+            
+            // Sync any changes back to storage
+            localStorage.setItem('avero_fs_local', JSON.stringify(fs.value));
+
+            nextTick(() => {
+                outputArea.value.scrollTop = outputArea.value.scrollHeight;
+            });
+        };
+
+        const historyStep = (direction) => {
+            const newIdx = stackIdx.value + direction;
+            if (newIdx >= 0 && newIdx < commandStack.value.length) {
+                stackIdx.value = newIdx;
+                currentInput.value = commandStack.value[newIdx];
+            } else if (newIdx === commandStack.value.length) {
+                stackIdx.value = newIdx;
+                currentInput.value = "";
+            }
+        };
+
+        const focusInput = () => inputField.value.focus();
+
+        onMounted(loadFS);
+
+        return { 
+            history, currentInput, handleCommand, currentPathStr, 
+            inputField, outputArea, focusInput, historyStep 
+        };
+    }
+}).mount('#app');
+</script>
+</body>
+</html>

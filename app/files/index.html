@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Avero Files</title>
+    <link rel="stylesheet" href="../../share/theme.css">
+    <script src="../../share/cdn.js"></script>
+    <style>
+        [v-cloak] { display: none; }
+        
+        /* Reset for Full Screen App Mode */
+        body, html { height: 100%; margin: 0; overflow: hidden; background: #000; }
+        
+        .app-layout {
+            display: grid;
+            grid-template-columns: 240px 1fr;
+            height: 100vh;
+            background: #0d0d12;
+        }
+
+        /* Sidebar Navigation */
+        .sidebar {
+            background: #08080c;
+            border-right: 1px solid rgba(255,255,255,0.05);
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Main Content Area */
+        .main-view {
+            display: flex;
+            flex-direction: column;
+            background: #0d0d12;
+            overflow: hidden;
+        }
+
+        .file-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+            gap: 8px;
+            padding: 20px;
+            align-content: start;
+        }
+
+        /* File/Folder Cards */
+        .item-node {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 16px 8px;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: 1px solid transparent;
+            text-align: center;
+        }
+        .item-node:hover { background: rgba(255,255,255,0.03); }
+        .item-node.selected { 
+            background: var(--avero-accent-glow); 
+            border-color: var(--avero-accent); 
+        }
+
+        .item-icon { font-size: 32px; margin-bottom: 8px; filter: drop-shadow(0 4px 8px rgba(0,0,0,0.3)); }
+        .item-label { font: -9px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: #888; width: 100%; overflow: hidden; text-overflow: ellipsis; }
+        .selected .item-label { color: #fff; }
+
+        /* Toolbar Styling */
+        .toolbar {
+            height: 56px;
+            background: #0d0d12;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            display: flex;
+            align-items: center;
+            padding: 0 20px;
+            gap: 12px;
+        }
+
+        .breadcrumb {
+            display: flex;
+            gap: 4px;
+            font-size: 10px;
+            font-weight: 900;
+            color: #444;
+            text-transform: uppercase;
+        }
+
+        .modal-fullscreen {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.9);
+            backdrop-filter: blur(20px);
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .editor-box {
+            width: 90%;
+            height: 85%;
+            background: #0a0a0f;
+            border: 1px solid #222;
+            border-radius: 16px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+    </style>
+</head>
+<body class="avero-app">
+
+<div id="app" v-cloak class="app-layout">
+    
+    <aside class="sidebar">
+        <div class="p-6">
+            <div class="text-[10px] font-black tracking-[0.3em] text-indigo-500 mb-8 uppercase">Avero Storage</div>
+            <nav class="space-y-2">
+                <div @click="jumpToPath(1)" class="flex items-center gap-3 p-3 rounded-lg hover:bg-white/5 cursor-pointer transition">
+                    <span>🏠</span> <span class="text-[10px] font-bold uppercase">Home</span>
+                </div>
+                <div @click="openModal('folder', 'create')" class="flex items-center gap-3 p-3 rounded-lg hover:bg-white/5 cursor-pointer transition text-slate-400">
+                    <span>📁</span> <span class="text-[10px] font-bold uppercase">New Directory</span>
+                </div>
+            </nav>
+        </div>
+        <div class="mt-auto p-6 border-t border-white/5 bg-black/20">
+            <div class="text-[8px] font-black text-slate-600 uppercase mb-2">Clipboard Status</div>
+            <div class="text-[9px] font-bold truncate">{{ clipboard ? clipboard.item.name : 'No Items' }}</div>
+        </div>
+    </aside>
+
+    <main class="main-view">
+        
+        <header class="toolbar">
+            <div class="flex items-center gap-2 mr-4">
+                <button @click="goBack" :disabled="path.length <= 2" class="avero-btn !p-2 !h-8 !w-8 opacity-50 hover:opacity-100 disabled:opacity-10">◀</button>
+            </div>
+            
+            <div class="breadcrumb flex-1">
+                <span v-for="(p, i) in path" :key="i" @click="jumpToPath(i)" class="hover:text-white cursor-pointer transition">
+                    {{ p }} <span v-if="i < path.length - 1" class="mx-1 opacity-20">/</span>
+                </span>
+            </div>
+
+            <div class="flex items-center gap-2">
+                <button @click="openModal('file', 'create')" class="avero-btn !px-4 !h-8 !text-[9px]">New File</button>
+                <div class="w-px h-4 bg-white/10"></div>
+                <button :disabled="!selectedItem" @click="copyItem" class="avero-btn !p-2 !h-8">📋</button>
+                <button :disabled="!clipboard" @click="pasteItem" class="avero-btn !p-2 !h-8 !bg-indigo-600/20">📥</button>
+                <button @click="downloadUserZip" class="avero-btn !px-4 !h-8 !text-[9px] !bg-emerald-600/20 !text-emerald-400">Backup</button>
+            </div>
+        </header>
+
+        <div class="file-grid flex-1 overflow-y-auto" @click.self="selectedItem = null">
+            
+            <div v-for="folder in currentFolders" :key="folder.id" 
+                 @click="selectedItem = folder" @dblclick="enterFolder(folder.name)"
+                 class="item-node" :class="{ 'selected': selectedItem?.id === folder.id }">
+                <div class="item-icon">📁</div>
+                <div class="item-label">{{ folder.name }}</div>
+            </div>
+
+            <div v-for="file in currentFiles" :key="file.id" 
+                 @click="selectedItem = file" @dblclick="openModal('file', 'edit', file)"
+                 class="item-node" :class="{ 'selected': selectedItem?.id === file.id }">
+                <div class="item-icon">{{ getIcon(file.name) }}</div>
+                <div class="item-label">{{ file.name }}</div>
+            </div>
+
+            <div v-if="currentFiles.length === 0 && currentFolders.length === 0" class="col-span-full h-full flex flex-col items-center justify-center opacity-10 py-20">
+                <span class="text-6xl mb-4">🕳️</span>
+                <span class="text-xs font-black uppercase">Directory Empty</span>
+            </div>
+        </div>
+
+        <footer class="h-8 bg-black/40 border-t border-white/5 flex items-center justify-between px-6">
+            <div class="text-[8px] font-black uppercase tracking-widest text-slate-500">
+                Avero Filesystem v2.0 // {{ currentFiles.length + currentFolders.length }} Objects
+            </div>
+        </header>
+    </main>
+
+    <transition name="fade">
+        <div v-if="modal.show" class="modal-fullscreen p-4">
+            <div class="editor-box">
+                <div class="p-6 border-b border-white/5 flex justify-between items-center bg-black/50">
+                    <div class="text-[10px] font-black uppercase text-indigo-400 tracking-[0.2em]">Editor — {{ modal.name || 'New Object' }}</div>
+                    <button @click="modal.show = false" class="text-slate-500 hover:text-white transition">✕</button>
+                </div>
+                
+                <div class="flex-1 p-8 flex flex-col gap-6">
+                    <div>
+                        <label class="text-[8px] font-black uppercase text-slate-600 mb-2 block">System Label</label>
+                        <input v-model="modal.name" class="avero-input w-full !text-sm" placeholder="filename.extension">
+                    </div>
+                    <div v-if="modal.type === 'file'" class="flex-1 flex flex-col">
+                        <label class="text-[8px] font-black uppercase text-slate-600 mb-2 block">Content Buffer</label>
+                        <textarea v-model="modal.content" class="avero-input flex-1 w-full !font-mono resize-none !text-xs !leading-relaxed p-4"></textarea>
+                    </div>
+                </div>
+
+                <div class="p-6 bg-black/50 border-t border-white/5 flex gap-4">
+                    <button @click="modal.show = false" class="avero-btn !bg-white/5 !text-white px-8">Cancel</button>
+                    <button @click="saveItem" class="avero-btn flex-1">Save Changes</button>
+                    <button v-if="modal.mode === 'edit'" @click="deleteSelected" class="avero-btn !bg-red-500/10 !text-red-500 px-8">Wipe</button>
+                </div>
+            </div>
+        </div>
+    </transition>
+
+</div>
+
+<script>
+const { createApp, ref, computed, onMounted } = Vue;
+
+createApp({
+    setup() {
+        const path = ref(['avero', 'user']);
+        const fs = ref([]);
+        const selectedItem = ref(null);
+        const clipboard = ref(null); 
+        const modal = ref({ show: false, type: 'file', mode: 'create', name: '', content: '', id: null });
+
+        const loadFS = () => {
+            const saved = localStorage.getItem('avero_fs_local');
+            fs.value = saved ? JSON.parse(saved) : [{ id: 'root', name: 'user', path: 'avero', isDir: true }];
+        };
+
+        const currentPathStr = computed(() => path.value.join('/'));
+        const currentFiles = computed(() => fs.value.filter(f => f.path === currentPathStr.value && !f.isDir));
+        const currentFolders = computed(() => fs.value.filter(f => f.path === currentPathStr.value && f.isDir && f.name !== 'user'));
+
+        const enterFolder = (n) => { path.value.push(n); selectedItem.value = null; };
+        const goBack = () => { if(path.value.length > 2) path.value.pop(); selectedItem.value = null; };
+        const jumpToPath = (i) => { if(i >= 1) path.value = path.value.slice(0, i + 1); selectedItem.value = null; };
+
+        const openModal = (type, mode, item = null) => {
+            if (item) {
+                modal.value = { show: true, type: item.isDir ? 'folder' : 'file', mode: 'edit', name: item.name, content: item.content || '', id: item.id };
+            } else {
+                modal.value = { show: true, type, mode: 'create', name: '', content: '', id: null };
+            }
+        };
+
+        const saveItem = () => {
+            if (!modal.value.name) return;
+            if (modal.value.mode === 'create') {
+                fs.value.push({ id: 'obj-' + Date.now(), name: modal.value.name, content: modal.value.content, path: currentPathStr.value, isDir: modal.value.type === 'folder' });
+            } else {
+                const i = fs.value.find(f => f.id === modal.value.id);
+                if (i) { i.name = modal.value.name; i.content = modal.value.content; }
+            }
+            sync(); modal.value.show = false;
+        };
+
+        const deleteSelected = () => {
+            fs.value = fs.value.filter(f => f.id !== modal.value.id);
+            sync(); modal.value.show = false; selectedItem.value = null;
+        };
+
+        const copyItem = () => clipboard.value = { mode: 'copy', item: { ...selectedItem.value } };
+        const pasteItem = () => {
+            if (!clipboard.value) return;
+            const source = clipboard.value.item;
+            fs.value.push({ ...source, id: 'obj-'+Date.now(), path: currentPathStr.value, name: source.name + ' (Copy)' });
+            sync();
+        };
+
+        const sync = () => localStorage.setItem('avero_fs_local', JSON.stringify(fs.value));
+        const getIcon = (n) => {
+            if(n.endsWith('.html')) return '🌐';
+            if(n.endsWith('.js')) return '📜';
+            if(n.endsWith('.txt')) return '📝';
+            return '📄';
+        };
+
+        const downloadUserZip = () => { alert("Zip generation triggered (Simulation)"); };
+
+        onMounted(loadFS);
+        return { path, currentFiles, currentFolders, enterFolder, goBack, jumpToPath, modal, openModal, saveItem, deleteSelected, selectedItem, copyItem, pasteItem, clipboard, getIcon, downloadUserZip };
+    }
+}).mount('#app');
+</script>
+</body>
+</html>

@@ -1,0 +1,244 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width,initial-scale=1" />
+        <title>Avero Calculator</title>
+        <link rel="stylesheet" href="../../share/theme.css">
+        <script src="../../share/cdn.js"></script>
+        
+        <style>
+            /* App-specific overrides that don't belong in global theme */
+            .terminal-input {
+                background: rgba(0, 0, 0, 0.6);
+                border-bottom: 2px solid var(--avero-border);
+                color: #10b981; /* Emerald */
+                font-family: monospace;
+                outline: none;
+                transition: all 0.2s;
+            }
+            .terminal-input:focus { border-color: #10b981; }
+            
+            .si-tab {
+                padding: 4px 12px;
+                font-size: 10px;
+                border: 1px solid var(--avero-border);
+                border-radius: 99px;
+                cursor: pointer;
+                transition: all 0.2s;
+            }
+            .si-tab:hover { 
+                background: rgba(16, 185, 129, 0.1); 
+                color: #10b981; 
+                border-color: #10b981;
+            }
+
+            .key-sci { color: #818cf8; }
+            .key-op { color: #f59e0b; }
+            .key-exec { background: #059669 !important; }
+        </style>
+    </head>
+    
+    <body class="avero-app p-4">
+        <div id="app" v-cloak class="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-4 h-full">
+            
+            <div class="lg:col-span-3">
+                <div class="avero-card h-full flex flex-col">
+                    <div class="p-3 border-b border-slate-800 text-[10px] font-black tracking-widest text-slate-500 uppercase">
+                        SI Conversion Matrix
+                    </div>
+                    <div class="p-4 space-y-4 overflow-y-auto flex-grow">
+                        <div v-for="(units, category) in siMatrix" :key="category">
+                            <label class="text-[9px] uppercase text-slate-600 mb-2 block font-bold tracking-tighter">{{ category }}</label>
+                            <div class="flex flex-wrap gap-2 mb-4">
+                                <div v-for="u in units" @click="append(` to ${u}`)" class="si-tab">{{ u }}</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="lg:col-span-6 space-y-4 flex flex-col">
+                <div class="avero-card p-6">
+                    <div class="flex justify-between items-center mb-4">
+                        <div class="flex items-center gap-2">
+                            <div class="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_#10b981]"></div>
+                            <span class="text-[9px] font-mono tracking-[0.2em] uppercase text-slate-500">Core.Compute.Active</span>
+                        </div>
+                        <span class="text-[9px] font-mono text-slate-600">SI_STANDARD_OFFSETS_LOADED</span>
+                    </div>
+                    
+                    <div class="relative mb-6">
+                        <input type="text" v-model="currentInput" @keyup.enter="calculate" 
+                               class="w-full p-4 text-4xl terminal-input" placeholder="f(x)..." ref="terminal" />
+                        <div class="mt-2 text-right h-6 text-slate-500 font-mono text-sm italic">{{ displayFormula }}</div>
+                    </div>
+
+                    <div class="grid grid-cols-5 gap-2">
+                        <button @click="append('sin(')" class="avero-btn py-3 key-sci">sin</button>
+                        <button @click="append('cos(')" class="avero-btn py-3 key-sci">cos</button>
+                        <button @click="append('tan(')" class="avero-btn py-3 key-sci">tan</button>
+                        <button @click="append('log(')" class="avero-btn py-3 key-sci">ln</button>
+                        <button @click="deleteLast" class="avero-btn py-3 !bg-transparent text-rose-500 border border-rose-900/30">DEL</button>
+                        
+                        <button @click="append('asin(')" class="avero-btn py-3 key-sci">asin</button>
+                        <button @click="append('acos(')" class="avero-btn py-3 key-sci">acos</button>
+                        <button @click="append('atan(')" class="avero-btn py-3 key-sci">atan</button>
+                        <button @click="append('^')" class="avero-btn py-3 key-sci">xʸ</button>
+                        <button @click="clear" class="avero-btn py-3 !bg-transparent text-rose-500 font-bold border border-rose-900/30">AC</button>
+                        
+                        <button v-for="n in ['7','8','9']" @click="append(n)" class="avero-btn py-3 !bg-slate-800/40 hover:!bg-slate-700">{{n}}</button>
+                        <button @click="append('/')" class="avero-btn py-3 key-op !bg-amber-950/10">÷</button>
+                        <button @click="append('sqrt(')" class="avero-btn py-3 key-op !bg-amber-950/10">√</button>
+                        
+                        <button v-for="n in ['4','5','6']" @click="append(n)" class="avero-btn py-3 !bg-slate-800/40 hover:!bg-slate-700">{{n}}</button>
+                        <button @click="append('*')" class="avero-btn py-3 key-op !bg-amber-950/10">×</button>
+                        <button @click="append('pi')" class="avero-btn py-3 key-op !bg-amber-950/10">π</button>
+                        
+                        <button v-for="n in ['1','2','3']" @click="append(n)" class="avero-btn py-3 !bg-slate-800/40 hover:!bg-slate-700">{{n}}</button>
+                        <button @click="append('-')" class="avero-btn py-3 key-op !bg-amber-950/10">−</button>
+                        <button @click="drawGraph" class="avero-btn !bg-indigo-600 row-span-2">PLOT</button>
+                        
+                        <button @click="append('0')" class="avero-btn py-3 col-span-2 !bg-slate-800/40 hover:!bg-slate-700">0</button>
+                        <button @click="append('.')" class="avero-btn py-3 !bg-slate-800/40 hover:!bg-slate-700">.</button>
+                        <button @click="append('+')" class="avero-btn py-3 key-op !bg-amber-950/10">+</button>
+                        
+                        <button @click="calculate" class="avero-btn key-exec col-span-5 py-4 mt-1">Run Command</button>
+                    </div>
+                </div>
+
+                <div class="avero-card flex-grow bg-black relative min-h-[200px]">
+                    <canvas id="graphCanvas" class="w-full h-full rounded-[24px]"></canvas>
+                    <div class="absolute bottom-4 left-4">
+                        <div class="bg-black/80 px-2 py-1 border border-slate-800 rounded text-[9px] font-mono uppercase">
+                            <span class="text-indigo-400">Target:</span> {{ lastFunction || 'Idle' }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="lg:col-span-3 space-y-4 flex flex-col">
+                <div class="avero-card flex-grow h-[420px] flex flex-col">
+                    <div class="p-3 border-b border-slate-800 text-[10px] font-black tracking-widest text-slate-500 uppercase">
+                        Data Log
+                    </div>
+                    <div class="overflow-y-auto flex-grow">
+                        <div v-for="(h, i) in history" :key="i" @click="currentInput = h.result"
+                             class="p-3 border-b border-slate-900 hover:bg-slate-800/40 cursor-pointer transition-colors">
+                            <div class="text-[10px] text-slate-600 truncate mb-1">{{ h.exp }}</div>
+                            <div class="text-emerald-500 font-mono text-xs">> {{ h.result }}</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="avero-card p-4">
+                    <label class="text-[9px] uppercase text-slate-600 mb-3 block font-bold">Physical Constants</label>
+                    <div class="space-y-1">
+                        <div v-for="(val, name) in siConstants" @click="append(name)"
+                             class="flex justify-between p-2 bg-black/40 border border-slate-800 rounded text-[10px] cursor-pointer hover:border-emerald-500 group transition-all">
+                            <span class="text-slate-300 group-hover:text-emerald-400">{{ name }}</span>
+                            <span class="text-slate-600 italic font-mono">{{ val }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <script>
+            const { createApp, ref, onMounted } = Vue;
+
+            createApp({
+                setup() {
+                    const currentInput = ref("");
+                    const displayFormula = ref("");
+                    const lastFunction = ref("");
+                    const history = ref([]);
+                    const terminal = ref(null);
+
+                    const siMatrix = {
+                        thermodynamics: ["kelvin", "celsius", "fahrenheit"],
+                        length: ["meter", "km", "cm", "mm", "inch", "foot", "mile"],
+                        mass: ["kg", "gram", "mg", "ton", "lb", "oz"],
+                        force: ["newton", "lbf"],
+                        pressure: ["pascal", "bar", "psi", "atm"],
+                        energy: ["joule", "kcal", "Wh"],
+                    };
+
+                    const siConstants = { c: "2.997e8", G: "6.674e-11", h: "6.626e-34", k: "1.380e-23", e: "1.602e-19" };
+
+                    const append = (v) => {
+                        currentInput.value += v;
+                        terminal.value.focus();
+                    };
+
+                    const clear = () => { currentInput.value = ""; displayFormula.value = ""; };
+                    const deleteLast = () => (currentInput.value = currentInput.value.slice(0, -1));
+
+                    const calculate = () => {
+                        if (!currentInput.value) return;
+                        try {
+                            const res = math.evaluate(currentInput.value);
+                            const formatted = math.format(res, { precision: 12 });
+                            displayFormula.value = currentInput.value;
+                            history.value.unshift({ exp: currentInput.value, result: formatted.toString() });
+                            currentInput.value = formatted.toString();
+                        } catch (e) {
+                            currentInput.value = "ERR: SYSTEM_FAIL";
+                            setTimeout(() => (currentInput.value = ""), 1200);
+                        }
+                    };
+
+                    const drawGraph = () => {
+                        const canvas = document.getElementById("graphCanvas");
+                        const ctx = canvas.getContext("2d");
+                        const w = (canvas.width = canvas.offsetWidth);
+                        const h = (canvas.height = canvas.offsetHeight);
+
+                        ctx.clearRect(0, 0, w, h);
+                        ctx.strokeStyle = "#0f172a";
+                        ctx.lineWidth = 1;
+                        ctx.beginPath();
+                        for (let i = 0; i < w; i += 25) { ctx.moveTo(i, 0); ctx.lineTo(i, h); }
+                        for (let i = 0; i < h; i += 25) { ctx.moveTo(0, i); ctx.lineTo(w, i); }
+                        ctx.stroke();
+
+                        ctx.strokeStyle = "#1e293b";
+                        ctx.lineWidth = 2;
+                        ctx.beginPath();
+                        ctx.moveTo(w / 2, 0); ctx.lineTo(w / 2, h);
+                        ctx.moveTo(0, h / 2); ctx.lineTo(w, h / 2);
+                        ctx.stroke();
+
+                        ctx.strokeStyle = "#4f46e5";
+                        ctx.lineWidth = 3;
+                        ctx.beginPath();
+
+                        try {
+                            const expr = math.compile(currentInput.value);
+                            lastFunction.value = currentInput.value;
+                            let first = true;
+                            for (let px = 0; px < w; px++) {
+                                const x = (px - w / 2) / 25;
+                                const y = expr.evaluate({ x: x });
+                                const py = h / 2 - y * 25;
+                                if (isNaN(py) || Math.abs(py) > h * 2) { first = true; continue; }
+                                if (first) { ctx.moveTo(px, py); first = false; } else { ctx.lineTo(px, py); }
+                            }
+                            ctx.stroke();
+                        } catch (e) { lastFunction.value = "Invalid Plottable"; }
+                    };
+
+                    onMounted(() => {
+                        terminal.value.focus();
+                        drawGraph();
+                    });
+
+                    return {
+                        currentInput, displayFormula, lastFunction, history, siMatrix, siConstants,
+                        append, clear, deleteLast, calculate, drawGraph, terminal
+                    };
+                },
+            }).mount("#app");
+        </script>
+    </body>
+</html>

@@ -4,65 +4,78 @@
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width,initial-scale=1" />
         <title>Avero Chess</title>
-        <script src="../cdn.js"></script>
+        <link rel="stylesheet" href="../../share/theme.css">
+        <script src="../../share/cdn.js"></script>
         <style>
-            [v-cloak] { display: none; }
-            .board-container { position: relative; padding: 40px; background: #1e293b; border-radius: 24px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); }
-            .board-grid { display: grid; grid-template-columns: repeat(8, 1fr); grid-template-rows: repeat(8, 1fr); aspect-ratio: 1/1; width: 75vh; max-width: 800px; min-width: 320px; border: 4px solid #334155; }
+            /* App-specific logic for the board only */
+            .board-container { position: relative; padding: 40px; }
+            .board-grid { 
+                display: grid; 
+                grid-template-columns: repeat(8, 1fr); 
+                grid-template-rows: repeat(8, 1fr); 
+                aspect-ratio: 1/1; 
+                width: 75vh; 
+                max-width: 800px; 
+                min-width: 320px; 
+                border: 4px solid var(--avero-border); 
+            }
             .chess-board-wrapper { transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1); transform-style: preserve-3d; }
             .flipped { transform: rotate(180deg); }
             .piece-img { transition: transform 0.8s; width: 90%; height: 90%; user-select: none; z-index: 10; }
             .flipped .piece-img { transform: rotate(180deg); }
             .square { display: flex; align-items: center; justify-content: center; position: relative; cursor: pointer; }
-            .coord { position: absolute; font-size: 12px; font-weight: 900; color: #64748b; text-transform: uppercase; }
+            
+            /* Piece Colors */
+            .square.light { background: #ebecd0; }
+            .square.dark { background: #779556; }
+            
+            .coord { position: absolute; font-size: 10px; font-weight: 900; color: var(--avero-text-muted); text-transform: uppercase; }
             .coord-rank { left: -25px; width: 20px; text-align: center; }
             .coord-file { bottom: -25px; width: 100%; text-align: center; }
             .capture-dot { position: absolute; width: 25%; height: 25%; background: rgba(239, 68, 68, 0.7); border-radius: 50%; z-index: 30; pointer-events: none; }
-            .explorer-bar { height: 6px; border-radius: 3px; overflow: hidden; display: flex; margin-top: 4px; background: #0f172a; }
-            .custom-scrollbar::-webkit-scrollbar { width: 4px; }
-            .custom-scrollbar::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
-            .modal-blur { backdrop-filter: blur(8px); background: rgba(15, 23, 42, 0.8); }
+            .explorer-bar { height: 6px; border-radius: 3px; overflow: hidden; display: flex; margin-top: 4px; background: var(--avero-bg); }
+            .modal-blur { backdrop-filter: blur(8px); background: rgba(1, 4, 9, 0.8); }
         </style>
     </head>
-    <body class="bg-slate-900 text-white min-h-screen font-sans flex flex-col overflow-hidden">
+    <body class="avero-app flex flex-col">
         
         <div id="app" v-cloak class="flex-grow flex items-center justify-center p-6 relative">
             
-            <div v-if="!gameStarted" class="w-full max-w-md bg-slate-800 p-10 rounded-3xl shadow-2xl border border-slate-700 text-center animate-in fade-in zoom-in duration-300">
-                <h1 class="text-6xl font-black italic tracking-tighter mb-8 text-transparent bg-clip-text bg-gradient-to-br from-blue-400 to-indigo-600">CHESS</h1>
-                <button @click="initGame" class="w-full bg-indigo-600 hover:bg-indigo-500 p-6 rounded-2xl font-black transition shadow-lg text-xl uppercase tracking-widest active:scale-95">Start Match</button>
+            <div v-if="!gameStarted" class="avero-card w-full max-w-md p-10 text-center animate-in fade-in zoom-in duration-300">
+                <h1 class="text-6xl font-black italic tracking-tighter mb-8 text-transparent bg-clip-text bg-gradient-to-br from-indigo-400 to-indigo-600">CHESS</h1>
+                <button @click="initGame" class="avero-btn w-full py-6 text-xl">Start Match</button>
             </div>
 
             <div v-else class="flex flex-col xl:flex-row gap-10 items-center xl:items-start w-full justify-center">
                 
                 <div class="flex flex-col gap-4 w-full xl:w-64">
-                    <div class="bg-slate-800/50 p-5 rounded-2xl border border-slate-700">
+                    <div class="avero-card p-5 bg-opacity-50">
                         <div class="text-[10px] font-black text-slate-500 uppercase mb-4 tracking-widest">Captured Material</div>
                         <div class="space-y-4">
                             <div>
-                                <div class="flex justify-between text-[10px] font-bold mb-1 text-white">WHITE (+{{ Math.max(0, scores.w - scores.b) }})</div>
-                                <div class="flex flex-wrap gap-1 p-2 bg-slate-950/50 rounded-lg min-h-[44px]">
+                                <div class="flex justify-between text-[10px] font-bold mb-1">WHITE (+{{ Math.max(0, scores.w - scores.b) }})</div>
+                                <div class="flex flex-wrap gap-1 p-2 bg-black/40 rounded-lg min-h-[44px]">
                                     <img v-for="p in capturedByWhite" :src="getPieceURL({type: p, color: 'b'})" class="w-5 h-5 opacity-80" />
                                 </div>
                             </div>
                             <div>
-                                <div class="flex justify-between text-[10px] font-bold mb-1 text-white">BLACK (+{{ Math.max(0, scores.b - scores.w) }})</div>
-                                <div class="flex flex-wrap gap-1 p-2 bg-slate-950/50 rounded-lg min-h-[44px]">
+                                <div class="flex justify-between text-[10px] font-bold mb-1">BLACK (+{{ Math.max(0, scores.b - scores.w) }})</div>
+                                <div class="flex flex-wrap gap-1 p-2 bg-black/40 rounded-lg min-h-[44px]">
                                     <img v-for="p in capturedByBlack" :src="getPieceURL({type: p, color: 'w'})" class="w-5 h-5 opacity-80" />
                                 </div>
                             </div>
                         </div>
                     </div>
-                    <button @click="confirmResign" class="py-3 text-[10px] font-black uppercase tracking-widest text-slate-500 hover:text-red-400 transition">Resign Match</button>
+                    <button @click="resignMatch" class="py-3 text-[10px] font-black uppercase tracking-widest text-slate-500 hover:text-red-400 transition">Resign Match</button>
                 </div>
 
-                <div class="board-container">
+                <div class="avero-card board-container">
                     <div :class="['chess-board-wrapper', flipped ? 'flipped' : '']">
                         <div class="board-grid">
                             <template v-for="(row, rIdx) in boardState">
                                 <div v-for="(square, sIdx) in row" :key="rIdx+'-'+sIdx"
                                     @click="handleSquareClick(rIdx, sIdx)"
-                                    :class="['square', (rIdx + sIdx) % 2 === 0 ? 'bg-[#ebecd0]' : 'bg-[#779556]', isSelected(rIdx, sIdx) ? 'ring-4 ring-inset ring-cyan-400 z-40' : '']">
+                                    :class="['square', (rIdx + sIdx) % 2 === 0 ? 'light' : 'dark', isSelected(rIdx, sIdx) ? 'ring-4 ring-inset ring-cyan-400 z-40' : '']">
                                     
                                     <div v-if="sIdx === 0" class="coord coord-rank" :class="flipped ? 'flipped' : ''">{{ 8 - rIdx }}</div>
                                     <div v-if="rIdx === 7" class="coord coord-file" :class="flipped ? 'flipped' : ''">{{ String.fromCharCode(97 + sIdx) }}</div>
@@ -75,14 +88,14 @@
                 </div>
 
                 <div class="w-full xl:w-72">
-                    <div class="bg-slate-800 p-6 rounded-3xl border border-slate-700 shadow-xl flex flex-col h-[75vh]">
+                    <div class="avero-card p-6 flex flex-col h-[75vh]">
                         <h2 class="text-[10px] font-black text-indigo-400 uppercase tracking-widest mb-4">Lichess Opening Explorer</h2>
-                        <div class="mb-4 p-4 bg-slate-900/50 rounded-xl border border-slate-700">
-                            <p class="text-[9px] text-slate-500 font-bold uppercase">Current Theory</p>
-                            <p class="text-xs font-bold text-white leading-tight italic">{{ currentOpening }}</p>
+                        <div class="mb-4 p-4 bg-black/30 rounded-xl border border-slate-800">
+                            <p class="text-[9px] text-slate-500 font-bold uppercase">Theory</p>
+                            <p class="text-xs font-bold leading-tight italic">{{ currentOpening }}</p>
                         </div>
-                        <div class="flex-grow overflow-y-auto space-y-2 pr-2 custom-scrollbar">
-                            <div v-for="m in explorerMoves" :key="m.san" class="bg-slate-950/40 p-3 rounded-xl border border-slate-800">
+                        <div class="flex-grow overflow-y-auto space-y-2 pr-2">
+                            <div v-for="m in explorerMoves" :key="m.san" class="bg-black/20 p-3 rounded-xl border border-slate-800/50">
                                 <div class="flex justify-between items-center mb-1">
                                     <span class="text-sm font-black text-indigo-300">{{ m.san }}</span>
                                     <span class="text-[9px] text-slate-500 font-mono">{{ m.white + m.draws + m.black }} games</span>
@@ -99,11 +112,11 @@
             </div>
 
             <div v-if="gameOverMessage" class="absolute inset-0 z-[100] modal-blur flex items-center justify-center p-6">
-                <div class="bg-slate-800 border border-slate-700 p-10 rounded-[2.5rem] shadow-2xl text-center max-w-sm w-full animate-in fade-in zoom-in slide-in-from-bottom-10 duration-500">
+                <div class="avero-card p-10 text-center max-w-sm w-full animate-in fade-in zoom-in slide-in-from-bottom-10">
                     <div class="text-5xl mb-4">🏆</div>
                     <h2 class="text-3xl font-black mb-2 tracking-tighter italic">GAME OVER</h2>
                     <p class="text-slate-400 font-medium mb-8 leading-relaxed">{{ gameOverMessage }}</p>
-                    <button @click="initGame" class="w-full bg-white text-slate-900 py-4 rounded-2xl font-black uppercase tracking-widest hover:bg-indigo-400 transition-colors">Play Again</button>
+                    <button @click="initGame" class="avero-btn w-full py-4 !bg-white !text-black">Play Again</button>
                     <button @click="gameStarted = false; gameOverMessage = null" class="mt-4 text-xs font-bold text-slate-500 uppercase tracking-widest hover:text-white transition">Back to Menu</button>
                 </div>
             </div>
@@ -129,16 +142,18 @@
                     const gameOverMessage = ref(null);
 
                     const initGame = () => {
-                        game.value = new Chess();
-                        gameStarted.value = true;
-                        gameOverMessage.value = null;
-                        flipped.value = false;
-                        selected.value = null;
-                        potentialCaptures.value = [];
-                        capturedByWhite.value = [];
-                        capturedByBlack.value = [];
-                        fetchExplorerData();
-                        syncState();
+                        try {
+                            game.value = new Chess();
+                            gameStarted.value = true;
+                            gameOverMessage.value = null;
+                            flipped.value = false;
+                            selected.value = null;
+                            potentialCaptures.value = [];
+                            capturedByWhite.value = [];
+                            capturedByBlack.value = [];
+                            fetchExplorerData();
+                            syncState();
+                        } catch (e) { console.error("Chess Init Error", e); }
                     };
 
                     const calculateScore = () => {
@@ -160,12 +175,8 @@
                             if (game.value.in_checkmate()) {
                                 const winner = game.value.turn() === 'w' ? 'Black' : 'White';
                                 gameOverMessage.value = `${winner} won by Checkmate.`;
-                            } else if (game.value.in_draw()) {
-                                gameOverMessage.value = "The match ended in a Draw.";
-                            } else if (game.value.in_stalemate()) {
-                                gameOverMessage.value = "Stalemate! No legal moves left.";
                             } else {
-                                gameOverMessage.value = "The game has ended.";
+                                gameOverMessage.value = "The match has ended.";
                             }
                         }
                     };
@@ -177,8 +188,7 @@
                             const data = await res.json();
                             explorerMoves.value = data.moves || [];
                             if (data.opening) currentOpening.value = data.opening.name;
-                            else if (game.value.history().length === 0) currentOpening.value = "Starting Position";
-                        } catch (e) { console.error(e); }
+                        } catch (e) { }
                     };
 
                     const syncState = () => {
@@ -237,10 +247,9 @@
                         return `https://upload.wikimedia.org/wikipedia/commons/${map[p.color + p.type]}`;
                     };
 
-                    const confirmResign = () => {
-                        if (confirm("Are you sure you want to resign?")) {
-                            gameOverMessage.value = `${game.value.turn() === 'w' ? 'White' : 'Black'} resigned.`;
-                        }
+                    const resignMatch = () => {
+                        const turn = game.value.turn() === 'w' ? 'White' : 'Black';
+                        gameOverMessage.value = `${turn} resigned.`;
                     };
 
                     const isSelected = (r, c) => selected.value === String.fromCharCode(97 + c) + (8 - r);
@@ -248,7 +257,7 @@
                     return {
                         gameStarted, boardState, getPieceURL, handleSquareClick, isSelected,
                         isPotentialCapture, flipped, capturedByWhite, capturedByBlack,
-                        currentOpening, explorerMoves, scores, initGame, gameOverMessage, confirmResign
+                        currentOpening, explorerMoves, scores, initGame, gameOverMessage, resignMatch
                     };
                 },
             }).mount("#app");

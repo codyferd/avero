@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width,initial-scale=1" />
+        <title>Luca's Website</title>
+        <link rel="stylesheet" href="../../share/theme.css">
+        <script src="../../share/cdn.js"></script>
+        <style>
+            [v-cloak] { display: none; }
+            
+            .animate-fade-in {
+                animation: fadeIn 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            }
+            @keyframes fadeIn {
+                from { opacity: 0; transform: scale(0.98); }
+                to { opacity: 1; transform: scale(1); }
+            }
+
+            /* Custom Nav Styling to bridge Avero and Luca's style */
+            .avero-nav {
+                background: var(--avero-surface);
+                border-bottom: 1px solid var(--avero-border);
+                backdrop-filter: blur(20px);
+            }
+
+            .cat-image-container {
+                position: relative;
+                overflow: hidden;
+                border-radius: calc(var(--avero-radius) - 8px);
+            }
+
+            /* Overriding default avero-btn for the navigation tabs */
+            .nav-btn {
+                background: transparent;
+                border: 1px solid var(--avero-border);
+                color: var(--avero-text-muted);
+            }
+            .nav-btn.active {
+                background: var(--avero-accent);
+                color: white;
+                border-color: transparent;
+                box-shadow: 0 0 20px var(--avero-accent-glow);
+            }
+        </style>
+    </head>
+    <body class="avero-app selection:bg-indigo-500/40">
+        <div id="app" v-cloak>
+            
+            <nav class="avero-nav p-4 sticky top-0 z-50">
+                <div class="max-w-4xl mx-auto flex justify-center items-center">
+                    <div class="flex flex-wrap justify-center gap-2 sm:gap-4">
+                        <button
+                            v-for="tab in tabs"
+                            :key="tab"
+                            @click="activeTab = tab"
+                            class="avero-btn px-6 py-2 transition-all duration-300 nav-btn"
+                            :class="{ 'active': activeTab === tab }"
+                        >
+                            {{ getTabLabel(tab) }}
+                        </button>
+                    </div>
+                </div>
+            </nav>
+
+            <main class="max-w-4xl mx-auto p-6 sm:p-12">
+                
+                <div v-if="activeTab === 'about'" class="text-center py-24 animate-fade-in">
+                    <h1 class="text-6xl sm:text-7xl font-black mb-8 tracking-tighter italic bg-gradient-to-r from-indigo-400 via-purple-400 to-blue-400 bg-clip-text text-transparent">
+                        Hi, this is my website :D
+                    </h1>
+                </div>
+
+                <div v-if="activeTab === 'cats'" class="space-y-12 animate-fade-in">
+                    <div class="text-center">
+                        <h2 class="text-4xl font-bold text-indigo-400 mb-2">Cats are the best animals..</h2>
+                        <div class="h-1 w-24 bg-indigo-500 mx-auto rounded-full"></div>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-10">
+                        <div v-for="cat in ['ravi', 'coco']" :key="cat" class="group relative">
+                            <div class="avero-card p-4 overflow-hidden group-hover:border-indigo-500/50 transition-colors">
+                                <div class="cat-image-container">
+                                    <img :src="`${cat}.avif`" class="w-full h-80 object-cover" :alt="cat" />
+                                </div>
+                                <p class="mt-4 text-center font-bold text-2xl italic capitalize"
+                                   :class="cat === 'ravi' ? 'text-indigo-300' : 'text-purple-300'">
+                                    {{ cat }}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div v-if="activeTab === 'loaf'" class="avero-card p-12 text-center relative overflow-hidden animate-fade-in">
+                    <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-indigo-500 to-purple-500"></div>
+                    <h2 class="text-4xl font-black text-white mb-6 tracking-tighter italic">
+                        Welcome to the official discord, <span class="text-indigo-400">Loaf House!</span>
+                    </h2>
+                    <p class="text-xl text-zinc-400 mb-10 max-w-xl mx-auto leading-relaxed">
+                        Talk about general things, cats, and much more in the Loaf House community.
+                    </p>
+                    <a href="https://discord.com/invite/DuzZyU3C9" target="_blank"
+                       class="avero-btn inline-block py-5 px-12 text-lg !rounded-2xl">
+                        Join the Discord
+                    </a>
+                </div>
+
+                <div v-if="activeTab === 'online'" class="animate-fade-in space-y-8">
+                    <h2 class="text-4xl font-black text-indigo-400 mb-8">Find Me Online</h2>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <a v-for="link in socialLinks" :key="link.name" :href="link.url" target="_blank"
+                            class="avero-card p-6 !bg-opacity-40 hover:!bg-opacity-100 transition">
+                            <span class="text-[10px] font-black uppercase tracking-widest" :class="link.accent">
+                                {{ link.name }}
+                            </span>
+                            <p class="text-xl font-bold mt-1 text-white">{{ link.label }}</p>
+                        </a>
+                        
+                        <div v-for="contact in contactInfo" :key="contact.name"
+                            class="avero-card p-6 !bg-black/20"
+                            :class="contact.span ? 'sm:col-span-2' : ''">
+                            <span class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">
+                                {{ contact.name }}
+                            </span>
+                            <p class="text-xl font-bold mt-1 text-white">{{ contact.label }}</p>
+                        </div>
+                    </div>
+                </div>
+
+            </main>
+        </div>
+
+        <script>
+            const { createApp, ref } = Vue;
+
+            createApp({
+                setup() {
+                    const activeTab = ref("about");
+                    const tabs = ["about", "online", "cats", "loaf"];
+
+                    const getTabLabel = (tab) => {
+                        const labels = {
+                            about: "About Me",
+                            cats: "Cats",
+                            loaf: "Loaf House",
+                            online: "Find Me Online",
+                        };
+                        return labels[tab];
+                    };
+
+                    const socialLinks = [
+                        { name: "GitHub", label: "codyferd", url: "https://github.com/codyferd", accent: "text-indigo-400" },
+                        { name: "YouTube", label: "polycat.codyferd", url: "https://www.youtube.com/@Polycat.Codyferd", accent: "text-red-400" },
+                        { name: "Mastodon", label: "codyferd@mastodon.social", url: "https://mastodon.social/@codyferd", accent: "text-purple-400" },
+                    ];
+
+                    const contactInfo = [
+                        { name: "Snapchat", label: "polycatcodyferd" },
+                        { name: "Discord", label: "codyferd_81960" },
+                        { name: "Google / Email", label: "lucarappferdinand@gmail.com", span: true },
+                    ];
+
+                    return { activeTab, tabs, getTabLabel, socialLinks, contactInfo };
+                },
+            }).mount("#app");
+        </script>
+    </body>
+</html>
