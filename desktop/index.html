@@ -7,36 +7,50 @@
     <script src="../cdn.js"></script>
     <style>
         [v-cloak] { display: none; }
-        .glass-dark { 
-            background: rgba(10, 10, 15, 0.7); 
-            backdrop-filter: blur(30px) saturate(160%);
-            border: 1px solid rgba(255, 255, 255, 0.1);
+        
+        .ui-solid { 
+            background: #0a0a0f; 
+            border-bottom: 1px solid #1e293b;
         }
-        /* Grid Tiling Logic */
-        .desktop-grid { display: grid; gap: 10px; padding: 10px; height: 100%; width: 100%; transition: 0.3s; }
+
+        /* Seamless Grid Logic */
+        .desktop-grid { 
+            display: grid; 
+            gap: 0px; /* Removed gaps between tiles */
+            height: 100%; 
+            width: 100%; 
+        }
+        
         .grid-1 { grid-template-columns: 1fr; }
         .grid-2 { grid-template-columns: 1fr 1fr; }
         .grid-3 { grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; }
         .grid-3 > :first-child { grid-row: span 2; }
         .grid-4 { grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; }
 
-        /* Dragging States */
-        .tab-dragging { opacity: 0.4; transform: scale(0.95); }
-        .tab-drop-over { background: rgba(99, 102, 241, 0.4) !important; border-color: #6366f1 !important; }
+        .tab-drop-over { background: #312e81 !important; border-color: #6366f1 !important; }
         
-        iframe { background: white; border-radius: 8px; }
-        .app-header { height: 32px; background: rgba(0,0,0,0.2); display: flex; align-items: center; justify-content: space-between; }
+        /* Iframe styling */
+        iframe { background: white; width: 100%; height: 100%; border: none; }
+        
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+
+        /* Transition for launcher */
+        .fade-enter-active, .fade-leave-active { transition: all 0.15s ease-out; }
+        .fade-enter-from, .fade-leave-to { opacity: 0; transform: scale(0.95); }
     </style>
 </head>
-<body class="overflow-hidden bg-slate-950 text-slate-100 font-sans select-none">
+<body class="overflow-hidden bg-black text-slate-100 font-sans select-none">
 
 <div id="app" v-cloak class="h-screen w-screen flex flex-col relative bg-cover bg-center"
      style="background-image: url('../media/background.avif')">
 
-    <header class="h-12 glass-dark flex items-center px-4 z-[100] gap-4">
-        <button @click="isDrawerOpen = !isDrawerOpen" class="h-8 w-8 bg-indigo-600 rounded-lg flex items-center justify-center hover:bg-indigo-500 transition-all active:scale-90 font-black text-xs">A</button>
+    <header class="h-12 ui-solid flex items-center px-4 z-[100] gap-4 shadow-xl">
+        <button @click="isDrawerOpen = !isDrawerOpen" 
+                class="h-8 w-8 bg-indigo-600 rounded flex items-center justify-center hover:bg-indigo-500 transition-all active:scale-90 font-black text-xs shadow-lg">
+            A
+        </button>
         
-        <div class="flex gap-1 flex-1 overflow-x-auto no-scrollbar">
+        <div class="flex flex-1 overflow-x-auto no-scrollbar">
             <div v-for="d in desktops" :key="d.id" 
                  draggable="true"
                  @dragstart="onTabDragStart($event, d)"
@@ -44,9 +58,9 @@
                  @dragleave="dragOverTabId = null"
                  @drop="onTabDrop($event, d)"
                  @click="activeDesktopId = d.id"
-                 class="h-9 px-4 rounded-xl flex items-center gap-3 cursor-pointer transition-all border"
+                 class="h-12 px-5 flex items-center gap-3 cursor-pointer transition-all border-r border-slate-800"
                  :class="[
-                    activeDesktopId === d.id ? 'bg-white/10 border-white/20 text-white shadow-lg' : 'bg-transparent border-transparent text-slate-400 hover:bg-white/5',
+                    activeDesktopId === d.id ? 'bg-slate-800 text-white border-b-2 border-b-indigo-500' : 'bg-transparent text-slate-500 hover:bg-slate-900',
                     dragOverTabId === d.id ? 'tab-drop-over' : ''
                  ]">
                 <span class="text-[10px] font-black uppercase tracking-widest">{{ d.name }}</span>
@@ -54,37 +68,51 @@
             </div>
         </div>
 
-        <div class="text-[10px] font-bold opacity-40 uppercase tracking-widest">{{ currentTime }}</div>
+        <div class="flex flex-col items-end leading-tight">
+            <div class="text-[11px] font-black tracking-tighter">{{ currentTime }}</div>
+            <div class="text-[8px] font-bold opacity-40 uppercase tracking-widest">{{ currentDate }}</div>
+        </div>
     </header>
 
-    <div v-if="isDrawerOpen" class="absolute top-14 left-4 w-72 glass-dark rounded-2xl p-5 z-[1000] shadow-2xl border border-white/10">
-        <h2 class="text-[9px] font-black text-indigo-400 uppercase tracking-widest mb-4">Launcher</h2>
-        <div class="grid grid-cols-2 gap-3 mb-6">
-            <div v-for="app in appList" :key="app.id" 
-                 draggable="true" @dragstart="onAppDragStart($event, app)"
-                 @click="launchNewDesktop(app)"
-                 class="flex flex-col items-center gap-2 p-3 rounded-xl hover:bg-white/10 cursor-pointer transition-all group">
-                <span class="text-3xl group-hover:scale-110 transition-transform">{{ app.icon }}</span>
-                <span class="text-[10px] font-bold">{{ app.title }}</span>
+    <transition name="fade">
+        <div v-if="isDrawerOpen" class="absolute top-12 left-0 w-72 h-[calc(100vh-3rem)] ui-solid p-6 z-[1000] shadow-2xl border-r">
+            <h2 class="text-[9px] font-black text-indigo-400 uppercase tracking-widest mb-6">Applications</h2>
+            <div class="grid grid-cols-2 gap-4 mb-8">
+                <div v-for="app in appList" :key="app.id" 
+                     draggable="true" @dragstart="onAppDragStart($event, app)"
+                     @click="launchNewDesktop(app)"
+                     class="flex flex-col items-center gap-2 p-4 rounded-2xl hover:bg-white/5 cursor-pointer transition-all group">
+                    <span class="text-3xl group-hover:scale-110 transition-transform">{{ app.icon }}</span>
+                    <span class="text-[10px] font-bold tracking-wide">{{ app.title }}</span>
+                </div>
+            </div>
+            <div class="pt-5 border-t border-white/5">
+                <div class="flex bg-black rounded-lg border border-white/10 p-1.5">
+                    <input v-model="urlInput" @keyup.enter="launchUrl" placeholder="https://..." class="bg-transparent border-none outline-none flex-1 text-[10px] px-3 py-1 text-white">
+                    <button @click="launchUrl" class="bg-indigo-600 px-4 rounded text-[9px] font-black uppercase">Go</button>
+                </div>
             </div>
         </div>
-        <div class="pt-4 border-t border-white/5">
-            <div class="flex bg-black/40 rounded-xl border border-white/10 p-1">
-                <input v-model="urlInput" @keyup.enter="launchUrl" placeholder="Enter URL (e.g. google.com)" class="bg-transparent border-none outline-none flex-1 text-[10px] px-2 py-1 text-white">
-                <button @click="launchUrl" class="bg-indigo-600 px-3 rounded-lg text-[9px] font-black uppercase">Go</button>
-            </div>
-        </div>
-    </div>
+    </transition>
 
     <main class="flex-1 relative overflow-hidden" @dragover.prevent @drop="onDropIntoMain">
         <div v-if="activeDesktop" :class="['desktop-grid', 'grid-' + activeDesktop.apps.length]">
-            <div v-for="app in activeDesktop.apps" :key="app.instanceId" class="flex flex-col glass-dark rounded-xl overflow-hidden border border-white/10">
-                <div class="h-8 flex items-center justify-between px-3 bg-white/5">
-                    <span class="text-[9px] font-black text-slate-400 uppercase tracking-tighter">{{ app.title }}</span>
-                    <button @click="closeApp(app.instanceId)" class="text-slate-500 hover:text-red-500 text-xs">✕</button>
+            <div v-for="app in activeDesktop.apps" :key="app.instanceId" 
+                 class="flex flex-col bg-black overflow-hidden border-r border-b border-slate-900 last:border-r-0">
+                <div class="h-7 flex items-center justify-between px-3 bg-slate-950 border-b border-slate-900">
+                    <span class="text-[8px] font-bold text-slate-600 uppercase tracking-widest">{{ app.title }}</span>
+                    <button @click="closeApp(app.instanceId)" class="text-slate-600 hover:text-red-500">
+                        <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"/></svg>
+                    </button>
                 </div>
-                <iframe :src="app.path" class="flex-1 w-full h-full border-none"></iframe>
+                <div class="flex-1">
+                    <iframe :src="app.path"></iframe>
+                </div>
             </div>
+        </div>
+        
+        <div v-else class="h-full w-full flex flex-col items-center justify-center pointer-events-none">
+             <h1 class="text-9xl font-black italic text-white/5 tracking-tighter">AVERO</h1>
         </div>
     </main>
 </div>
@@ -95,13 +123,14 @@ const { createApp, ref, computed, onMounted } = Vue;
 createApp({
     setup() {
         const currentTime = ref('');
+        const currentDate = ref('');
         const isDrawerOpen = ref(false);
         const urlInput = ref('');
         const desktops = ref([]); 
         const activeDesktopId = ref(null);
         
-        const draggedItem = ref(null); // Can be an App or a Desktop
-        const dragType = ref(null);    // 'app' or 'desktop'
+        const draggedItem = ref(null);
+        const dragType = ref(null);
         const dragOverTabId = ref(null);
 
         const appList = [
@@ -127,13 +156,12 @@ createApp({
             if (!val) return;
             if (!val.startsWith('http')) val = 'https://' + val;
             const id = Date.now();
-            desktops.value.push({ id, name: urlInput.value.split('.')[0], apps: [{ title: 'Web', icon: '🌐', path: val, instanceId: Math.random() }] });
+            desktops.value.push({ id, name: urlInput.value.split('.')[0] || "Web", apps: [{ title: 'Browser', icon: '🌐', path: val, instanceId: Math.random() }] });
             activeDesktopId.value = id;
             urlInput.value = '';
             isDrawerOpen.value = false;
         };
 
-        // DRAG START HANDLERS
         const onAppDragStart = (e, app) => {
             dragType.value = 'app';
             draggedItem.value = app;
@@ -145,29 +173,24 @@ createApp({
             draggedItem.value = desktop;
         };
 
-        // DROP HANDLERS
         const onTabDrop = (e, targetDesktop) => {
             dragOverTabId.value = null;
             if (!draggedItem.value) return;
 
-            if (dragType.value === 'app') {
-                // Merge App into Existing Tab
+            if (dragType.value === 'app' && targetDesktop.apps.length < 4) {
                 targetDesktop.apps.push({ ...draggedItem.value, instanceId: Math.random() });
-                targetDesktop.name = "Split View";
             } else if (dragType.value === 'desktop' && draggedItem.value.id !== targetDesktop.id) {
-                // Merge Desktop into Desktop
                 targetDesktop.apps.push(...draggedItem.value.apps);
-                targetDesktop.name = "Merged View";
-                closeDesktop(draggedItem.value.id); // Delete the old tab
+                targetDesktop.apps = targetDesktop.apps.slice(0, 4);
+                closeDesktop(draggedItem.value.id);
             }
             activeDesktopId.value = targetDesktop.id;
             draggedItem.value = null;
         };
 
         const onDropIntoMain = () => {
-            if (dragType.value === 'app' && activeDesktop.value) {
+            if (dragType.value === 'app' && activeDesktop.value && activeDesktop.value.apps.length < 4) {
                 activeDesktop.value.apps.push({ ...draggedItem.value, instanceId: Math.random() });
-                activeDesktop.value.name = "Split View";
             }
             draggedItem.value = null;
         };
@@ -185,15 +208,20 @@ createApp({
             }
         };
 
+        const updateClock = () => {
+            const now = new Date();
+            currentTime.value = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
+            currentDate.value = now.toISOString().split('T')[0];
+        };
+
         onMounted(() => {
-            setInterval(() => {
-                currentTime.value = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
-            }, 1000);
+            updateClock();
+            setInterval(updateClock, 1000);
         });
 
         return { 
             appList, desktops, activeDesktopId, activeDesktop, isDrawerOpen,
-            launchNewDesktop, launchUrl, urlInput, currentTime, 
+            launchNewDesktop, launchUrl, urlInput, currentTime, currentDate,
             closeDesktop, closeApp, onAppDragStart, onTabDragStart, onTabDrop, onDropIntoMain, dragOverTabId
         };
     }
