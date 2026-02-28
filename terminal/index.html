@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Terminal</title>
+    <script src="../cdn.js"></script>
+    <style>
+        body { background: #0c0c0e; color: #818cf8; font-family: 'Fira Code', monospace; }
+        .term-box { background: rgba(20, 20, 25, 0.7); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.05); }
+        .prompt { color: #4ade80; font-weight: bold; }
+        .cursor { width: 8px; height: 16px; background: #818cf8; display: inline-block; vertical-align: middle; animation: blink 1s infinite; }
+        @keyframes blink { 50% { opacity: 0; } }
+        [v-cloak] { display: none; }
+    </style>
+</head>
+<body class="p-6 h-screen flex flex-col overflow-hidden">
+
+<div id="app" v-cloak class="flex-1 flex flex-col term-box rounded-3xl p-8 shadow-2xl overflow-hidden" @click="focusInput">
+    
+    <div ref="outputArea" class="flex-1 overflow-y-auto space-y-3 text-sm">
+        <div class="opacity-30 text-[10px] uppercase tracking-widest mb-6">Avero Terminal Core // System Ready</div>
+
+        <div v-for="(entry, idx) in history" :key="idx">
+            <div class="flex gap-2">
+                <span class="prompt">avero@system:{{ currentPathStr }}$</span>
+                <span class="text-white">{{ entry.input }}</span>
+            </div>
+            <div class="text-indigo-200/70 whitespace-pre-wrap ml-4 mt-1 border-l border-indigo-500/20 pl-4">
+                {{ entry.output }}
+            </div>
+        </div>
+
+        <div class="flex gap-2 items-center">
+            <span class="prompt">avero@system:{{ currentPathStr }}$</span>
+            <input 
+                ref="inputField"
+                v-model="currentInput" 
+                @keyup.enter="handleCommand"
+                class="flex-1 bg-transparent border-none outline-none text-white"
+                autofocus
+            >
+        </div>
+    </div>
+</div>
+
+<script type="module">
+import { Commands } from './commands.js';
+const { createApp, ref, computed, nextTick } = Vue;
+
+createApp({
+    setup() {
+        const history = ref([]);
+        const currentInput = ref("");
+        const path = ref(['avero', 'user']);
+        const fs = ref(JSON.parse(localStorage.getItem('avero_fs_local')) || [{ id: 'r', name: 'user', path: 'avero', isDir: true }]);
+        
+        const inputField = ref(null);
+        const outputArea = ref(null);
+
+        const currentPathStr = computed(() => `/${path.value.join('/')}`);
+
+        const handleCommand = async () => {
+            const raw = currentInput.value.trim();
+            if (!raw) return;
+
+            const [name, ...args] = raw.split(/\s+/);
+            let result = "";
+
+            if (name === "clear") {
+                history.value = [];
+            } else if (Commands[name]) {
+                result = await Commands[name](args, fs, { path });
+            } else {
+                result = `Command '${name}' not found.`;
+            }
+
+            if (name !== "clear") history.value.push({ input: raw, output: result });
+            
+            currentInput.value = "";
+            localStorage.setItem('avero_fs_local', JSON.stringify(fs.value));
+
+            nextTick(() => {
+                outputArea.value.scrollTop = outputArea.value.scrollHeight;
+            });
+        };
+
+        const focusInput = () => inputField.value.focus();
+
+        return { history, currentInput, handleCommand, currentPathStr, inputField, outputArea, focusInput };
+    }
+}).mount('#app');
+</script>
+</body>
+</html>

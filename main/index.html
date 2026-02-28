@@ -86,9 +86,6 @@
                 <iframe :src="app.path" class="flex-1 w-full h-full border-none"></iframe>
             </div>
         </div>
-        <div v-else class="h-full flex items-center justify-center opacity-10 pointer-events-none">
-            <h1 class="text-[15vw] font-black italic tracking-tighter">AVERO</h1>
-        </div>
     </main>
 </div>
 
@@ -111,7 +108,9 @@ createApp({
             { id: 0, title: 'About', icon: '🏠', path: '../home' },
             { id: 1, title: 'Calculator', icon: '🔢', path: '../calculator/index.html' },
             { id: 2, title: 'Chess', icon: '♟️', path: '../chess/index.html' },
-            { id: 3, title: 'Superbird', icon: '🐦', path: '../superbirdjumper3/index.html' }
+            { id: 3, title: 'Superbird', icon: '🐦', path: '../superbirdjumper3/index.html' },
+            { id: 4, title: 'Files', icon: '📂', path: '../files/index.html' },
+            { id: 5, title: 'Terminal', icon: '📦', path: '../terminal/index.html'}
         ];
 
         const activeDesktop = computed(() => desktops.value.find(d => d.id === activeDesktopId.value));

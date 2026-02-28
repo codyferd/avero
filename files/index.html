@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Files</title>
+    <script src="../cdn.js"></script>
+    <style>
+        [v-cloak] { display: none; }
+        .glass-dark { background: rgba(10, 10, 15, 0.9); backdrop-filter: blur(40px); border: 1px solid rgba(255,255,255,0.1); }
+        .file-card { transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); border: 2px solid transparent; }
+        .file-card:hover { background: rgba(255,255,255,0.05); transform: translateY(-2px); }
+        .selected { border-color: #6366f1; background: rgba(99, 102, 241, 0.1) !important; }
+        .toolbar-btn { @apply flex flex-col items-center gap-1 p-2 rounded-xl transition-all hover:bg-white/10 disabled:opacity-20; }
+        input, textarea { background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.1); color: white; outline: none; }
+        .code-font { font-family: 'Fira Code', monospace; }
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 10px; }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 font-sans p-2 sm:p-6 h-screen overflow-hidden select-none">
+
+<div id="app" v-cloak class="h-full flex flex-col glass-dark rounded-[2.5rem] shadow-2xl relative overflow-hidden">
+    
+    <header class="p-4 flex flex-wrap justify-between items-center border-b border-white/5 bg-white/5 gap-4">
+        <div class="flex items-center gap-4">
+            <div class="h-10 w-10 bg-indigo-600 rounded-xl flex items-center justify-center font-black shadow-lg shadow-indigo-500/20">A</div>
+            <nav class="flex items-center text-[10px] font-mono tracking-tighter overflow-x-auto whitespace-nowrap max-w-[200px]">
+                <span v-for="(p, i) in path" :key="i" @click="jumpToPath(i)" class="hover:text-indigo-400 cursor-pointer">
+                    {{ p.toUpperCase() }} <span class="mx-1 opacity-20">/</span>
+                </span>
+            </nav>
+        </div>
+
+        <div class="flex items-center gap-1 bg-black/20 p-1 rounded-2xl border border-white/5">
+            <button @click="openModal('file', 'create')" class="toolbar-btn text-[9px] font-bold px-3 uppercase">📄 New</button>
+            <button @click="openModal('folder', 'create')" class="toolbar-btn text-[9px] font-bold px-3 uppercase">📁 +Dir</button>
+            <div class="w-px h-6 bg-white/10 mx-1"></div>
+            <button :disabled="!selectedItem" @click="copyItem" class="toolbar-btn text-[9px] font-bold px-3 uppercase">Copy</button>
+            <button :disabled="!selectedItem" @click="cutItem" class="toolbar-btn text-[9px] font-bold px-3 uppercase">Cut</button>
+            <button :disabled="!clipboard" @click="pasteItem" class="toolbar-btn text-[9px] font-bold px-3 uppercase text-indigo-400">Paste</button>
+            <div class="w-px h-6 bg-white/10 mx-1"></div>
+            <button @click="downloadUserZip" class="toolbar-btn text-[9px] font-black px-4 uppercase bg-emerald-600/20 text-emerald-400 rounded-xl">Backup</button>
+        </div>
+    </header>
+
+    <main class="flex-1 p-6 overflow-y-auto grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-4 align-content-start" @click.self="selectedItem = null">
+        <div v-if="path.length > 1" @click="goBack" class="file-card flex flex-col items-center p-4 rounded-3xl cursor-pointer opacity-30 hover:opacity-100">
+            <span class="text-3xl">🔙</span>
+            <span class="text-[9px] font-black uppercase mt-1">Up</span>
+        </div>
+
+        <div v-for="folder in currentFolders" :key="folder.id" 
+             @click="selectedItem = folder" @dblclick="enterFolder(folder.name)"
+             class="file-card flex flex-col items-center p-4 rounded-3xl cursor-pointer relative"
+             :class="{ 'selected': selectedItem?.id === folder.id }">
+            <span class="text-4xl mb-2">📁</span>
+            <span class="text-[10px] font-bold uppercase truncate w-full text-center">{{ folder.name }}</span>
+        </div>
+
+        <div v-for="file in currentFiles" :key="file.id" 
+             @click="selectedItem = file" @dblclick="openModal('file', 'edit', file)"
+             class="file-card flex flex-col items-center p-4 rounded-3xl cursor-pointer relative"
+             :class="{ 'selected': selectedItem?.id === file.id }">
+            <span class="text-4xl mb-2">{{ getIcon(file.name) }}</span>
+            <span class="text-[10px] font-medium truncate w-full text-center px-1">{{ file.name }}</span>
+        </div>
+    </main>
+
+    <footer class="p-3 bg-black/40 border-t border-white/5 flex justify-between px-6 text-[9px] font-black uppercase opacity-40">
+        <span>{{ currentFiles.length + currentFolders.length }} Objects</span>
+        <span>Clipboard: {{ clipboard ? clipboard.name : 'Empty' }}</span>
+    </footer>
+
+    <transition name="fade">
+        <div v-if="modal.show" class="absolute inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-xl">
+            <div class="glass-dark w-full max-w-2xl rounded-[3rem] p-10 border border-white/20 shadow-2xl flex flex-col max-h-[85vh]">
+                <h2 class="text-[10px] font-black uppercase tracking-[0.4em] text-indigo-400 mb-8">Object Configuration</h2>
+
+                <div class="space-y-6 flex-1 flex flex-col overflow-hidden">
+                    <div class="group">
+                        <label class="text-[8px] font-black uppercase opacity-30 ml-2 mb-2 block">System Label</label>
+                        <input v-model="modal.name" class="w-full p-5 rounded-2xl text-sm" placeholder="filename.extension">
+                    </div>
+
+                    <div v-if="modal.type === 'file'" class="flex-1 flex flex-col overflow-hidden">
+                        <label class="text-[8px] font-black uppercase opacity-30 ml-2 mb-2 block">Data Buffer</label>
+                        <textarea v-model="modal.content" class="flex-1 w-full p-6 rounded-2xl text-[12px] code-font resize-none"></textarea>
+                    </div>
+                </div>
+
+                <div class="flex gap-4 mt-10">
+                    <button @click="modal.show = false" class="flex-1 py-5 text-[10px] font-black uppercase opacity-40">Abort</button>
+                    <button @click="saveItem" class="flex-[2] py-5 bg-indigo-600 rounded-3xl text-[10px] font-black uppercase shadow-lg shadow-indigo-500/20">Commit Changes</button>
+                    <button v-if="modal.mode === 'edit'" @click="deleteSelected" class="px-8 py-5 bg-red-500/10 text-red-500 border border-red-500/20 rounded-3xl text-[10px] font-black uppercase hover:bg-red-500 hover:text-white transition">Wipe</button>
+                </div>
+            </div>
+        </div>
+    </transition>
+
+</div>
+
+<script>
+const { createApp, ref, computed, onMounted } = Vue;
+
+createApp({
+    setup() {
+        const path = ref(['avero', 'user']);
+        const fs = ref([]);
+        const selectedItem = ref(null);
+        const clipboard = ref(null); // Stores { mode: 'copy'|'cut', item: {} }
+        const modal = ref({ show: false, type: 'file', mode: 'create', name: '', content: '', id: null });
+
+        const loadFS = () => {
+            const saved = localStorage.getItem('avero_fs_local');
+            fs.value = saved ? JSON.parse(saved) : [
+                { id: 'root', name: 'user', path: 'avero', isDir: true }
+            ];
+        };
+
+        const currentPathStr = computed(() => path.value.join('/'));
+        const currentFiles = computed(() => fs.value.filter(f => f.path === currentPathStr.value && !f.isDir));
+        const currentFolders = computed(() => fs.value.filter(f => f.path === currentPathStr.value && f.isDir && f.name !== 'user'));
+
+        const enterFolder = (n) => { path.value.push(n); selectedItem.value = null; };
+        const goBack = () => { path.value.pop(); selectedItem.value = null; };
+        const jumpToPath = (i) => { path.value = path.value.slice(0, i + 1); selectedItem.value = null; };
+
+        const openModal = (type, mode, item = null) => {
+            if (item) {
+                modal.value = { show: true, type: item.isDir ? 'folder' : 'file', mode: 'edit', name: item.name, content: item.content || '', id: item.id };
+            } else {
+                modal.value = { show: true, type, mode: 'create', name: '', content: '', id: null };
+            }
+        };
+
+        const saveItem = () => {
+            if (!modal.value.name) return;
+            if (modal.value.mode === 'create') {
+                fs.value.push({
+                    id: 'obj-' + Date.now(),
+                    name: modal.value.name,
+                    content: modal.value.content,
+                    path: currentPathStr.value,
+                    isDir: modal.value.type === 'folder'
+                });
+            } else {
+                const i = fs.value.find(f => f.id === modal.value.id);
+                if (i) { 
+                    const oldName = i.name;
+                    i.name = modal.value.name;
+                    i.content = modal.value.content;
+                    // If folder renamed, update children paths
+                    if (i.isDir) updateChildPaths(`${i.path}/${oldName}`, `${i.path}/${i.name}`);
+                }
+            }
+            sync();
+            modal.value.show = false;
+        };
+
+        const updateChildPaths = (oldPath, newPath) => {
+            fs.value.forEach(f => {
+                if (f.path.startsWith(oldPath)) {
+                    f.path = f.path.replace(oldPath, newPath);
+                }
+            });
+        };
+
+        const deleteSelected = () => {
+            const item = fs.value.find(f => f.id === modal.value.id);
+            if (item && item.isDir) {
+                const target = `${item.path}/${item.name}`;
+                fs.value = fs.value.filter(f => !f.path.startsWith(target));
+            }
+            fs.value = fs.value.filter(f => f.id !== modal.value.id);
+            sync();
+            modal.value.show = false;
+            selectedItem.value = null;
+        };
+
+        // COPY / CUT / PASTE
+        const copyItem = () => clipboard.value = { mode: 'copy', item: { ...selectedItem.value } };
+        const cutItem = () => clipboard.value = { mode: 'cut', item: { ...selectedItem.value } };
+
+        const pasteItem = () => {
+            if (!clipboard.value) return;
+            const source = clipboard.value.item;
+            const newId = 'obj-' + Date.now();
+            
+            if (clipboard.value.mode === 'copy') {
+                // Duplicate the item
+                fs.value.push({ ...source, id: newId, path: currentPathStr.value, name: source.name + ' (Copy)' });
+                if (source.isDir) {
+                    // Logic for copying folder contents would go here (recursive clone)
+                    alert("Folder cloning coming soon!");
+                }
+            } else {
+                // Move the item
+                const target = fs.value.find(f => f.id === source.id);
+                if (target) {
+                    const oldFullPath = `${target.path}/${target.name}`;
+                    target.path = currentPathStr.value;
+                    if (target.isDir) updateChildPaths(oldFullPath, `${target.path}/${target.name}`);
+                }
+                clipboard.value = null; // Clear clipboard after cut
+            }
+            sync();
+        };
+
+        const sync = () => localStorage.setItem('avero_fs_local', JSON.stringify(fs.value));
+
+        const downloadUserZip = async () => {
+            const zip = new JSZip();
+            fs.value.filter(f => !f.isDir).forEach(f => {
+                const rel = f.path.split('user')[1] + '/' + f.name;
+                zip.file(rel.replace(/^\//, ''), f.content);
+            });
+            const blob = await zip.generateAsync({type:"blob"});
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = "avero_workspace.zip";
+            a.click();
+        };
+
+        const getIcon = (n) => n.endsWith('.html') ? '🌐' : n.endsWith('.js') ? '📜' : '📄';
+
+        onMounted(loadFS);
+
+        return { path, currentFiles, currentFolders, enterFolder, goBack, jumpToPath, modal, openModal, saveItem, deleteSelected, selectedItem, copyItem, cutItem, pasteItem, clipboard, downloadUserZip, getIcon };
+    }
+}).mount('#app');
+</script>
+</body>
+</html>
