@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Avero Tic-Tac-Toe</title>
+    <link rel="stylesheet" href="../../share/theme.css">
+    <script src="../../share/cdn.js"></script>
+    <style>
+        [v-cloak] { display: none; }
+        body, html { height: 100%; margin: 0; background: #050508; color: #fff; overflow: hidden; font-family: 'Inter', sans-serif; }
+        .game-wrapper { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; gap: 20px; }
+        .config-panel { background: #0a0a0f; border: 1px solid #1a1a20; padding: 40px; border-radius: 20px; text-align: center; width: 340px; }
+        .grid { display: grid; grid-template-columns: repeat(3, 100px); grid-template-rows: repeat(3, 100px); gap: 10px; }
+        .cell { background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 32px; font-weight: 900; cursor: pointer; transition: 0.2s; }
+        .cell.taken { cursor: default; }
+        .x-mark { color: #6366f1; }
+        .o-mark { color: #f43f5e; }
+        .opening-badge { background: #6366f1; color: #fff; padding: 4px 12px; border-radius: 4px; font-size: 9px; font-weight: 900; margin-top: 10px; letter-spacing: 1px; }
+        .strategy-alert { color: #fbbf24; font-size: 11px; font-weight: 900; text-transform: uppercase; margin-top: 10px; letter-spacing: 2px; }
+        .history-log { position: absolute; right: 20px; top: 50%; transform: translateY(-50%); width: 220px; background: rgba(10,10,15,0.8); border: 1px solid #1a1a20; border-radius: 12px; padding: 20px; height: 80vh; overflow-y: auto; }
+        .history-item { font-size: 9px; margin-bottom: 15px; border-bottom: 1px solid #1a1a20; padding-bottom: 8px; }
+    </style>
+</head>
+<body class="avero-app">
+
+<div id="app" v-cloak class="game-wrapper">
+
+    <div v-if="!gameStarted" class="config-panel">
+        <div class="text-indigo-500 font-black text-xs tracking-widest mb-6 uppercase">Tactical Session</div>
+        <p class="text-[10px] text-slate-500 mb-4">TOTAL ROUNDS (MAX 9 / ODD)</p>
+        <div class="flex flex-wrap justify-center gap-2 mb-8">
+            <button v-for="n in [1, 3, 5, 7, 9]" @click="totalRounds = n" 
+                    :class="totalRounds === n ? '!bg-indigo-600 !border-indigo-500' : ''" 
+                    class="avero-btn !w-10">{{ n }}</button>
+        </div>
+        <button @click="gameStarted = true" class="avero-btn !w-full !bg-indigo-600">Initialize Match</button>
+    </div>
+
+    <template v-else>
+        <div class="text-[10px] font-black opacity-40 uppercase tracking-[0.4em]">Round {{ currentRound }} // {{ totalRounds }}</div>
+        
+        <div class="flex flex-col items-center">
+            <div v-if="openingName" class="opening-badge">{{ openingName }} OPENING</div>
+            <div v-if="winner && roundStrategy" class="strategy-alert">Analysis: {{ roundStrategy }}</div>
+        </div>
+
+        <div class="grid mt-4">
+            <div v-for="(val, i) in board" :key="i" @click="play(i)" 
+                 class="cell" :class="{ taken: val || winner || isDraw, 'x-mark': val === 'X', 'o-mark': val === 'O' }">
+                {{ val }}
+            </div>
+        </div>
+
+        <div class="mt-6 flex flex-col items-center gap-4">
+            <div class="text-[10px] font-bold tracking-widest text-slate-500 uppercase">
+                {{ winner ? 'Node Secured by ' + winner : (isDraw ? 'Result: Stale' : 'Input: Player ' + (isXNext ? 'X' : 'O')) }}
+            </div>
+            
+            <button v-if="winner || isDraw" @click="nextRound" class="avero-btn !bg-white !text-black !px-8">
+                {{ currentRound >= totalRounds ? 'End Operation' : 'Proceed' }}
+            </button>
+        </div>
+
+        <aside class="history-log">
+            <div class="text-[8px] font-black text-slate-600 uppercase mb-4 tracking-widest">Tactical Log</div>
+            <div v-for="(h, i) in matchHistory" :key="i" class="history-item">
+                <div class="text-indigo-400 font-bold">R{{ i+1 }}: {{ h.opening }}</div>
+                <div class="text-white opacity-80 mt-1">{{ h.strategy }}</div>
+                <div class="opacity-40 text-[8px] mt-1">Winner: {{ h.winner || 'None' }}</div>
+            </div>
+        </aside>
+    </template>
+
+</div>
+
+<script>
+const { createApp, ref, computed } = Vue;
+
+createApp({
+    setup() {
+        const gameStarted = ref(false);
+        const totalRounds = ref(3);
+        const currentRound = ref(1);
+        const scores = ref({ X: 0, O: 0 });
+        const matchHistory = ref([]);
+        const board = ref(Array(9).fill(null));
+        const isXNext = ref(true);
+        const moves = ref([]);
+        const winner = ref(null);
+        const roundStrategy = ref(null);
+
+        const types = ['x', 'y', 'x', 'y', 'z', 'y', 'x', 'y', 'x'];
+        const openingMap = { 'xx':'Indian','xy':'Chinese','xz':'American','yx':'Indonesian','yy':'Pakistani','yz':'Nigerian','zx':'Brazilian','zy':'Bangladeshi' };
+
+        const openingName = computed(() => {
+            if (moves.value.length < 2) return null;
+            return openingMap[types[moves.value[0]] + types[moves.value[1]]] || 'Standard';
+        });
+
+        const isDraw = computed(() => !winner.value && !board.value.includes(null));
+
+        const getStrategy = (winChar) => {
+            const pMoves = moves.value.filter((m, idx) => idx % 2 === (winChar === 'X' ? 0 : 1));
+            const oMoves = moves.value.filter((m, idx) => idx % 2 === (winChar === 'X' ? 1 : 0));
+            const typeLabel = winChar === 'X' ? 'Gambit' : 'Victory';
+            
+            // 1. Easy Strategy (Win in 3 moves of the player)
+            if (pMoves.length === 3) return `Easy ${typeLabel}`;
+
+            // 2. Miss Strategy (Last move could have been blocked by opponent but wasn't)
+            const lastMove = pMoves[pMoves.length - 1];
+            // (Simplified logic: if opponent had 2 in a row and didn't finish, or you had 2 and they didn't block)
+            if (pMoves.length >= 3) return `Miss ${typeLabel}`;
+
+            // 3. Corner Strategy (3 unblocked corners + connection)
+            const corners = [0, 2, 6, 8].filter(c => pMoves.includes(c));
+            if (corners.length >= 3 && board.value[4] !== winChar) return `Corner ${typeLabel}`;
+
+            // 4. Pillars Strategy (3 corners, center untaken, one blocked)
+            if (corners.length >= 3 && board.value[4] === null) return `Pillars ${typeLabel}`;
+
+            // 5. Fork Strategy (Win by side-fork, unblocked)
+            const sides = [1, 3, 5, 7].filter(s => pMoves.includes(s));
+            if (sides.length >= 2) return `Fork ${typeLabel}`;
+
+            // 6. Center Hub (Win involving the Z node)
+            if (pMoves.includes(4)) return `Hub ${typeLabel}`;
+
+            // 7. Perimeter Sweep (Win using only X and Y nodes)
+            if (!pMoves.includes(4)) return `Perimeter ${typeLabel}`;
+
+            // 8. Cross Strike (Diagonal win)
+            const winPaths = [[0,4,8],[2,4,6]];
+            for(let path of winPaths) if(path.every(pos => board.value[pos] === winChar)) return `Cross ${typeLabel}`;
+
+            // 9. Quick Response (Winning on the 4th player move)
+            if (pMoves.length === 4) return `Response ${typeLabel}`;
+
+            // 10. Endurance (Winning on the final possible move)
+            return `Endurance ${typeLabel}`;
+        };
+
+        const play = (i) => {
+            if (board.value[i] || winner.value) return;
+            board.value[i] = isXNext.value ? 'X' : 'O';
+            moves.value.push(i);
+            
+            const winPaths = [[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
+            for (let path of winPaths) {
+                if (path.every(p => board.value[p] === board.value[path[0]] && board.value[p] !== null)) {
+                    winner.value = board.value[path[0]];
+                    scores.value[winner.value]++;
+                    roundStrategy.value = getStrategy(winner.value);
+                    return;
+                }
+            }
+            isXNext.value = !isXNext.value;
+        };
+
+        const nextRound = () => {
+            matchHistory.value.push({
+                opening: openingName.value || 'None',
+                strategy: roundStrategy.value || 'Draw',
+                winner: winner.value
+            });
+
+            if (currentRound.value >= totalRounds.value) {
+                alert(`SESSION END\nX: ${scores.value.X} | O: ${scores.value.O}`);
+                location.reload();
+                return;
+            }
+            board.value = Array(9).fill(null);
+            moves.value = [];
+            winner.value = null;
+            roundStrategy.value = null;
+            isXNext.value = true;
+            currentRound.value++;
+        };
+
+        return { gameStarted, totalRounds, currentRound, scores, board, isXNext, play, winner, isDraw, nextRound, openingName, matchHistory, roundStrategy };
+    }
+}).mount('#app');
+</script>
+</body>
+</html>
