@@ -1,1 +1,1 @@
-This is the official codebase of Avero.
+Avero 1.0

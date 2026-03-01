@@ -8,50 +8,55 @@
     <script src="../../share/storage.js"></script>
     <style>
         [v-cloak] { display: none; }
-        body, html { height: 100%; margin: 0; background: #000; color: #fff; overflow: hidden; }
+        body, html { height: 100%; margin: 0; background: #050508; color: #fff; font-family: 'Inter', sans-serif; overflow: hidden; }
         .app-layout { display: grid; grid-template-rows: 60px 1fr; height: 100vh; }
-        .toolbar { background: #0d0d12; border-bottom: 1px solid #222; display: flex; align-items: center; padding: 0 20px; gap: 10px; }
-        .file-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 15px; padding: 25px; overflow-y: auto; }
-        .item { display: flex; flex-direction: column; align-items: center; padding: 15px; border-radius: 10px; cursor: pointer; border: 1px solid transparent; }
-        .item:hover { background: rgba(255,255,255,0.05); }
-        .item.selected { background: rgba(99, 102, 241, 0.2); border-color: #6366f1; }
+        .toolbar { background: #0a0a0f; border-bottom: 1px solid #1a1a20; display: flex; align-items: center; padding: 0 20px; gap: 10px; }
+        .file-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 10px; padding: 20px; align-content: start; overflow-y: auto; }
+        
+        .item { display: flex; flex-direction: column; align-items: center; padding: 12px; border-radius: 12px; cursor: pointer; border: 1px solid transparent; transition: 0.1s; user-select: none; }
+        .item:hover { background: rgba(255,255,255,0.03); }
+        .item.selected { background: rgba(99, 102, 241, 0.1); border-color: #6366f1; }
+        
         .icon { font-size: 32px; margin-bottom: 8px; }
-        .label { font-size: 10px; font-weight: 800; text-transform: uppercase; color: #777; text-align: center; width: 100%; overflow: hidden; text-overflow: ellipsis; }
+        .label { font-size: 10px; font-weight: 700; color: #888; text-align: center; word-break: break-all; }
         .selected .label { color: #fff; }
+
+        .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 100; display: flex; align-items: center; justify-content: center; padding: 20px; }
+        .modal-content { background: #0d0d12; border: 1px solid #222; width: 100%; max-width: 500px; border-radius: 16px; padding: 24px; }
     </style>
 </head>
 <body class="avero-app">
+
 <div id="app" v-cloak class="app-layout">
     <header class="toolbar">
-        <button @click="path.pop()" :disabled="path.length <= 2" class="avero-btn">BACK</button>
-        <div class="flex-1 text-[10px] font-bold opacity-30 uppercase tracking-widest">/ {{ path.join(' / ') }}</div>
+        <button @click="goUp" :disabled="path.length <= 1" class="avero-btn">UP</button>
+        <div class="flex-1 text-[10px] font-black opacity-30 uppercase tracking-widest truncate">/ {{ path.join(' / ') }}</div>
         
+        <button @click="openModal('folder')" class="avero-btn">NEW FOLDER</button>
         <button @click="openModal('file')" class="avero-btn">NEW FILE</button>
-        <button @click="$refs.uploader.click()" class="avero-btn">UPLOAD</button>
-        <button @click="deleteItem" :disabled="!selectedId" class="avero-btn !text-red-500">DELETE</button>
-        <button @click="zipOut" class="avero-btn !bg-indigo-600">ZIP BACKUP</button>
-        
-        <input type="file" ref="uploader" @change="upload" class="hidden" multiple>
+        <button @click="copy" :disabled="!selectedId" class="avero-btn">COPY</button>
+        <button @click="paste" :disabled="!clipboard" class="avero-btn">PASTE</button>
+        <button @click="remove" :disabled="!selectedId" class="avero-btn !text-rose-500">DELETE</button>
     </header>
 
     <div class="file-grid" @click.self="selectedId = null">
-        <div v-for="f in folders" :key="f.id" class="item" :class="{selected: selectedId === f.id}" @click="selectedId = f.id" @dblclick="path.push(f.name)">
-            <div class="icon">📁</div>
-            <div class="label">{{ f.name }}</div>
-        </div>
-        <div v-for="f in files" :key="f.id" class="item" :class="{selected: selectedId === f.id}" @click="selectedId = f.id" @dblclick="openModal('file', f)">
-            <div class="icon">📄</div>
-            <div class="label">{{ f.name }}</div>
+        <div v-for="item in currentItems" :key="item.id" 
+             class="item" :class="{selected: selectedId === item.id}"
+             @click="selectedId = item.id"
+             @dblclick="handleAction(item)">
+            <div class="icon">{{ item.isDir ? '📁' : '📄' }}</div>
+            <div class="label">{{ item.name }}</div>
         </div>
     </div>
 
-    <div v-if="modal.show" class="fixed inset-0 bg-black/90 flex items-center justify-center z-50 p-10">
-        <div class="bg-[#111] border border-[#222] w-full h-full rounded-xl flex flex-col p-6 gap-4">
-            <input v-model="modal.name" class="avero-input" placeholder="filename.txt">
-            <textarea v-model="modal.content" class="avero-input flex-1 font-mono"></textarea>
-            <div class="flex gap-4">
-                <button @click="modal.show = false" class="avero-btn flex-1">CANCEL</button>
-                <button @click="save" class="avero-btn flex-1 !bg-indigo-600">SAVE FILE</button>
+    <div v-if="ui.modal" class="modal">
+        <div class="modal-content">
+            <h3 class="text-[10px] font-black text-indigo-500 uppercase mb-4 tracking-widest">{{ ui.title }}</h3>
+            <input v-model="form.name" class="avero-input mb-4" placeholder="Name..." autofocus>
+            <textarea v-if="!form.isDir" v-model="form.content" class="avero-input h-48 mb-4 font-mono text-xs" placeholder="Content..."></textarea>
+            <div class="flex gap-3">
+                <button @click="ui.modal = false" class="avero-btn flex-1">CANCEL</button>
+                <button @click="save" class="avero-btn flex-1 !bg-indigo-600">SAVE</button>
             </div>
         </div>
     </div>
@@ -59,46 +64,70 @@
 
 <script>
 const { createApp, ref, computed, onMounted } = Vue;
+
 createApp({
     setup() {
-        const path = ref(['avero', 'user']);
         const fs = ref([]);
+        const path = ref(['avero', 'user']);
         const selectedId = ref(null);
-        const modal = ref({ show: false, name: '', content: '', id: null });
+        const clipboard = ref(null);
+        
+        const ui = ref({ modal: false, title: '' });
+        const form = ref({ id: null, name: '', content: '', isDir: false });
 
         const refresh = () => { fs.value = AveroStorage.getFS(); };
-        const currentPathStr = computed(() => path.value.join('/'));
-        const files = computed(() => fs.value.filter(f => f.path === currentPathStr.value && !f.isDir));
-        const folders = computed(() => fs.value.filter(f => f.path === currentPathStr.value && f.isDir && f.name !== 'user'));
+        const currentPath = computed(() => path.value.join('/'));
+        const currentItems = computed(() => fs.value.filter(i => i.path === currentPath.value));
+
+        const handleAction = (item) => {
+            if (item.isDir) {
+                path.value.push(item.name);
+                selectedId.value = null;
+            } else {
+                form.value = { ...item };
+                ui.value = { modal: true, title: 'Edit File' };
+            }
+        };
+
+        const goUp = () => { path.value.pop(); selectedId.value = null; };
+
+        const openModal = (type) => {
+            form.value = { id: null, name: '', content: '', isDir: type === 'folder' };
+            ui.value = { modal: true, title: `New ${type}` };
+        };
 
         const save = () => {
-            AveroStorage.save(modal.value.name, modal.value.content, currentPathStr.value, false, modal.value.id);
-            modal.show = false; refresh();
+            if (!form.value.name) return;
+            AveroStorage.save(form.value.name, form.value.content, currentPath.value, form.value.isDir, form.value.id);
+            ui.value.modal = false;
+            refresh();
         };
 
-        const upload = (e) => {
-            Array.from(e.target.files).forEach(file => {
-                const reader = new FileReader();
-                reader.onload = (res) => { 
-                    AveroStorage.save(file.name, res.target.result, currentPathStr.value, false);
-                    refresh();
-                };
-                reader.readAsText(file);
-            });
+        const remove = () => {
+            if (confirm('Delete permanently?')) {
+                AveroStorage.delete(selectedId.value);
+                selectedId.value = null;
+                refresh();
+            }
         };
 
-        const zipOut = async () => {
-            const zip = new JSZip();
-            fs.value.filter(f => !f.isDir).forEach(f => zip.file(f.name, f.content));
-            const blob = await zip.generateAsync({type:"blob"});
-            const a = document.createElement('a');
-            a.href = URL.createObjectURL(blob);
-            a.download = "avero_fs_backup.zip";
-            a.click();
+        const copy = () => {
+            const item = fs.value.find(i => i.id === selectedId.value);
+            if (item) clipboard.value = { ...item };
         };
 
-        onMounted(() => { refresh(); window.addEventListener('storage', refresh); });
-        return { path, files, folders, selectedId, modal, save, upload, zipOut, deleteItem: () => { AveroStorage.delete(selectedId.value); selectedId.value = null; refresh(); }, openModal: (type, item) => modal.value = { show: true, name: item?.name||'', content: item?.content||'', id: item?.id||null } };
+        const paste = () => {
+            if (!clipboard.value) return;
+            AveroStorage.save(clipboard.value.name + " (Copy)", clipboard.value.content, currentPath.value, clipboard.value.isDir, null);
+            refresh();
+        };
+
+        onMounted(() => {
+            refresh();
+            window.addEventListener('storage', refresh);
+        });
+
+        return { fs, path, selectedId, clipboard, ui, form, currentItems, handleAction, goUp, openModal, save, remove, copy, paste };
     }
 }).mount('#app');
 </script>
