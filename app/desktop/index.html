@@ -8,10 +8,66 @@
     <script src="../../share/cdn.js"></script>
     <style>
         [v-cloak] { display: none; }
-        body { background: #000; }
+        body { background: #000; margin: 0; }
         .ui-solid { background: #0d0d12; border-bottom: 1px solid var(--avero-border); }
-        
-        /* Grid Engine */
+
+        /* Loading Screen Styles */
+        #loading-screen {
+            position: fixed;
+            inset: 0;
+            background: #000000; /* Pitch black background */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            transition: opacity 0.5s ease;
+        }
+
+        .avero-logo-loader {
+            width: 80px;
+            height: 80px;
+            background: #000000; /* Pitch black inside the box too */
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid rgba(255,255,255,0.1); /* Subtle border for definition */
+            box-shadow: 0 0 40px rgba(79, 70, 229, 0.2);
+            animation: pulse 2s infinite ease-in-out;
+            overflow: hidden;
+            padding: 12px;
+            box-sizing: border-box;
+        }
+
+        .avero-logo-loader img, .start-logo-img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+            display: block;
+        }
+
+        /* Start Button Custom Style */
+        .avero-start-btn {
+            background: #000000 !important;
+            border: 1px solid rgba(255,255,255,0.1) !important;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            padding: 4px !important;
+        }
+        .avero-start-btn:hover {
+            border-color: var(--avero-accent) !important;
+            box-shadow: 0 0 15px rgba(79, 70, 229, 0.3);
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.05); opacity: 0.8; }
+        }
+
+        /* Desktop Grid Engine */
         .desktop-grid { display: grid; gap: 2px; height: 100%; width: 100%; background: #1a1a20; }
         .grid-1 { grid-template-columns: 1fr; }
         .grid-2 { grid-template-columns: 1fr 1fr; }
@@ -21,25 +77,32 @@
 
         .app-window { display: flex; flex-direction: column; background: #000; overflow: hidden; }
         iframe { background: #fff; width: 100%; height: 100%; border: none; }
-        
-        .nav-btn { padding: 2px 6px; border-radius: 4px; font-size: 10px; background: #222; border: 1px solid #333; color: #aaa; }
+
+        .nav-btn { padding: 2px 6px; border-radius: 4px; font-size: 10px; background: #222; border: 1px solid #333; color: #aaa; cursor: pointer; }
         .nav-btn:hover { background: var(--avero-accent); color: white; }
 
-        /* Drag & Drop Visual Feedback */
         .tab-drop-zone { background: var(--avero-accent-glow) !important; border-bottom: 2px solid var(--avero-accent) !important; }
-        
-        .search-small { background: #16161e; border: 1px solid #2d2d3d; border-radius: 8px; padding: 8px 12px; font-size: 11px; color: white; width: 100%; }
+        .search-small { background: #16161e; border: 1px solid #2d2d3d; border-radius: 8px; padding: 8px 12px; font-size: 11px; color: white; width: 100%; outline: none; }
     </style>
 </head>
 <body class="overflow-hidden text-slate-100 font-sans select-none avero-app">
 
 <div id="app" v-cloak class="h-screen w-screen flex flex-col relative bg-cover bg-center" style="background-image: url('background.avif')">
 
+    <div v-if="isLoading" id="loading-screen">
+        <div class="avero-logo-loader">
+            <img src="../../share/logo.avif" alt="Avero Logo">
+        </div>
+        <div class="mt-6 text-[10px] font-black uppercase tracking-[0.3em] opacity-40">Avero OS Loading</div>
+    </div>
+
     <header class="h-12 ui-solid flex items-center px-4 z-[100] gap-4 shadow-xl">
-        <button @click="isDrawerOpen = !isDrawerOpen" class="avero-btn h-8 w-8 !rounded-lg !p-0">A</button>
-        
+        <button @click="isDrawerOpen = !isDrawerOpen" class="avero-btn avero-start-btn h-8 w-8 !rounded-lg">
+            <img src="../../share/logo.avif" class="start-logo-img" alt="Start">
+        </button>
+
         <div class="flex flex-1 overflow-x-auto no-scrollbar h-full">
-            <div v-for="d in desktops" :key="d.id" 
+            <div v-for="d in desktops" :key="d.id"
                  draggable="true"
                  @dragstart="draggedTabId = d.id"
                  @dragover.prevent="dragOverId = d.id"
@@ -102,14 +165,14 @@ const { createApp, ref, computed, onMounted } = Vue;
 
 createApp({
     setup() {
+        const isLoading = ref(true);
         const currentTime = ref('');
         const currentDate = ref('');
         const isDrawerOpen = ref(false);
         const urlInput = ref('');
-        const desktops = ref([]); 
+        const desktops = ref([]);
         const activeDesktopId = ref(null);
-        
-        // Drag State
+
         const draggedTabId = ref(null);
         const dragOverId = ref(null);
 
@@ -117,37 +180,22 @@ createApp({
             { id: 0, title: 'About', icon: '👤', path: '../../app/about/index.html' },
             { id: 1, title: 'Calculator', icon: '🔢', path: '../../app/calculator/index.html' },
             { id: 2, title: 'Chess', icon: '♟️', path: '../../app/chess/index.html' },
-            { id: 3, title: 'Files', icon: '📂', path: '../../app/files/index.html' },
-            { id: 4, title: 'Superbirdjumper3', icon: '🐦', path: '../../app/superbirdjumper3/index.html' },
+            { id: 3, title: 'Clicker', icon: '🖱️', path: '../../app/clicker/index.html' },
+            { id: 4, title: 'Files', icon: '📂', path: '../../app/files/index.html' },
             { id: 5, title: 'Stopwatch', icon: '⌚', path: '../../app/stopwatch/index.html'},
-            { id: 6, title: 'Terminal', icon: '📦', path: '../../app/terminal/index.html'},
-            { id: 7, title: 'Tictactoe', icon:'🌀', path: '../../app/tictactoe/index.html'},
+            { id: 6, title: 'Superbirdjumper3', icon: '🐦', path: '../../app/superbirdjumper3/index.html' },
+            { id: 7, title: 'Terminal', icon: '📦', path: '../../app/terminal/index.html'},
+            { id: 8, title: 'Tictactoe', icon: '🌀', path: '../../app/tictactoe/index.html'},
         ];
-
-        // HaGeZi Multi Mirror Integration (AdBlocker)
-        const adBlockFilter = (url) => {
-            // This is a programmatic implementation of the HaGeZi filter logic
-            const blackListPattern = /ad|track|telemetry|doubleclick|adnxs|popunder|analytics/i;
-            try {
-                const domain = new URL(url).hostname;
-                if (blackListPattern.test(domain)) {
-                    console.warn(`Avero Shield: Blocked request to ${domain}`);
-                    return 'about:blank';
-                }
-            } catch(e) {}
-            return url;
-        };
 
         const mergeTabs = (targetId) => {
             if (draggedTabId.value === targetId) return;
             const sourceIdx = desktops.value.findIndex(d => d.id === draggedTabId.value);
             const targetIdx = desktops.value.findIndex(d => d.id === targetId);
-            
+
             if (sourceIdx !== -1 && targetIdx !== -1) {
                 const sourceDesktop = desktops.value[sourceIdx];
                 const targetDesktop = desktops.value[targetIdx];
-                
-                // Allow up to 4 apps per split-view
                 if (targetDesktop.apps.length + sourceDesktop.apps.length <= 4) {
                     targetDesktop.apps.push(...sourceDesktop.apps);
                     targetDesktop.name = "Split View";
@@ -163,10 +211,6 @@ createApp({
             let query = urlInput.value.trim();
             if (!query) return;
             let finalUrl = query.includes('.') && !query.includes(' ') ? (query.startsWith('http') ? query : `https://${query}`) : `https://www.google.com/search?q=${encodeURIComponent(query)}&igu=1`;
-            
-            // Apply AdBlock
-            finalUrl = adBlockFilter(finalUrl);
-            
             const id = Date.now();
             desktops.value.push({ id, name: 'Web', apps: [{ title: 'Browser', icon: '🌐', path: finalUrl, instanceId: id }] });
             activeDesktopId.value = id;
@@ -182,7 +226,7 @@ createApp({
         };
 
         const activeDesktop = computed(() => desktops.value.find(d => d.id === activeDesktopId.value));
-        
+
         const closeApp = (instanceId) => {
             activeDesktop.value.apps = activeDesktop.value.apps.filter(a => a.instanceId !== instanceId);
             if (activeDesktop.value.apps.length === 0) closeDesktop(activeDesktop.value.id);
@@ -209,10 +253,17 @@ createApp({
             currentDate.value = now.toISOString().split('T')[0];
         };
 
-        onMounted(() => { updateClock(); setInterval(updateClock, 1000); });
+        onMounted(() => {
+            updateClock();
+            setInterval(updateClock, 1000);
 
-        return { 
-            appList, desktops, activeDesktopId, activeDesktop, isDrawerOpen,
+            setTimeout(() => {
+                isLoading.value = false;
+            }, 800);
+        });
+
+        return {
+            isLoading, appList, desktops, activeDesktopId, activeDesktop, isDrawerOpen,
             launchNewDesktop, urlInput, currentTime, currentDate, launchUrl,
             closeDesktop, closeApp, navAction, draggedTabId, dragOverId, mergeTabs
         };
@@ -221,3 +272,4 @@ createApp({
 </script>
 </body>
 </html>
+

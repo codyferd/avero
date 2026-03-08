@@ -2,130 +2,156 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Avero Tic-Tac-Toe</title>
     <link rel="stylesheet" href="../../share/theme.css">
     <script src="../../share/cdn.js"></script>
     <style>
         [v-cloak] { display: none; }
-        body, html { height: 100%; margin: 0; background: #050508; color: #fff; overflow: hidden; font-family: 'Inter', sans-serif; }
-        .game-wrapper { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; gap: 20px; }
-        .config-panel { background: #0a0a0f; border: 1px solid #1a1a20; padding: 40px; border-radius: 20px; text-align: center; width: 360px; }
-        .grid { display: grid; grid-template-columns: repeat(3, 100px); grid-template-rows: repeat(3, 100px); gap: 10px; }
-        .cell { background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 32px; font-weight: 900; cursor: pointer; transition: 0.2s; }
-        .cell.taken { cursor: default; }
-        .x-mark { color: #6366f1; }
-        .o-mark { color: #f43f5e; }
-        .opening-badge { background: #6366f1; color: #fff; padding: 4px 12px; border-radius: 4px; font-size: 9px; font-weight: 900; margin-top: 10px; letter-spacing: 1px; }
-        .strategy-alert { color: #fbbf24; font-size: 11px; font-weight: 900; text-transform: uppercase; margin-top: 10px; letter-spacing: 2px; text-align: center;}
-        .history-log { position: absolute; right: 20px; top: 50%; transform: translateY(-50%); width: 220px; background: rgba(10,10,15,0.8); border: 1px solid #1a1a20; border-radius: 12px; padding: 20px; height: 80vh; overflow-y: auto; }
-        .history-item { font-size: 9px; margin-bottom: 15px; border-bottom: 1px solid #1a1a20; padding-bottom: 8px; }
-        
-        /* Theory Modal Styles */
-        .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.98); z-index: 100; padding: 40px; overflow-y: auto; }
-        .theory-section { margin-bottom: 30px; border-left: 2px solid #6366f1; padding-left: 20px; }
-        .theory-title { color: #6366f1; font-weight: 900; font-size: 10px; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 10px; }
-        .theory-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; font-size: 11px; }
+        body, html { height: 100%; margin: 0; background: #050508; color: #fff; font-family: 'Inter', sans-serif; overflow-x: hidden; }
+
+        .game-wrapper {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 20px;
+            box-sizing: border-box;
+            gap: 15px;
+        }
+
+        /* Responsive Config Panel */
+        .config-panel {
+            background: #0a0a0f;
+            border: 1px solid #1a1a20;
+            padding: 2rem;
+            border-radius: 20px;
+            text-align: center;
+            width: 100%;
+            max-width: 400px;
+        }
+
+        /* Fluid Grid System */
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(3, min(25vw, 100px));
+            grid-template-rows: repeat(3, min(25vw, 100px));
+            gap: 10px;
+        }
+
+        .cell {
+            background: rgba(255,255,255,0.02);
+            border: 1px solid rgba(255,255,255,0.05);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: clamp(24px, 8vw, 32px);
+            font-weight: 900;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        /* Responsive Sidebar/Bottom-bar */
+        .history-log {
+            width: 100%;
+            max-width: 400px;
+            background: rgba(10,10,15,0.8);
+            border: 1px solid #1a1a20;
+            border-radius: 12px;
+            padding: 15px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        @media (min-width: 1024px) {
+            .history-log {
+                position: absolute;
+                right: 20px;
+                top: 50%;
+                transform: translateY(-50%);
+                width: 220px;
+                height: 80vh;
+                max-height: none;
+            }
+        }
+
+        .x-mark { color: #6366f1; text-shadow: 0 0 15px rgba(99, 102, 241, 0.4); }
+        .o-mark { color: #f43f5e; text-shadow: 0 0 15px rgba(244, 63, 94, 0.4); }
+
+        .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.98); z-index: 100; padding: 5vw; overflow-y: auto; }
+        .theory-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 15px; font-size: 11px; }
     </style>
 </head>
 <body class="avero-app">
 
 <div id="app" v-cloak class="game-wrapper">
 
-    <div v-if="!gameStarted" class="config-panel">
+    <div v-if="!gameStarted" class="config-panel animate-in">
         <div class="text-indigo-500 font-black text-xs tracking-widest mb-6 uppercase">Balanced Tournament</div>
-        <p class="text-[10px] text-slate-500 mb-4">SELECT ROUNDS (EVEN = EQUAL STARTS)</p>
+        <p class="text-[10px] text-slate-500 mb-4 font-mono">SELECT MATCH LENGTH</p>
         <div class="flex flex-wrap justify-center gap-2 mb-8">
-            <button v-for="n in [1, 2, 4, 6, 8, 10]" @click="totalRounds = n" 
-                    :class="totalRounds === n ? '!bg-indigo-600 !border-indigo-500' : ''" 
-                    class="avero-btn !w-10">{{ n }}</button>
+            <button v-for="n in [1, 2, 4, 6, 10]" @click="totalRounds = n"
+                    :class="totalRounds === n ? '!bg-indigo-600 !border-indigo-500' : ''"
+                    class="avero-btn !w-10 !h-10 !p-0">{{ n }}</button>
         </div>
         <button @click="gameStarted = true" class="avero-btn !w-full !bg-indigo-600 mb-2">Initialize Match</button>
         <button @click="showLearn = true" class="avero-btn !w-full !bg-white/5">Theory Center</button>
     </div>
 
     <template v-else>
-        <div class="text-[10px] font-black opacity-40 uppercase tracking-[0.4em]">Round {{ currentRound }} // {{ totalRounds }}</div>
-        
-        <div class="flex flex-col items-center min-h-[60px]">
-            <div v-if="openingName" class="opening-badge">{{ openingName }} OPENING</div>
-            <div v-if="winner && roundStrategy" class="strategy-alert">Analysis: {{ roundStrategy }}</div>
+        <div class="text-[10px] font-black opacity-40 uppercase tracking-[0.4em]">Round {{ currentRound }} / {{ totalRounds }}</div>
+
+        <div class="flex flex-col items-center min-h-[50px] text-center">
+            <div v-if="openingName" class="bg-indigo-600 text-[9px] font-black px-3 py-1 rounded uppercase tracking-widest">{{ openingName }} OPENING</div>
+            <div v-if="winner && roundStrategy" class="text-[#fbbf24] text-[10px] font-black uppercase mt-2 tracking-widest animate-pulse">
+                {{ roundStrategy }}
+            </div>
         </div>
 
-        <div class="grid mt-4">
-            <div v-for="(val, i) in board" :key="i" @click="play(i)" 
+        <div class="grid">
+            <div v-for="(val, i) in board" :key="i" @click="play(i)"
                  class="cell" :class="{ taken: val || winner || isDraw, 'x-mark': val === 'X', 'o-mark': val === 'O' }">
                 {{ val }}
             </div>
         </div>
 
-        <div class="mt-6 flex flex-col items-center gap-4">
-            <div class="flex gap-10">
+        <div class="w-full max-w-[320px] flex flex-col items-center gap-4">
+            <div class="flex justify-around w-full border-t border-white/5 pt-4">
                 <div class="text-center"><div class="text-[8px] opacity-40 uppercase">P1 Score</div><div class="text-xl font-bold">{{ scores.P1 }}</div></div>
                 <div class="text-center"><div class="text-[8px] opacity-40 uppercase">P2 Score</div><div class="text-xl font-bold">{{ scores.P2 }}</div></div>
             </div>
-            
-            <button v-if="winner || isDraw" @click="nextRound" class="avero-btn !bg-white !text-black !px-8">
+
+            <button v-if="winner || isDraw" @click="nextRound" class="avero-btn !bg-white !text-black !w-full">
                 {{ currentRound >= totalRounds ? 'Finish Session' : 'Continue' }}
             </button>
         </div>
 
         <aside class="history-log">
-            <div class="text-[8px] font-black text-slate-600 uppercase mb-4 tracking-widest">Tactical Log</div>
-            <div v-for="(h, i) in matchHistory.slice().reverse()" :key="i" class="history-item">
-                <div class="text-indigo-400 font-bold">R{{ matchHistory.length - i }}: {{ h.opening }}</div>
-                <div class="text-white opacity-80 mt-1">{{ h.strategy }}</div>
-                <div class="opacity-40 text-[8px] mt-1">Result: {{ h.winnerName }}</div>
+            <div class="text-[8px] font-black text-slate-600 uppercase mb-3 tracking-widest">Tactical Log</div>
+            <div v-if="matchHistory.length === 0" class="text-[9px] opacity-20 italic">Awaiting data...</div>
+            <div v-for="(h, i) in matchHistory.slice().reverse()" :key="i" class="mb-3 border-b border-white/5 pb-2">
+                <div class="text-indigo-400 font-bold text-[9px]">R{{ matchHistory.length - i }}: {{ h.opening }}</div>
+                <div class="opacity-40 text-[8px]">Result: {{ h.winnerName }} ({{ h.strategy }})</div>
             </div>
         </aside>
     </template>
 
-    <div v-if="showLearn" class="modal">
-        <div class="max-w-3xl mx-auto">
-            <h2 class="text-white font-black tracking-[0.5em] uppercase text-center mb-12">Avero Strategic Theory</h2>
-            
-            <div class="theory-section">
-                <div class="theory-title">Official Openings (X vs O)</div>
-                <div class="theory-grid opacity-80">
-                    <div>Indian: Corner → Corner</div>
-                    <div>Chinese: Corner → Side</div>
-                    <div>American: Corner → Center</div>
-                    <div>Indonesian: Side → Corner</div>
-                    <div>Pakistani: Side → Side</div>
-                    <div>Nigerian: Side → Center</div>
-                    <div>Brazilian: Center → Corner</div>
-                    <div>Bangladeshi: Center → Side</div>
+    <div v-if="showLearn" class="modal animate-in">
+        <div class="max-w-2xl mx-auto">
+            <h2 class="text-white font-black tracking-[0.4em] uppercase text-center mb-10">Avero Strategic Theory</h2>
+
+            <div class="border-l-2 border-indigo-500 pl-4 mb-8">
+                <div class="text-indigo-500 font-black text-[10px] uppercase mb-3">Counter-Play Matrix</div>
+                <div class="space-y-3">
+                    <div class="p-3 bg-white/5 rounded text-xs"><b class="text-indigo-400">vs Corner:</b> Take Center immediately.</div>
+                    <div class="p-3 bg-white/5 rounded text-xs"><b class="text-indigo-400">vs Side:</b> Take Center to neutralize splits.</div>
+                    <div class="p-3 bg-white/5 rounded text-xs"><b class="text-indigo-400">vs Center:</b> Take Corner to bait traps.</div>
                 </div>
             </div>
 
-            <div class="theory-section">
-                <div class="theory-title">Optimal Responses for O</div>
-                <div class="space-y-4 text-xs">
-                    <div class="p-3 bg-white/5 rounded">
-                        <span class="text-indigo-400 font-bold">If X starts Corner:</span> TAKE CENTER. This forces the American Opening, which is a secured draw. Taking a side or corner results in a mathematical loss.
-                    </div>
-                    <div class="p-3 bg-white/5 rounded">
-                        <span class="text-indigo-400 font-bold">If X starts Side:</span> TAKE CENTER. You immediately seize the Hub and neutralize X's split threat.
-                    </div>
-                    <div class="p-3 bg-white/5 rounded">
-                        <span class="text-indigo-400 font-bold">If X starts Center:</span> TAKE CORNER. Forces X to play perfectly to avoid a corner-trap draw.
-                    </div>
-                </div>
-            </div>
-
-            <div class="theory-section">
-                <div class="theory-title">Post-Game Strategies</div>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-[10px] opacity-60">
-                    <div>• T-Corner: Control 3 corners + Center</div>
-                    <div>• Fork: Two simultaneous win paths</div>
-                    <div>• Pillars: 3 corners with empty Center</div>
-                    <div>• Diamond: Side nodes + Center connection</div>
-                    <div>• Easy: Win in first 3 moves</div>
-                    <div>• Perimeter: Win without Center node</div>
-                    <div>• Miss: Win via opponent's failed block</div>
-                </div>
-            </div>
-            
-            <button @click="showLearn = false" class="avero-btn mt-8 !w-full">Back to OS</button>
+            <button @click="showLearn = false" class="avero-btn !w-full">Return to OS</button>
         </div>
     </div>
 
@@ -146,11 +172,9 @@ createApp({
         const moves = ref([]);
         const winner = ref(null);
         const roundStrategy = ref(null);
-
-        // Logic for alternating starts
-        const isP1TurnToStartX = computed(() => currentRound.value % 2 !== 0);
         const isXNext = ref(true);
 
+        const isP1TurnToStartX = computed(() => currentRound.value % 2 !== 0);
         const types = ['x', 'y', 'x', 'y', 'z', 'y', 'x', 'y', 'x'];
         const openingMap = { 'xx':'Indian','xy':'Chinese','xz':'American','yx':'Indonesian','yy':'Pakistani','yz':'Nigerian','zx':'Brazilian','zy':'Bangladeshi' };
 
@@ -164,29 +188,24 @@ createApp({
         const getStrategy = (winChar) => {
             const pMoves = moves.value.filter((m, idx) => idx % 2 === (winChar === 'X' ? 0 : 1));
             const label = winChar === 'X' ? 'Gambit' : 'Victory';
-            const corners = [0, 2, 6, 8].filter(c => pMoves.includes(c));
-
-            if (corners.length >= 3 && board.value[4] === winChar) return `T-Corner ${label}`;
-            if ([1, 3, 5, 7].filter(s => pMoves.includes(s)).length >= 2) return `Fork ${label}`;
-            if (corners.length >= 3 && board.value[4] === null) return `Pillars ${label}`;
-            if (pMoves.length === 3) return `Easy ${label}`;
             if (!pMoves.includes(4)) return `Perimeter ${label}`;
-            return `Miss ${label}`;
+            if (pMoves.length === 3) return `Easy ${label}`;
+            return `Precision ${label}`;
         };
 
         const play = (i) => {
             if (board.value[i] || winner.value) return;
-            const currentPlayerChar = isXNext.value ? 'X' : 'O';
-            board.value[i] = currentPlayerChar;
+            const char = isXNext.value ? 'X' : 'O';
+            board.value[i] = char;
             moves.value.push(i);
-            
+
             const winPaths = [[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
             for (let path of winPaths) {
-                if (path.every(p => board.value[p] === currentPlayerChar)) {
-                    winner.value = currentPlayerChar;
-                    roundStrategy.value = getStrategy(winner.value);
-                    if ((winner.value === 'X' && isP1TurnToStartX.value) || (winner.value === 'O' && !isP1TurnToStartX.value)) scores.value.P1 += 1;
-                    else scores.value.P2 += 1;
+                if (path.every(p => board.value[p] === char)) {
+                    winner.value = char;
+                    roundStrategy.value = getStrategy(char);
+                    const isP1 = (char === 'X' && isP1TurnToStartX.value) || (char === 'O' && !isP1TurnToStartX.value);
+                    isP1 ? scores.value.P1++ : scores.value.P2++;
                     return;
                 }
             }
@@ -198,7 +217,7 @@ createApp({
             matchHistory.value.push({
                 opening: openingName.value || 'Draw',
                 strategy: roundStrategy.value || 'Draw',
-                winnerName: winner.value ? ( (winner.value === 'X' && isP1TurnToStartX.value) || (winner.value === 'O' && !isP1TurnToStartX.value) ? 'P1' : 'P2') : 'Draw'
+                winnerName: winner.value ? (((winner.value === 'X' && isP1TurnToStartX.value) || (winner.value === 'O' && !isP1TurnToStartX.value)) ? 'P1' : 'P2') : 'Draw'
             });
             if (currentRound.value >= totalRounds.value) { location.reload(); return; }
             board.value = Array(9).fill(null); moves.value = []; winner.value = null; roundStrategy.value = null;
@@ -211,3 +230,4 @@ createApp({
 </script>
 </body>
 </html>
+

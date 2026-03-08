@@ -6,7 +6,7 @@
         <title>Avero Calculator</title>
         <link rel="stylesheet" href="../../share/theme.css">
         <script src="../../share/cdn.js"></script>
-        
+
         <style>
             /* App-specific overrides that don't belong in global theme */
             .terminal-input {
@@ -18,7 +18,7 @@
                 transition: all 0.2s;
             }
             .terminal-input:focus { border-color: #10b981; }
-            
+
             .si-tab {
                 padding: 4px 12px;
                 font-size: 10px;
@@ -27,9 +27,9 @@
                 cursor: pointer;
                 transition: all 0.2s;
             }
-            .si-tab:hover { 
-                background: rgba(16, 185, 129, 0.1); 
-                color: #10b981; 
+            .si-tab:hover {
+                background: rgba(16, 185, 129, 0.1);
+                color: #10b981;
                 border-color: #10b981;
             }
 
@@ -38,10 +38,10 @@
             .key-exec { background: #059669 !important; }
         </style>
     </head>
-    
+
     <body class="avero-app p-4">
         <div id="app" v-cloak class="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-4 h-full">
-            
+
             <div class="lg:col-span-3">
                 <div class="avero-card h-full flex flex-col">
                     <div class="p-3 border-b border-slate-800 text-[10px] font-black tracking-widest text-slate-500 uppercase">
@@ -67,9 +67,9 @@
                         </div>
                         <span class="text-[9px] font-mono text-slate-600">SI_STANDARD_OFFSETS_LOADED</span>
                     </div>
-                    
+
                     <div class="relative mb-6">
-                        <input type="text" v-model="currentInput" @keyup.enter="calculate" 
+                        <input type="text" v-model="currentInput" @keyup.enter="calculate"
                                class="w-full p-4 text-4xl terminal-input" placeholder="f(x)..." ref="terminal" />
                         <div class="mt-2 text-right h-6 text-slate-500 font-mono text-sm italic">{{ displayFormula }}</div>
                     </div>
@@ -80,29 +80,29 @@
                         <button @click="append('tan(')" class="avero-btn py-3 key-sci">tan</button>
                         <button @click="append('log(')" class="avero-btn py-3 key-sci">ln</button>
                         <button @click="deleteLast" class="avero-btn py-3 !bg-transparent text-rose-500 border border-rose-900/30">DEL</button>
-                        
+
                         <button @click="append('asin(')" class="avero-btn py-3 key-sci">asin</button>
                         <button @click="append('acos(')" class="avero-btn py-3 key-sci">acos</button>
                         <button @click="append('atan(')" class="avero-btn py-3 key-sci">atan</button>
                         <button @click="append('^')" class="avero-btn py-3 key-sci">xʸ</button>
                         <button @click="clear" class="avero-btn py-3 !bg-transparent text-rose-500 font-bold border border-rose-900/30">AC</button>
-                        
+
                         <button v-for="n in ['7','8','9']" @click="append(n)" class="avero-btn py-3 !bg-slate-800/40 hover:!bg-slate-700">{{n}}</button>
                         <button @click="append('/')" class="avero-btn py-3 key-op !bg-amber-950/10">÷</button>
                         <button @click="append('sqrt(')" class="avero-btn py-3 key-op !bg-amber-950/10">√</button>
-                        
+
                         <button v-for="n in ['4','5','6']" @click="append(n)" class="avero-btn py-3 !bg-slate-800/40 hover:!bg-slate-700">{{n}}</button>
                         <button @click="append('*')" class="avero-btn py-3 key-op !bg-amber-950/10">×</button>
                         <button @click="append('pi')" class="avero-btn py-3 key-op !bg-amber-950/10">π</button>
-                        
+
                         <button v-for="n in ['1','2','3']" @click="append(n)" class="avero-btn py-3 !bg-slate-800/40 hover:!bg-slate-700">{{n}}</button>
                         <button @click="append('-')" class="avero-btn py-3 key-op !bg-amber-950/10">−</button>
                         <button @click="drawGraph" class="avero-btn !bg-indigo-600 row-span-2">PLOT</button>
-                        
+
                         <button @click="append('0')" class="avero-btn py-3 col-span-2 !bg-slate-800/40 hover:!bg-slate-700">0</button>
                         <button @click="append('.')" class="avero-btn py-3 !bg-slate-800/40 hover:!bg-slate-700">.</button>
                         <button @click="append('+')" class="avero-btn py-3 key-op !bg-amber-950/10">+</button>
-                        
+
                         <button @click="calculate" class="avero-btn key-exec col-span-5 py-4 mt-1">Run Command</button>
                     </div>
                 </div>
@@ -130,7 +130,7 @@
                         </div>
                     </div>
                 </div>
-                
+
                 <div class="avero-card p-4">
                     <label class="text-[9px] uppercase text-slate-600 mb-3 block font-bold">Physical Constants</label>
                     <div class="space-y-1">
