@@ -9,13 +9,15 @@
     <style>
         [v-cloak] { display: none; }
         body { background: #000; margin: 0; }
-        .ui-solid { background: #0d0d12; border-bottom: 1px solid var(--avero-border); }
+
+        /* Updated: Fully black title bar */
+        .ui-solid { background: #000000; border-bottom: 1px solid var(--avero-border); }
 
         /* Loading Screen Styles */
         #loading-screen {
             position: fixed;
             inset: 0;
-            background: #000000; /* Pitch black background */
+            background: #000000;
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -27,12 +29,12 @@
         .avero-logo-loader {
             width: 80px;
             height: 80px;
-            background: #000000; /* Pitch black inside the box too */
+            background: #000000;
             border-radius: 16px;
             display: flex;
             align-items: center;
             justify-content: center;
-            border: 1px solid rgba(255,255,255,0.1); /* Subtle border for definition */
+            border: 1px solid rgba(255,255,255,0.1);
             box-shadow: 0 0 40px rgba(79, 70, 229, 0.2);
             animation: pulse 2s infinite ease-in-out;
             overflow: hidden;
@@ -126,7 +128,7 @@
     </header>
 
     <transition name="fade">
-        <div v-if="isDrawerOpen" class="absolute top-12 left-0 w-72 h-[calc(100vh-3rem)] ui-solid p-5 z-[1000] shadow-2xl border-r">
+        <div v-if="isDrawerOpen" class="absolute top-12 left-0 w-72 h-[calc(100vh-3.1rem)] ui-solid p-5 z-[1000] shadow-2xl border-r">
             <div class="mb-6">
                 <input v-model="urlInput" @keyup.enter="launchUrl" class="search-small" placeholder="Search or URL...">
             </div>
@@ -153,7 +155,11 @@
                     <button @click="closeApp(app.instanceId)" class="text-slate-600 hover:text-red-500 px-2">✕</button>
                 </div>
                 <div class="flex-1 bg-white">
-                    <iframe :id="'frame-' + app.instanceId" :src="app.path" sandbox="allow-scripts allow-forms allow-popups allow-same-origin"></iframe>
+                    <iframe
+                        :id="'frame-' + app.instanceId"
+                        :src="app.path"
+                        sandbox="allow-scripts allow-forms allow-popups allow-popups-to-escape-sandbox allow-same-origin">
+                    </iframe>
                 </div>
             </div>
         </div>
@@ -178,15 +184,15 @@ createApp({
 
         const appList = [
             { id: 0, title: 'About', icon: '👤', path: '../../app/about/index.html' },
-            { id: 1, title: 'AveroScript', icon: '💻', path: '../../app/averoscript/index.html' },
-            { id: 2, title: 'Calculator', icon: '🔢', path: '../../app/calculator/index.html' },
-            { id: 3, title: 'Chess', icon: '♟️', path: '../../app/chess/index.html' },
-            { id: 4, title: 'Clicker', icon: '🖱️', path: '../../app/clicker/index.html' },
-            { id: 5, title: 'Files', icon: '📂', path: '../../app/files/index.html' },
-            { id: 6, title: 'Stopwatch', icon: '⌚', path: '../../app/stopwatch/index.html'},
-            { id: 7, title: 'Superbirdjumper3', icon: '🐦', path: '../../app/superbirdjumper3/index.html' },
-            { id: 8, title: 'Terminal', icon: '📦', path: '../../app/terminal/index.html'},
-            { id: 9, title: 'Tictactoe', icon: '🌀', path: '../../app/tictactoe/index.html'},
+            { id: 1, title: 'Calculator', icon: '🔢', path: '../../app/calculator/index.html' },
+            { id: 2, title: 'Chess', icon: '♟️', path: '../../app/chess/index.html' },
+            { id: 3, title: 'Clicker', icon: '🖱️', path: '../../app/clicker/index.html' },
+            { id: 4, title: 'Files', icon: '📂', path: '../../app/files/index.html' },
+            { id: 5, title: 'Stopwatch', icon: '⌚', path: '../../app/stopwatch/index.html'},
+            { id: 6, title: 'Superbirdjumper3', icon: '🐦', path: '../../app/superbirdjumper3/index.html' },
+            { id: 7, title: 'Terminal', icon: '📦', path: '../../app/terminal/index.html'},
+            { id: 8, title: 'Tictactoe', icon: '🌀', path: '../../app/tictactoe/index.html'},
+            { id: 9, title: 'TV', icon: '📺', path: '../../app/tv/index.html'},
         ];
 
         const mergeTabs = (targetId) => {
@@ -273,4 +279,3 @@ createApp({
 </script>
 </body>
 </html>
-

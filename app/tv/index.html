@@ -1,0 +1,346 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width,initial-scale=1" />
+        <title>Avero TV | Premium Streaming</title>
+        <link rel="stylesheet" href="../../share/theme.css">
+        <script src="../../share/cdn.js"></script>
+        <style>
+            [v-cloak] { display: none; }
+
+            :root {
+                --accent: #6366f1;
+                --bg: #050505;
+                --surface: #111113;
+                --border: rgba(255,255,255,0.08);
+            }
+
+            body {
+                background: var(--bg);
+                color: #fff;
+                font-family: 'Inter', sans-serif;
+                overflow-x: hidden;
+            }
+
+            /* Premium Scrollbar */
+            ::-webkit-scrollbar { width: 8px; }
+            ::-webkit-scrollbar-track { background: var(--bg); }
+            ::-webkit-scrollbar-thumb { background: #333; border-radius: 10px; }
+
+            /* Hero Header */
+            .brand-hero {
+                height: 50vh;
+                background: radial-gradient(circle at center, #1e1b4b 0%, #050505 100%);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                border-radius: 40px;
+                margin-bottom: 3rem;
+                position: relative;
+                border: 1px solid var(--border);
+                overflow: hidden;
+            }
+
+            .brand-hero::after {
+                content: '';
+                position: absolute;
+                inset: 0;
+                background: url('https://www.transparenttextures.com/patterns/carbon-fibre.png');
+                opacity: 0.1;
+            }
+
+            .logo-text {
+                font-size: clamp(3rem, 12vw, 8rem);
+                font-weight: 900;
+                font-style: italic;
+                letter-spacing: -0.05em;
+                background: linear-gradient(to bottom, #fff 40%, #666);
+                -webkit-background-clip: text;
+                -webkit-text-fill-color: transparent;
+                filter: drop-shadow(0 20px 30px rgba(0,0,0,0.5));
+            }
+
+            /* Cards */
+            .series-card {
+                position: relative;
+                border-radius: 20px;
+                overflow: hidden;
+                background: var(--surface);
+                border: 1px solid var(--border);
+                transition: all 0.5s cubic-bezier(0.23, 1, 0.32, 1);
+            }
+
+            .series-card:hover {
+                transform: translateY(-10px) scale(1.02);
+                border-color: var(--accent);
+                box-shadow: 0 20px 40px rgba(0,0,0,0.6), 0 0 20px rgba(99, 102, 241, 0.2);
+            }
+
+            .card-overlay {
+                position: absolute;
+                inset: 0;
+                background: linear-gradient(to top, rgba(0,0,0,0.95) 0%, transparent 60%);
+                display: flex;
+                flex-direction: column;
+                justify-content: flex-end;
+                padding: 1.5rem;
+                opacity: 0.9;
+                transition: opacity 0.3s;
+            }
+
+            .medium-badge {
+                font-size: 9px;
+                font-weight: 900;
+                background: var(--accent);
+                color: white;
+                padding: 2px 8px;
+                border-radius: 4px;
+                width: fit-content;
+                text-transform: uppercase;
+                letter-spacing: 0.1em;
+                margin-bottom: 8px;
+            }
+
+            .rating-badge {
+                background: #eab308;
+                color: #000;
+                font-weight: 900;
+                padding: 2px 8px;
+                border-radius: 4px;
+                font-size: 10px;
+                text-transform: uppercase;
+            }
+
+            /* Controls Bar */
+            .controls-bar {
+                background: rgba(255,255,255,0.03);
+                backdrop-filter: blur(10px);
+                border-radius: 24px;
+                border: 1px solid var(--border);
+                padding: 1rem 1.5rem;
+                display: flex;
+                flex-wrap: wrap;
+                gap: 1.5rem;
+                align-items: center;
+                margin-bottom: 3rem;
+            }
+
+            .search-input {
+                background: rgba(0,0,0,0.3);
+                border: 1px solid var(--border);
+                border-radius: 12px;
+                padding: 0.75rem 1.25rem;
+                color: #fff;
+                outline: none;
+                flex-grow: 1;
+                transition: border-color 0.3s;
+            }
+
+            .search-input:focus { border-color: var(--accent); }
+
+            /* Buttons */
+            .upload-btn {
+                background: #fff;
+                color: #000;
+                font-weight: 900;
+                padding: 1.25rem 3rem;
+                border-radius: 100px;
+                text-transform: uppercase;
+                letter-spacing: 0.1em;
+                transition: all 0.3s;
+                box-shadow: 0 10px 30px rgba(255,255,255,0.1);
+            }
+
+            /* Video Container */
+            #video-player {
+                width: 100%;
+                aspect-ratio: 16/9;
+                background: #000;
+                border-radius: 30px;
+                overflow: hidden;
+                box-shadow: 0 30px 60px rgba(0,0,0,0.8);
+                border: 1px solid var(--border);
+            }
+
+            .back-btn {
+                display: inline-flex;
+                align-items: center;
+                gap: 8px;
+                color: #888;
+                font-weight: 800;
+                text-transform: uppercase;
+                font-size: 11px;
+                letter-spacing: 0.2em;
+                transition: color 0.3s;
+                margin-bottom: 2rem;
+            }
+
+            .back-btn:hover { color: #fff; }
+
+            pre {
+                background: #000;
+                padding: 1.5rem;
+                border-radius: 16px;
+                font-family: 'JetBrains Mono', monospace;
+                font-size: 13px;
+                color: #6366f1;
+                border: 1px solid #1a1a1a;
+            }
+        </style>
+    </head>
+    <body class="avero-app p-6 md:p-12">
+        <div id="app" v-cloak>
+
+            <div v-if="allSeries.length === 0" class="min-h-[80vh] flex flex-col items-center justify-center animate-fade-in">
+                <div class="brand-hero w-full max-w-6xl">
+                    <h1 class="logo-text">AVERO TV</h1>
+                </div>
+                <div class="flex flex-col items-center gap-6">
+                    <label class="upload-btn cursor-pointer">
+                        <span>Initialize Library</span>
+                        <input type="file" @change="handleLibraryUpload" class="hidden" accept=".json">
+                    </label>
+                    <button @click="showInfo = true" class="text-zinc-600 hover:text-indigo-400 text-[10px] font-black uppercase tracking-[0.3em] transition-colors">
+                        Protocol Guide
+                    </button>
+                </div>
+            </div>
+
+            <div v-if="allSeries.length > 0 && !activeSeries && !currentEpisode" class="max-w-7xl mx-auto">
+                <div class="flex justify-between items-end mb-8">
+                    <div>
+                        <p class="text-indigo-500 font-black uppercase text-[10px] tracking-[0.4em] mb-2">Streaming Now</p>
+                        <h2 class="text-5xl font-black italic tracking-tighter uppercase">Your Library</h2>
+                    </div>
+                    <button @click="allSeries = []" class="px-6 py-2 rounded-full border border-red-500/30 text-red-500 text-[10px] font-black uppercase tracking-widest hover:bg-red-500 hover:text-white transition-all">
+                        Eject
+                    </button>
+                </div>
+
+                <div class="controls-bar">
+                    <div class="flex gap-2">
+                        <button v-for="opt in filterOptions" @click="activeFilter = opt"
+                                :class="activeFilter === opt ? 'bg-indigo-600 text-white' : 'bg-white/5 text-zinc-500 hover:bg-white/10'"
+                                class="px-5 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all">
+                            {{ opt }}
+                        </button>
+                    </div>
+                    <input v-model="searchQuery" type="text" placeholder="Search library..." class="search-input">
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
+                    <div v-for="series in filteredLibrary" @click="openSeries(series)" class="series-card cursor-pointer group">
+                        <img :src="series.poster" class="w-full aspect-video object-cover">
+                        <div class="card-overlay">
+                            <div class="flex justify-between items-end">
+                                <div>
+                                    <div class="medium-badge">{{ series.medium || 'Video' }}</div>
+                                    <h3 class="text-3xl font-black italic uppercase tracking-tighter">{{ series.title }}</h3>
+                                </div>
+                                <div v-if="series.rating" class="rating-badge mb-2">★ {{ series.rating }}</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div v-if="activeSeries || currentEpisode" class="max-w-6xl mx-auto">
+                <button @click="activeSeries = null; currentEpisode = null" class="back-btn">
+                    <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M15 8a.5.5 0 0 0-.5-.5H2.707l3.147-3.146a.5.5 0 1 0-.708-.708l-4 4a.5.5 0 0 0 0 .708l4 4a.5.5 0 0 0 .708-.708L2.707 8.5H14.5A.5.5 0 0 0 15 8z"/></svg>
+                    Return to Library
+                </button>
+
+                <div v-if="currentEpisode" class="mb-12 animate-fade-in">
+                    <div id="video-player"></div>
+                    <div class="mt-8 flex justify-between items-start">
+                        <div>
+                            <p class="text-indigo-500 font-black uppercase text-[10px] tracking-[0.4em] mb-1">Now Playing</p>
+                            <h2 class="text-4xl font-black italic tracking-tighter uppercase">{{ currentEpisode.title }}</h2>
+                        </div>
+                        <a v-if="currentEpisode.download" :href="currentEpisode.download" target="_blank" class="bg-white/5 p-4 rounded-2xl hover:bg-white/10 transition">
+                            <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                        </a>
+                    </div>
+                </div>
+
+                <div v-if="activeSeries && !currentEpisode" class="animate-fade-in">
+                    <div class="flex flex-col md:flex-row gap-12 items-start mb-16">
+                        <img :src="activeSeries.poster" class="w-full md:w-1/3 rounded-3xl shadow-2xl border border-white/5">
+                        <div class="flex-1">
+                            <div class="flex items-center gap-4 mb-4">
+                                <span class="text-indigo-500 font-black uppercase text-xs tracking-widest">{{ activeSeries.year || '2026' }}</span>
+                                <span v-if="activeSeries.rating" class="rating-badge">★ {{ activeSeries.rating }}</span>
+                            </div>
+                            <h1 class="text-7xl font-black italic mb-6 tracking-tighter uppercase leading-none">{{ activeSeries.title }}</h1>
+                            <p class="text-xl text-zinc-400 leading-relaxed max-w-2xl font-medium mb-8">{{ activeSeries.description }}</p>
+
+                            <div class="flex gap-10 border-t border-white/5 pt-8">
+                                <div v-if="activeSeries.director">
+                                    <p class="text-[10px] text-zinc-500 font-black uppercase tracking-widest mb-1">Director</p>
+                                    <p class="font-bold uppercase tracking-tight">{{ activeSeries.director }}</p>
+                                </div>
+                                <div v-if="activeSeries.studio">
+                                    <p class="text-[10px] text-zinc-500 font-black uppercase tracking-widest mb-1">Studio</p>
+                                    <p class="font-bold uppercase tracking-tight">{{ activeSeries.studio }}</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <h3 class="text-xs font-black text-zinc-500 uppercase tracking-[0.5em] mb-8">Selection</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                        <div v-for="ep in activeSeries.episodes" class="group flex flex-col">
+                            <div @click="playEpisode(ep)" class="relative overflow-hidden rounded-2xl mb-4 border border-white/5 cursor-pointer">
+                                <img :src="ep.thumb" class="w-full aspect-video object-cover group-hover:scale-110 transition-transform duration-700">
+                                <div class="absolute inset-0 bg-indigo-600/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                    <div class="w-12 h-12 bg-white rounded-full flex items-center justify-center text-black">
+                                        <svg width="24" height="24" fill="currentColor" viewBox="0 0 16 16"><path d="m11.596 8.697-6.363 3.692c-.54.313-1.233-.066-1.233-.697V4.308c0-.63.692-1.01 1.233-.696l6.363 3.692a.802.802 0 0 1 0 1.393z"/></svg>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="flex justify-between items-start px-2">
+                                <div>
+                                    <p class="text-[10px] font-black text-zinc-500 uppercase tracking-widest mb-1">Part {{ ep.number }}</p>
+                                    <h4 class="text-lg font-bold group-hover:text-indigo-400 transition-colors">{{ ep.title }}</h4>
+                                </div>
+                                <a v-if="ep.download" :href="ep.download" target="_blank" class="mt-2 text-zinc-600 hover:text-white transition-colors">
+                                    <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div v-if="showInfo" class="modal-overlay" @click.self="showInfo = false">
+                <div class="modal-content">
+                    <div class="flex justify-between items-center mb-8">
+                        <h2 class="text-2xl font-black italic uppercase tracking-tighter">JSON Structure Protocol</h2>
+                        <button @click="showInfo = false" class="text-zinc-500 hover:text-white transition-colors">✕</button>
+                    </div>
+                    <pre>
+{
+  "library": [
+    {
+      "title": "Title",
+      "medium": "Movie / Mini-Series",
+      "rating": "8.5",
+      "year": "2024",
+      "director": "Name",
+      "studio": "Name",
+      "poster": "URL",
+      "episodes": [
+        { "number": 1, "title": "Part 1", "id": "YT_ID", "thumb": "URL", "download": "URL" }
+      ]
+    }
+  ]
+}</pre>
+                </div>
+            </div>
+        </div>
+        <script src="app.js"></script>
+        <script src="player.js"></script>
+    </body>
+</html>
+

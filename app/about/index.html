@@ -79,6 +79,18 @@
                     <h1 class="text-6xl sm:text-7xl font-black mb-8 tracking-tighter italic bg-gradient-to-r from-indigo-400 via-purple-400 to-blue-400 bg-clip-text text-transparent">
                         Hi, this is my website :D
                     </h1>
+
+                    <p class="text-xl text-zinc-400 mb-10 max-w-2xl mx-auto leading-relaxed">
+                        I am an author and creator currently working on my original series,
+                        The Third Formation. I also make games and web projects.
+                    </p>
+
+                    <button
+                        @click="openExternal('https://sites.google.com/view/codyferd')"
+                        class="avero-btn inline-flex items-center gap-3 py-5 px-12 text-lg !rounded-2xl bg-indigo-600 hover:bg-indigo-500 transition-colors"
+                    >
+                        <span>🎮 Luca's Games</span>
+                    </button>
                 </div>
 
                 <div v-if="activeTab === 'ttf'" class="avero-card p-12 animate-fade-in relative overflow-hidden">
@@ -90,7 +102,6 @@
 
                     <p class="ttf-description text-xl text-zinc-300 mb-10 leading-relaxed italic border-l-4 border-blue-500 pl-6">
                         A life spent in the gray dust of the mines ends the moment a silent tear in reality appears before Zeshi. When he reaches out to touch the impossible light, he shatters the walls of his confinement and escapes into a forest that feels suddenly, strangely alive. Now a fugitive, he must survive the cold wilderness while a rhythmic pulse of heat takes root beneath his skin. Every breath brings a new, terrifying vision of glowing threads and vibrating air that he cannot explain. He is no longer a prisoner, but the thing growing inside him ensures he will never be the same.
-                        <b>Temporary Note -- The button does not work due to security on Google Drive. Please click the button, and then copy the url in the new tab, "Blocked by Google Drive". Then open in a new tab. Then, it will not be blocked.</b>
                     </p>
 
                     <button
@@ -169,13 +180,10 @@
                     const tabs = ["about", "online", "cats", "loaf", "ttf"];
 
                     const openExternal = (url) => {
-                        // Directly opens the window.
-                        // Note: This relies on the parent iframe having the proper sandbox permissions.
                         const win = window.open(url, '_blank', 'noopener,noreferrer');
                         if (win) {
                             win.focus();
                         } else {
-                            // Fallback if the popup is blocked by the browser
                             console.error("Popup blocked. Ensure Avero Desktop allows popups to escape sandbox.");
                         }
                     };
