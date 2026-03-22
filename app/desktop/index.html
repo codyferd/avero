@@ -5,71 +5,42 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Avero Desktop</title>
     <link rel="stylesheet" href="../../share/theme.css">
+    <script src="proxy.js"></script>
     <script src="../../share/cdn.js"></script>
     <style>
         [v-cloak] { display: none; }
         body { background: #000; margin: 0; }
 
-        /* Updated: Fully black title bar */
         .ui-solid { background: #000000; border-bottom: 1px solid var(--avero-border); }
 
-        /* Loading Screen Styles */
         #loading-screen {
-            position: fixed;
-            inset: 0;
-            background: #000000;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            z-index: 9999;
-            transition: opacity 0.5s ease;
+            position: fixed; inset: 0; background: #000000;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            z-index: 9999; transition: opacity 0.5s ease;
         }
 
         .avero-logo-loader {
-            width: 80px;
-            height: 80px;
-            background: #000000;
-            border-radius: 16px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            width: 80px; height: 80px; background: #000000; border-radius: 16px;
+            display: flex; align-items: center; justify-content: center;
             border: 1px solid rgba(255,255,255,0.1);
             box-shadow: 0 0 40px rgba(79, 70, 229, 0.2);
             animation: pulse 2s infinite ease-in-out;
-            overflow: hidden;
-            padding: 12px;
-            box-sizing: border-box;
+            overflow: hidden; padding: 12px; box-sizing: border-box;
         }
 
-        .avero-logo-loader img, .start-logo-img {
-            max-width: 100%;
-            max-height: 100%;
-            object-fit: contain;
-            display: block;
-        }
+        .avero-logo-loader img, .start-logo-img { max-width: 100%; max-height: 100%; object-fit: contain; display: block; }
 
-        /* Start Button Custom Style */
         .avero-start-btn {
-            background: #000000 !important;
-            border: 1px solid rgba(255,255,255,0.1) !important;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            overflow: hidden;
-            padding: 4px !important;
+            background: #000000 !important; border: 1px solid rgba(255,255,255,0.1) !important;
+            display: flex; align-items: center; justify-content: center; overflow: hidden; padding: 4px !important;
         }
-        .avero-start-btn:hover {
-            border-color: var(--avero-accent) !important;
-            box-shadow: 0 0 15px rgba(79, 70, 229, 0.3);
-        }
+        .avero-start-btn:hover { border-color: var(--avero-accent) !important; box-shadow: 0 0 15px rgba(79, 70, 229, 0.3); }
 
         @keyframes pulse {
             0%, 100% { transform: scale(1); opacity: 1; }
             50% { transform: scale(1.05); opacity: 0.8; }
         }
 
-        /* Desktop Grid Engine */
         .desktop-grid { display: grid; gap: 2px; height: 100%; width: 100%; background: #1a1a20; }
         .grid-1 { grid-template-columns: 1fr; }
         .grid-2 { grid-template-columns: 1fr 1fr; }
@@ -84,7 +55,8 @@
         .nav-btn:hover { background: var(--avero-accent); color: white; }
 
         .tab-drop-zone { background: var(--avero-accent-glow) !important; border-bottom: 2px solid var(--avero-accent) !important; }
-        .search-small { background: #16161e; border: 1px solid #2d2d3d; border-radius: 8px; padding: 8px 12px; font-size: 11px; color: white; width: 100%; outline: none; }
+        .search-small { background: #16161e; border: 1px solid #2d2d3d; border-radius: 8px; padding: 8px 12px; font-size: 11px; color: white; width: 100%; outline: none; transition: border-color 0.2s; }
+        .search-small:focus { border-color: #6366f1; }
     </style>
 </head>
 <body class="overflow-hidden text-slate-100 font-sans select-none avero-app">
@@ -129,9 +101,17 @@
 
     <transition name="fade">
         <div v-if="isDrawerOpen" class="absolute top-12 left-0 w-72 h-[calc(100vh-3.1rem)] ui-solid p-5 z-[1000] shadow-2xl border-r">
-            <div class="mb-6">
-                <input v-model="urlInput" @keyup.enter="launchUrl" class="search-small" placeholder="Search or URL...">
+            <div class="mb-4">
+                <p class="text-[8px] font-black text-zinc-600 uppercase tracking-widest mb-2">Direct / Web Search</p>
+                <input v-model="urlInput" @keyup.enter="launchUrl" class="search-small" placeholder="URL or Search...">
             </div>
+
+            <div class="mb-6">
+                <p class="text-[8px] font-black text-indigo-500 uppercase tracking-widest mb-2">Avero Proxy Linker</p>
+                <input v-model="proxyInput" @keyup.enter="launchProxyUrl" class="search-small !border-indigo-900/50" placeholder="Proxy Search...">
+                <p class="text-[7px] text-zinc-700 mt-2 italic">Submitting again cycles through blocked proxies.</p>
+            </div>
+
             <div class="grid grid-cols-2 gap-2">
                 <div v-for="app in appList" :key="app.id" @click="launchNewDesktop(app)"
                      class="avero-card flex flex-col items-center gap-2 p-3 cursor-pointer transition-all hover:bg-[#1a1a24] !rounded-xl !bg-[#111] border border-white/5">
@@ -166,116 +146,6 @@
     </main>
 </div>
 
-<script>
-const { createApp, ref, computed, onMounted } = Vue;
-
-createApp({
-    setup() {
-        const isLoading = ref(true);
-        const currentTime = ref('');
-        const currentDate = ref('');
-        const isDrawerOpen = ref(false);
-        const urlInput = ref('');
-        const desktops = ref([]);
-        const activeDesktopId = ref(null);
-
-        const draggedTabId = ref(null);
-        const dragOverId = ref(null);
-
-        const appList = [
-            { id: 0, title: 'About', icon: '👤', path: '../../app/about/index.html' },
-            { id: 1, title: 'Calculator', icon: '🔢', path: '../../app/calculator/index.html' },
-            { id: 2, title: 'Chess', icon: '♟️', path: '../../app/chess/index.html' },
-            { id: 3, title: 'Clicker', icon: '🖱️', path: '../../app/clicker/index.html' },
-            { id: 4, title: 'Files', icon: '📂', path: '../../app/files/index.html' },
-            { id: 5, title: 'Stopwatch', icon: '⌚', path: '../../app/stopwatch/index.html'},
-            { id: 6, title: 'Superbirdjumper3', icon: '🐦', path: '../../app/superbirdjumper3/index.html' },
-            { id: 7, title: 'Terminal', icon: '📦', path: '../../app/terminal/index.html'},
-            { id: 8, title: 'Tictactoe', icon: '🌀', path: '../../app/tictactoe/index.html'},
-            { id: 9, title: 'TV', icon: '📺', path: '../../app/tv/index.html'},
-        ];
-
-        const mergeTabs = (targetId) => {
-            if (draggedTabId.value === targetId) return;
-            const sourceIdx = desktops.value.findIndex(d => d.id === draggedTabId.value);
-            const targetIdx = desktops.value.findIndex(d => d.id === targetId);
-
-            if (sourceIdx !== -1 && targetIdx !== -1) {
-                const sourceDesktop = desktops.value[sourceIdx];
-                const targetDesktop = desktops.value[targetIdx];
-                if (targetDesktop.apps.length + sourceDesktop.apps.length <= 4) {
-                    targetDesktop.apps.push(...sourceDesktop.apps);
-                    targetDesktop.name = "Split View";
-                    desktops.value.splice(sourceIdx, 1);
-                    activeDesktopId.value = targetId;
-                }
-            }
-            dragOverId.value = null;
-            draggedTabId.value = null;
-        };
-
-        const launchUrl = () => {
-            let query = urlInput.value.trim();
-            if (!query) return;
-            let finalUrl = query.includes('.') && !query.includes(' ') ? (query.startsWith('http') ? query : `https://${query}`) : `https://www.google.com/search?q=${encodeURIComponent(query)}&igu=1`;
-            const id = Date.now();
-            desktops.value.push({ id, name: 'Web', apps: [{ title: 'Browser', icon: '🌐', path: finalUrl, instanceId: id }] });
-            activeDesktopId.value = id;
-            urlInput.value = "";
-            isDrawerOpen.value = false;
-        };
-
-        const launchNewDesktop = (app) => {
-            const id = Date.now();
-            desktops.value.push({ id, name: app.title, apps: [{ ...app, instanceId: id }] });
-            activeDesktopId.value = id;
-            isDrawerOpen.value = false;
-        };
-
-        const activeDesktop = computed(() => desktops.value.find(d => d.id === activeDesktopId.value));
-
-        const closeApp = (instanceId) => {
-            activeDesktop.value.apps = activeDesktop.value.apps.filter(a => a.instanceId !== instanceId);
-            if (activeDesktop.value.apps.length === 0) closeDesktop(activeDesktop.value.id);
-        };
-
-        const closeDesktop = (id) => {
-            desktops.value = desktops.value.filter(d => d.id !== id);
-            if (activeDesktopId.value === id) activeDesktopId.value = desktops.value.length ? desktops.value[0].id : null;
-        };
-
-        const navAction = (id, action) => {
-            const frame = document.getElementById('frame-' + id);
-            if (!frame) return;
-            try {
-                if (action === 'reload') frame.src = frame.src;
-                if (action === 'back') frame.contentWindow.history.back();
-                if (action === 'forward') frame.contentWindow.history.forward();
-            } catch (e) {}
-        };
-
-        const updateClock = () => {
-            const now = new Date();
-            currentTime.value = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
-            currentDate.value = now.toISOString().split('T')[0];
-        };
-
-        onMounted(() => {
-            updateClock();
-            setInterval(updateClock, 1000);
-
-            setTimeout(() => {
-                isLoading.value = false;
-            }, 800);
-        });
-
-        return {
-            isLoading, appList, desktops, activeDesktopId, activeDesktop, isDrawerOpen,
-            launchNewDesktop, urlInput, currentTime, currentDate, launchUrl,
-            closeDesktop, closeApp, navAction, draggedTabId, dragOverId, mergeTabs
-        };
-    }
-}).mount('#app');
-</script>
+<script src="app.js"></script>
 </body>
 </html>

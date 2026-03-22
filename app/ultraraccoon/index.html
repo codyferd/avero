@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Ultraraccoon</title>
+    <script src="../../share/cdn.js"></script> <style>
+        body { margin: 0; background: #000; display: flex; justify-content: center; align-items: center; height: 100vh; overflow: hidden; }
+        canvas { border: 4px solid #333; border-radius: 12px; box-shadow: 0 0 50px rgba(0,0,0,0.5); }
+    </style>
+</head>
+<body>
+    <div id="game-container"></div>
+
+    <script src="components.js"></script>
+    <script src="utils.js"></script>
+    <script src="raccoon.js"></script>
+
+
+    <script src="level1.js"></script>
+
+    <script src="app.js"></script>
+
+
+    <script>
+        // Avero Bridge: Pause the game if the tab is hidden
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden) {
+                // Access the game instance from app.js to pause
+                if (typeof game !== 'undefined') game.loop.pause();
+            } else {
+                if (typeof game !== 'undefined') game.loop.resume();
+            }
+        });
+    </script>
+</body>
+</html>

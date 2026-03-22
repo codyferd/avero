@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Avero Player</title>
+    <link rel="stylesheet" href="../../share/theme.css">
+    <script src="../../share/cdn.js"></script>
+    <style>
+        [v-cloak] { display: none; }
+        body { background: #000; color: #fff; font-family: 'Inter', sans-serif; height: 100vh; margin: 0; overflow: hidden; }
+
+        .player-container { height: 100vh; display: flex; flex-direction: column; padding: 40px; box-sizing: border-box; }
+
+        .viewport {
+            flex-grow: 1; width: 100%; background: #070707;
+            border: 1px solid #1a1a1a; border-radius: 32px; overflow: hidden;
+            display: flex; align-items: center; justify-content: center; position: relative;
+            box-shadow: 0 40px 100px rgba(0,0,0,0.5);
+        }
+
+        /* Media Elements */
+        video, img { max-width: 100%; max-height: 100%; object-fit: contain; animation: fade-in 0.5s ease; }
+        audio { width: 80%; filter: invert(1); } /* Dark theme audio bars */
+
+        @keyframes fade-in { from { opacity: 0; transform: scale(0.98); } to { opacity: 1; transform: scale(1); } }
+
+        .drop-zone {
+            position: absolute; inset: 0; display: flex; flex-direction: column;
+            align-items: center; justify-content: center; cursor: pointer; z-index: 5;
+        }
+
+        .btn-main {
+            background: #fff; color: #000; font-weight: 900; padding: 14px 32px;
+            border-radius: 100px; text-transform: uppercase; font-size: 11px;
+            letter-spacing: 0.1em; cursor: pointer; border: none;
+        }
+
+        .file-input { display: none; }
+
+        .media-footer {
+            height: 100px; display: flex; justify-content: space-between; align-items: center;
+        }
+
+        .type-tag {
+            background: rgba(255,255,255,0.05); padding: 4px 12px; border-radius: 4px;
+            font-size: 10px; font-weight: 800; color: #6366f1;
+        }
+    </style>
+</head>
+<body>
+    <div id="app" v-cloak class="player-container" @dragover.prevent @drop.prevent="handleDrop">
+
+        <div class="mb-8 flex justify-between items-end">
+            <div>
+                <h1 class="text-6xl font-black italic tracking-tighter uppercase leading-none truncate max-w-[700px]">
+                    {{ fileName || 'Avero Player' }}
+                </h1>
+                <div class="flex items-center gap-3 mt-3">
+                    <span v-if="fileCategory" class="type-tag">{{ fileCategory }}</span>
+                    <p class="text-[9px] text-zinc-600 font-bold tracking-[0.4em] uppercase">
+                        Avero OS // File Relay v3.0
+                    </p>
+                </div>
+            </div>
+            <button v-if="mediaUrl" @click="resetPlayer" class="btn-main !bg-zinc-900 !text-white text-[10px]">Eject</button>
+        </div>
+
+        <div class="viewport">
+            <div v-if="!mediaUrl" class="drop-zone" @click="$refs.fileInput.click()">
+                <p class="text-zinc-800 font-black text-xs uppercase tracking-[1em] mb-6">Drop Media Anywhere</p>
+                <button class="btn-main">Open File Explorer</button>
+            </div>
+
+            <video v-if="fileCategory === 'VIDEO'" :src="mediaUrl" controls autoplay></video>
+
+            <img v-if="fileCategory === 'IMAGE'" :src="mediaUrl" alt="Preview">
+
+            <div v-if="fileCategory === 'AUDIO'" class="flex flex-col items-center w-full">
+                <div class="w-24 h-24 bg-zinc-900 rounded-full mb-8 flex items-center justify-center animate-pulse">
+                    <div class="w-12 h-12 bg-indigo-500 rounded-full"></div>
+                </div>
+                <audio :src="mediaUrl" controls autoplay></audio>
+            </div>
+        </div>
+
+        <input type="file" ref="fileInput" class="file-input" @change="handleFile" accept="image/*,video/*,audio/*">
+
+        <div class="media-footer">
+            <span class="text-[9px] font-black text-zinc-800 uppercase tracking-widest">
+                {{ rawType || 'No Active Protocol' }}
+            </span>
+            <div class="flex gap-2">
+                <div class="w-1 h-1 bg-zinc-800 rounded-full"></div>
+                <div class="w-1 h-1 bg-zinc-800 rounded-full"></div>
+                <div class="w-12 h-1 bg-zinc-800 rounded-full"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const { createApp, ref } = Vue;
+        createApp({
+            setup() {
+                const mediaUrl = ref(null);
+                const fileName = ref("");
+                const fileCategory = ref("");
+                const rawType = ref("");
+
+                const processFile = (file) => {
+                    if (!file) return;
+                    if (mediaUrl.value) URL.revokeObjectURL(mediaUrl.value);
+
+                    fileName.value = file.name;
+                    rawType.value = file.type;
+
+                    if (file.type.startsWith('image/')) fileCategory.value = "IMAGE";
+                    else if (file.type.startsWith('video/')) fileCategory.value = "VIDEO";
+                    else if (file.type.startsWith('audio/')) fileCategory.value = "AUDIO";
+                    else fileCategory.value = "UNKNOWN";
+
+                    mediaUrl.value = URL.createObjectURL(file);
+                };
+
+                const handleFile = (e) => processFile(e.target.files[0]);
+
+                const handleDrop = (e) => {
+                    const file = e.dataTransfer.files[0];
+                    processFile(file);
+                };
+
+                const resetPlayer = () => {
+                    if (mediaUrl.value) URL.revokeObjectURL(mediaUrl.value);
+                    mediaUrl.value = null;
+                    fileName.value = "";
+                    fileCategory.value = "";
+                    rawType.value = "";
+                };
+
+                return { mediaUrl, fileName, fileCategory, rawType, handleFile, handleDrop, resetPlayer };
+            }
+        }).mount('#app');
+    </script>
+</body>
+</html>
+
