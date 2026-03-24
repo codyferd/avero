@@ -57,6 +57,18 @@
         .tab-drop-zone { background: var(--avero-accent-glow) !important; border-bottom: 2px solid var(--avero-accent) !important; }
         .search-small { background: #16161e; border: 1px solid #2d2d3d; border-radius: 8px; padding: 8px 12px; font-size: 11px; color: white; width: 100%; outline: none; transition: border-color 0.2s; }
         .search-small:focus { border-color: #6366f1; }
+
+        /* Custom Scrollbar for App Drawer */
+        .app-drawer {
+            overflow-y: auto;
+            overflow-x: hidden;
+            scrollbar-width: thin;
+            scrollbar-color: #312e81 #000000;
+        }
+        .app-drawer::-webkit-scrollbar { width: 4px; }
+        .app-drawer::-webkit-scrollbar-track { background: #000000; }
+        .app-drawer::-webkit-scrollbar-thumb { background: #312e81; border-radius: 10px; }
+        .app-drawer::-webkit-scrollbar-thumb:hover { background: #4f46e5; }
     </style>
 </head>
 <body class="overflow-hidden text-slate-100 font-sans select-none avero-app">
@@ -100,7 +112,7 @@
     </header>
 
     <transition name="fade">
-        <div v-if="isDrawerOpen" class="absolute top-12 left-0 w-72 h-[calc(100vh-3.1rem)] ui-solid p-5 z-[1000] shadow-2xl border-r">
+        <div v-if="isDrawerOpen" class="app-drawer absolute top-12 left-0 w-72 h-[calc(100vh-3.1rem)] ui-solid p-5 z-[1000] shadow-2xl border-r">
             <div class="mb-4">
                 <p class="text-[8px] font-black text-zinc-600 uppercase tracking-widest mb-2">Direct / Web Search</p>
                 <input v-model="urlInput" @keyup.enter="launchUrl" class="search-small" placeholder="URL or Search...">
@@ -112,7 +124,7 @@
                 <p class="text-[7px] text-zinc-700 mt-2 italic">Submitting again cycles through blocked proxies.</p>
             </div>
 
-            <div class="grid grid-cols-2 gap-2">
+            <div class="grid grid-cols-2 gap-2 pb-10">
                 <div v-for="app in appList" :key="app.id" @click="launchNewDesktop(app)"
                      class="avero-card flex flex-col items-center gap-2 p-3 cursor-pointer transition-all hover:bg-[#1a1a24] !rounded-xl !bg-[#111] border border-white/5">
                     <span class="text-2xl">{{ app.icon }}</span>
@@ -149,3 +161,4 @@
 <script src="app.js"></script>
 </body>
 </html>
+
