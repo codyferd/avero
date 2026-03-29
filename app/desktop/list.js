@@ -1,0 +1,16 @@
+const appList = [
+    { title: 'About', icon: '👤', path: '../../app/about/index.html' },
+    { title: 'Calculator', icon: '🔢', path: '../../app/calculator/index.html' },
+    { title: 'Chess', icon: '♟️', path: '../../app/chess/index.html' },
+    { title: 'Clicker', icon: '🖱️', path: '../../app/clicker/index.html' },
+    { title: 'Files', icon: '📂', path: '../../app/files/index.html' },
+    { title: 'HTML', icon: '</>', path: '../../app/html/index.html' },
+    { title: 'Maps', icon: '🗺️', path: '../../app/maps/index.html' },
+    { title: 'Player', icon: '🎬', path: '../../app/player/index.html' },
+    { title: 'Stopwatch', icon: '⌚', path: '../../app/stopwatch/index.html'},
+    { title: 'Superbirdjumper3', icon: '🐦', path: '../../app/superbirdjumper3/index.html' },
+    { title: 'Terminal', icon: '📦', path: '../../app/terminal/index.html'},
+    { title: 'Tictactoe', icon: '🌀', path: '../../app/tictactoe/index.html'},
+    { title: 'Ultraraccoon', icon: '🦝', path: '../../app/ultraraccoon/index.html'},
+    { title: 'Weather', icon: '⛅', path: '../../app/weather/index.html'},
+];

@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Avero Weather</title>
+    <script src="../../share/cdn.js"></script>
+    <style>
+        [v-cloak] { display: none; }
+        body { background: #000; color: #fff; margin: 0; font-family: 'Inter', sans-serif; overflow-x: hidden; }
+
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 24px;
+            backdrop-filter: blur(12px);
+            transition: all 0.3s ease;
+        }
+        .glass-panel:hover { border-color: var(--avero-accent); background: rgba(255,255,255,0.05); }
+
+        .unit-select {
+            background: #111; border: 1px solid #333; color: white;
+            font-size: 10px; padding: 6px 10px; border-radius: 8px;
+            text-transform: uppercase; font-weight: 900; outline: none; cursor: pointer;
+        }
+
+        .search-input {
+            background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 12px; padding: 12px 16px; width: 100%; color: white; outline: none;
+        }
+        .search-input:focus { border-color: var(--avero-accent); background: rgba(255,255,255,0.08); }
+
+        .stat-label { font-size: 8px; text-transform: uppercase; letter-spacing: 0.15em; opacity: 0.4; margin-bottom: 4px; font-weight: 900; }
+        .stat-value { font-size: 16px; font-weight: 700; }
+
+        .forecast-row { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 15px; scrollbar-width: none; }
+        .forecast-row::-webkit-scrollbar { display: none; }
+
+        .forecast-day {
+            min-width: 95px; padding: 15px; background: rgba(255,255,255,0.02);
+            border-radius: 20px; text-align: center; border: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .accent-glow { color: var(--avero-accent); text-shadow: 0 0 15px rgba(99, 102, 241, 0.4); }
+        .thermal-tag { font-size: 10px; margin-top: 4px; display: block; filter: saturate(1.5); }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-ui { animation: fadeIn 0.6s cubic-bezier(0.2, 1, 0.2, 1); }
+    </style>
+</head>
+<body class="p-4 md:p-8">
+
+<div id="app" v-cloak class="max-w-4xl mx-auto">
+    <header class="flex items-center justify-between mb-8 gap-4">
+        <div class="flex-1">
+            <input v-model="cityInput" @keyup.enter="getWeatherByCity" class="search-input" placeholder="Search location...">
+        </div>
+        <select v-model="unit" class="unit-select">
+            <option value="K">Kelvin (K)</option>
+            <option value="C">Celsius (°C)</option>
+            <option value="F">Fahrenheit (°F)</option>
+        </select>
+    </header>
+
+    <div v-if="loading" class="flex flex-col items-center justify-center h-64 opacity-20">
+        <div class="text-3xl mb-4 animate-pulse">📡</div>
+        <div class="text-[10px] font-black uppercase tracking-[0.4em]">Atmospheric Sync</div>
+    </div>
+
+    <div v-else-if="weather" class="animate-ui">
+        <div class="glass-panel p-8 mb-6 flex flex-col md:flex-row justify-between items-center text-center md:text-left">
+            <div>
+                <p class="text-[10px] font-black uppercase tracking-[0.4em] opacity-40 mb-1">Current</p>
+                <h1 class="text-5xl font-black mb-1 tracking-tighter">{{ cityName }}</h1>
+                <p class="text-xl opacity-60 font-medium">{{ weatherDesc }}</p>
+                <span class="thermal-tag text-lg mt-2">{{ getThermalEmoji(weather.current.temperature_2m) }}</span>
+            </div>
+            <div class="mt-6 md:mt-0">
+                <span class="text-8xl font-black accent-glow leading-none">{{ convertTemp(weather.current.temperature_2m) }}°</span>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+            <div class="glass-panel p-4 text-center">
+                <p class="stat-label">Humidity</p>
+                <p class="stat-value">{{ weather.current.relative_humidity_2m }}%</p>
+            </div>
+            <div class="glass-panel p-4 text-center">
+                <p class="stat-label">Wind Velocity</p>
+                <p class="stat-value">{{ weather.current.wind_speed_10m }} <span class="text-[10px]">km/h</span></p>
+            </div>
+            <div class="glass-panel p-4 text-center">
+                <p class="stat-label">UV Index</p>
+                <p class="stat-value">{{ weather.daily.uv_index_max[0] }}</p>
+            </div>
+            <div class="glass-panel p-4 text-center">
+                <p class="stat-label">Precipitation</p>
+                <p class="stat-value">{{ weather.daily.precipitation_probability_max[0] }}%</p>
+            </div>
+        </div>
+
+        <h2 class="text-[10px] font-black uppercase tracking-[0.4em] opacity-30 mb-4 ml-2">7-Day Trajectory</h2>
+        <div class="forecast-row">
+            <div v-for="(temp, i) in weather.daily.temperature_2m_max" :key="i" class="forecast-day">
+                <p class="text-[10px] font-black opacity-40 uppercase mb-2">{{ formatDate(weather.daily.time[i]) }}</p>
+                <div class="text-xl font-bold mb-1">{{ convertTemp(temp) }}°</div>
+                <div class="text-[9px] opacity-30 mb-2">{{ convertTemp(weather.daily.temperature_2m_min[i]) }}°</div>
+                <span class="thermal-tag">{{ getThermalEmoji(temp) }}</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+const { createApp, ref, onMounted } = Vue;
+
+createApp({
+    setup() {
+        const loading = ref(true);
+        const weather = ref(null);
+        const cityName = ref('Harleysville');
+        const cityInput = ref('');
+        const weatherDesc = ref('Searching...');
+        const unit = ref('K');
+
+        const interpretCode = (code) => {
+            const map = { 0: 'Clear', 1: 'Mainly Clear', 2: 'Cloudy', 3: 'Overcast', 45: 'Fog', 61: 'Rain', 71: 'Snow', 95: 'Storm' };
+            return map[code] || 'Atmospheric Event';
+        };
+
+        const getThermalEmoji = (celsius) => {
+            const k = celsius + 273.15;
+            if (k >= 310) return '🔥🔥🔥';
+            if (k >= 300) return '🔥🔥';
+            if (k >= 290) return '🔥';
+            if (k >= 280) return '❄️';
+            if (k >= 270) return '❄️❄️';
+            return '❄️❄️❄️';
+        };
+
+        const convertTemp = (c) => {
+            if (unit.value === 'K') return (c + 273.15).toFixed(1);
+            if (unit.value === 'F') return ((c * 9/5) + 32).toFixed(0);
+            return Math.round(c);
+        };
+
+        const fetchWeather = async (lat, lon) => {
+            loading.value = true;
+            try {
+                const params = `current=temperature_2m,relative_humidity_2m,weather_code,wind_speed_10m&daily=weather_code,temperature_2m_max,temperature_2m_min,uv_index_max,precipitation_probability_max&timezone=auto`;
+                const res = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&${params}`);
+                weather.value = await res.json();
+                weatherDesc.value = interpretCode(weather.value.current.weather_code);
+            } catch (e) { console.error("Link Failure"); }
+            finally { loading.value = false; }
+        };
+
+        const getWeatherByCity = async () => {
+            if (!cityInput.value) return;
+            loading.value = true;
+            try {
+                const res = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(cityInput.value)}&count=1`);
+                const data = await res.json();
+                if (data.results?.[0]) {
+                    const l = data.results[0];
+                    cityName.value = l.name;
+                    await fetchWeather(l.latitude, l.longitude);
+                }
+            } catch (e) { alert("City not found"); }
+            finally { cityInput.value = ''; loading.value = false; }
+        };
+
+        const formatDate = (d) => new Intl.DateTimeFormat('en-US', { weekday: 'short' }).format(new Date(d));
+
+        onMounted(() => fetchWeather(40.2798, -75.3855));
+
+        return {
+            loading, weather, cityName, cityInput, weatherDesc, unit,
+            getWeatherByCity, formatDate, convertTemp, getThermalEmoji
+        };
+    }
+}).mount('#app');
+</script>
+</body>
+</html>
+

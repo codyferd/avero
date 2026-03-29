@@ -6,148 +6,162 @@ createApp({
         const currentTime = ref('');
         const currentDate = ref('');
         const isDrawerOpen = ref(false);
+        const isSplitMenuOpen = ref(false); // New state
         const urlInput = ref('');
-        const proxyInput = ref('');
-        const proxyIndex = ref(0);
+        const bgUrl = ref("background.avif");
         const desktops = ref([]);
         const activeDesktopId = ref(null);
-        const bgUrl = ref("background.avif");
+        const focusedAppId = ref(null);
 
-        const draggedTabId = ref(null);
-        const dragOverId = ref(null);
+        // Filter out the active desktop for the split menu
+        const otherDesktops = computed(() =>
+        desktops.value.filter(d => d.id !== activeDesktopId.value)
+        );
 
-        const appList = [
-            { id: 0, title: 'About', icon: '👤', path: '../../app/about/index.html' },
-            { id: 1, title: 'Calculator', icon: '🔢', path: '../../app/calculator/index.html' },
-            { id: 2, title: 'Chess', icon: '♟️', path: '../../app/chess/index.html' },
-            { id: 3, title: 'Clicker', icon: '🖱️', path: '../../app/clicker/index.html' },
-            { id: 4, title: 'Files', icon: '📂', path: '../../app/files/index.html' },
-            { id: 5, title: 'HTML', icon: '</>', path: '../../app/html/index.html' },
-            { id: 6, title: 'Player', icon: '🎬', path: '../../app/player/index.html' },
-            { id: 7, title: 'Stopwatch', icon: '⌚', path: '../../app/stopwatch/index.html'},
-            { id: 8, title: 'Superbirdjumper3', icon: '🐦', path: '../../app/superbirdjumper3/index.html' },
-            { id: 9, title: 'Terminal', icon: '📦', path: '../../app/terminal/index.html'},
-            { id: 10, title: 'Tictactoe', icon: '🌀', path: '../../app/tictactoe/index.html'},
-            { id: 11, title: 'Ultraraccoon', icon: '🦝', path: '../../app/ultraraccoon/index.html'},
-        ];
-
-        const handleSystemMessages = (event) => {
-            const msg = event.data;
-            if (!msg || !msg.type) return;
-
-            if (msg.type === 'AVERO_OPEN_TAB') {
-                const id = Date.now();
-                const blob = new Blob([msg.content], { type: 'text/html' });
-                const blobUrl = URL.createObjectURL(blob);
-                desktops.value.push({
-                    id,
-                    name: msg.title || 'Live Tab',
-                    apps: [{ title: msg.title || 'Preview', icon: '📄', path: blobUrl, instanceId: id }]
-                });
-                activeDesktopId.value = id;
-            }
-            if (msg.type === 'AVERO_SET_WALLPAPER') {
-                bgUrl.value = msg.url;
+        const smartClose = () => {
+            if (focusedAppId.value && activeDesktopId.value) {
+                closeApp(focusedAppId.value, activeDesktopId.value);
+            } else if (activeDesktopId.value) {
+                closeDesktop(activeDesktopId.value);
             }
         };
 
-        const mergeTabs = (targetId) => {
-            if (draggedTabId.value === targetId) return;
-            const sourceIdx = desktops.value.findIndex(d => d.id === draggedTabId.value);
-            const targetIdx = desktops.value.findIndex(d => d.id === targetId);
-
-            if (sourceIdx !== -1 && targetIdx !== -1) {
-                const sourceDesktop = desktops.value[sourceIdx];
-                const targetDesktop = desktops.value[targetIdx];
-                if (targetDesktop.apps.length + sourceDesktop.apps.length <= 4) {
-                    targetDesktop.apps.push(...sourceDesktop.apps);
-                    targetDesktop.name = "Split View";
-                    desktops.value.splice(sourceIdx, 1);
-                    activeDesktopId.value = targetId;
-                }
+        const smartRefresh = () => {
+            if (focusedAppId.value) {
+                navAction(focusedAppId.value, 'reload');
+            } else if (activeDesktopId.value) {
+                const d = desktops.value.find(x => x.id === activeDesktopId.value);
+                if (d) d.apps.forEach(a => navAction(a.instanceId, 'reload'));
             }
-            dragOverId.value = null;
-            draggedTabId.value = null;
+        };
+
+        const launchNewDesktop = (app) => {
+            const id = Date.now();
+            desktops.value.push({
+                id,
+                name: app.title,
+                apps: [{ ...app, instanceId: id }]
+            });
+            activeDesktopId.value = id;
+            focusedAppId.value = id;
+            isDrawerOpen.value = false;
         };
 
         const launchUrl = () => {
             let query = urlInput.value.trim();
             if (!query) return;
-            let finalUrl = query.includes('.') && !query.includes(' ') ? (query.startsWith('http') ? query : `https://${query}`) : `https://www.google.com/search?q=${encodeURIComponent(query)}&igu=1`;
-            const id = Date.now();
-            desktops.value.push({ id, name: 'Web', apps: [{ title: 'Browser', icon: '🌐', path: finalUrl, instanceId: id }] });
-            activeDesktopId.value = id;
-            urlInput.value = "";
-            isDrawerOpen.value = false;
-        };
-
-        const launchProxyUrl = () => {
-            let query = proxyInput.value.trim();
-            if (!query) return;
-
-            const proxyList = window.proxies || ["https://www.google.com/search?q="];
-            const currentProxy = proxyList[proxyIndex.value % proxyList.length];
-            const finalUrl = `${currentProxy}${encodeURIComponent(query)}`;
+            let finalUrl = query.includes('.') && !query.includes(' ')
+            ? (query.startsWith('http') ? query : `https://${query}`)
+            : `https://www.google.com/search?q=${encodeURIComponent(query)}&igu=1`;
 
             const id = Date.now();
             desktops.value.push({
                 id,
-                name: 'Proxy Web',
-                apps: [{ title: 'Proxy Browser', icon: '🛡️', path: finalUrl, instanceId: id }]
+                name: 'Web',
+                apps: [{ title: 'Browser', icon: '🌐', path: finalUrl, instanceId: id }]
             });
-
             activeDesktopId.value = id;
-            proxyIndex.value++;
+            focusedAppId.value = id;
+            urlInput.value = "";
             isDrawerOpen.value = false;
         };
 
-        const launchNewDesktop = (app) => {
-            const id = Date.now();
-            desktops.value.push({ id, name: app.title, apps: [{ ...app, instanceId: id }] });
-            activeDesktopId.value = id;
-            isDrawerOpen.value = false;
+        const mergeTabs = (sourceId, targetId) => {
+            const sIdx = desktops.value.findIndex(d => d.id === sourceId);
+            const tIdx = desktops.value.findIndex(d => d.id === targetId);
+
+            if (sIdx !== -1 && tIdx !== -1) {
+                const source = desktops.value[sIdx];
+                const target = desktops.value[tIdx];
+
+                if (target.apps.length + source.apps.length <= 4) {
+                    target.apps.push(...source.apps);
+                    target.name = "Split View";
+                    desktops.value.splice(sIdx, 1);
+                    activeDesktopId.value = targetId;
+                    focusedAppId.value = null;
+                }
+            }
+            isSplitMenuOpen.value = false; // Close menu after merge
         };
 
-        const activeDesktop = computed(() => desktops.value.find(d => d.id === activeDesktopId.value));
-
-        const closeApp = (instanceId) => {
-            activeDesktop.value.apps = activeDesktop.value.apps.filter(a => a.instanceId !== instanceId);
-            if (activeDesktop.value.apps.length === 0) closeDesktop(activeDesktop.value.id);
+        const closeApp = (instanceId, desktopId) => {
+            const desktop = desktops.value.find(d => d.id === desktopId);
+            if (!desktop) return;
+            desktop.apps = desktop.apps.filter(a => a.instanceId !== instanceId);
+            if (focusedAppId.value === instanceId) focusedAppId.value = null;
+            if (desktop.apps.length === 0) closeDesktop(desktopId);
         };
 
             const closeDesktop = (id) => {
                 desktops.value = desktops.value.filter(d => d.id !== id);
-                if (activeDesktopId.value === id) activeDesktopId.value = desktops.value.length ? desktops.value[0].id : null;
+                if (activeDesktopId.value === id) {
+                    activeDesktopId.value = desktops.value.length ? desktops.value[0].id : null;
+                }
             };
 
-                const navAction = (id, action) => {
-                    const frame = document.getElementById('frame-' + id);
-                    if (!frame) return;
-                    try {
-                        if (action === 'reload') frame.src = frame.src;
-                        if (action === 'back') frame.contentWindow.history.back();
-                        if (action === 'forward') frame.contentWindow.history.forward();
-                    } catch (e) {}
-                };
+            const navAction = (id, action) => {
+                const frame = document.getElementById('frame-' + id);
+                if (!frame) return;
+                try {
+                    if (action === 'reload') frame.src = frame.src;
+                } catch (e) {
+                    if (action === 'reload') {
+                        const currentSrc = frame.src;
+                        frame.src = '';
+                        frame.src = currentSrc;
+                    }
+                }
+            };
 
-                const updateClock = () => {
-                    const now = new Date();
-                    currentTime.value = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
-                    currentDate.value = now.toISOString().split('T')[0];
-                };
+            const updateClock = () => {
+                const now = new Date();
+                currentTime.value = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
+                currentDate.value = now.toISOString().split('T')[0];
+            };
 
-                onMounted(() => {
-                    updateClock();
-                    setInterval(updateClock, 1000);
-                    window.addEventListener('message', handleSystemMessages);
-                    setTimeout(() => { isLoading.value = false; }, 800);
+            // Inside your main OS app.js, within setup()
+
+            onMounted(() => {
+                updateClock();
+                setInterval(updateClock, 1000);
+                setTimeout(() => { isLoading.value = false; }, 800);
+
+                // --- ADD THIS LISTENER ---
+                window.addEventListener('message', (event) => {
+                    if (event.data.type === 'AVERO_OPEN_TAB') {
+                        const { title, content } = event.data;
+
+                        // Create a Blob from the raw HTML content
+                        const blob = new Blob([content], { type: 'text/html' });
+                        const blobUrl = URL.createObjectURL(blob);
+
+                        // Launch a new desktop tab using the Blob URL
+                        const id = Date.now();
+                        desktops.value.push({
+                            id,
+                            name: title || 'Live Preview',
+                            apps: [{
+                                title: title || 'Live Preview',
+                                icon: '⚡',
+                                path: blobUrl, // Use the generated Blob URL
+                                instanceId: id
+                            }]
+                        });
+                        activeDesktopId.value = id;
+                        focusedAppId.value = id;
+                    }
                 });
+                // -------------------------
+            });
 
-                return {
-                    isLoading, appList, desktops, activeDesktopId, activeDesktop, isDrawerOpen,
-          launchNewDesktop, urlInput, proxyInput, currentTime, currentDate, launchUrl, launchProxyUrl,
-          closeDesktop, closeApp, navAction, draggedTabId, dragOverId, mergeTabs,
-          bgUrl
-                };
+
+            return {
+                isLoading, appList, desktops, activeDesktopId,
+          isDrawerOpen, isSplitMenuOpen, otherDesktops, urlInput,
+          currentTime, currentDate, bgUrl, focusedAppId,
+          launchNewDesktop, launchUrl, closeDesktop, closeApp, mergeTabs, navAction,
+          smartClose, smartRefresh
+            };
     }
 }).mount('#app');

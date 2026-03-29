@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Avero Maps</title>
+    <script src="../../share/cdn.js"></script>
+
+    <style>
+        [v-cloak] { display: none; }
+        html, body, #app { height: 100%; width: 100%; margin: 0; background: #000; overflow: hidden; color: white; font-family: 'Inter', sans-serif; }
+
+        #map { height: 100vh; width: 100vw; z-index: 1; }
+
+        /* Avero Dark Map Filter */
+        .leaflet-tile-container { filter: invert(100%) hue-rotate(180deg) brightness(0.8) contrast(0.9); }
+        .leaflet-marker-icon, .leaflet-marker-shadow, .leaflet-routing-icon { filter: invert(0) !important; }
+        .leaflet-container { background: #050505 !important; }
+
+        /* UI Overlays */
+        .map-overlay { position: absolute; z-index: 1000; pointer-events: auto; }
+
+        .side-panel {
+            top: 20px; left: 20px; width: 340px; max-height: calc(100vh - 40px);
+            background: rgba(10, 10, 10, 0.9); backdrop-filter: blur(20px);
+            border: 1px solid rgba(255,255,255,0.1); border-radius: 24px;
+            padding: 24px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.7);
+            display: flex; flex-direction: column; gap: 20px;
+            overflow-y: auto; scrollbar-width: none;
+        }
+
+        .input-group { margin-bottom: 12px; }
+        .label { font-size: 9px; font-weight: 900; text-transform: uppercase; opacity: 0.4; letter-spacing: 0.15em; margin-bottom: 6px; display: block; }
+
+        .map-input {
+            width: 100%; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 12px; padding: 12px 14px; color: white; font-size: 13px; outline: none; transition: all 0.2s;
+        }
+        .map-input:focus { border-color: var(--avero-accent); background: rgba(255,255,255,0.1); }
+
+        .poi-chips { display: flex; gap: 8px; flex-wrap: wrap; }
+        .chip {
+            padding: 6px 12px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 20px; font-size: 10px; font-weight: 700; cursor: pointer; transition: 0.2s;
+        }
+        .chip:hover, .chip.active { background: var(--avero-accent); border-color: var(--avero-accent); }
+
+        .route-summary {
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.2), rgba(0,0,0,0));
+            border-radius: 16px; padding: 16px; border: 1px solid rgba(99, 102, 241, 0.3);
+        }
+
+        /* Routing UI Customization */
+        .leaflet-routing-container { display: none !important; } /* We build our own UI */
+
+        .zoom-controls { bottom: 30px; right: 20px; display: flex; flex-direction: column; gap: 10px; }
+        .map-btn {
+            width: 48px; height: 48px; background: #111; border: 1px solid rgba(255,255,255,0.1);
+            color: white; border-radius: 16px; cursor: pointer; display: flex;
+            align-items: center; justify-content: center; font-size: 20px; box-shadow: 0 10px 20px rgba(0,0,0,0.4);
+        }
+        .map-btn:hover { background: var(--avero-accent); transform: translateY(-2px); }
+
+        .btn-action {
+            width: 100%; background: var(--avero-accent); color: white; border: none;
+            padding: 14px; border-radius: 12px; font-size: 11px; font-weight: 900;
+            text-transform: uppercase; cursor: pointer; letter-spacing: 0.1em;
+        }
+    </style>
+</head>
+<body>
+
+<div id="app" v-cloak>
+    <div class="map-overlay side-panel">
+        <div>
+            <h2 class="text-lg font-black uppercase tracking-tighter mb-1">Avero <span class="text-indigo-500">Maps</span></h2>
+            <p class="text-[9px] opacity-30 font-bold uppercase tracking-widest">Navigation & Intelligence</p>
+        </div>
+
+        <section>
+            <div class="input-group">
+                <label class="label">Origin</label>
+                <input v-model="startPoint" placeholder="Search start..." class="map-input">
+            </div>
+            <div class="input-group">
+                <label class="label">Destination</label>
+                <input v-model="endPoint" placeholder="Search destination..." class="map-input">
+            </div>
+            <button @click="planTrip" class="btn-action">Construct Route</button>
+        </section>
+
+        <div v-if="routeInfo" class="route-summary animate-fade-in">
+            <div class="flex justify-between mb-2">
+                <span class="label">Distance</span>
+                <span class="text-sm font-bold">{{ routeInfo.distance }}</span>
+            </div>
+            <div class="flex justify-between">
+                <span class="label">Est. Time</span>
+                <span class="text-sm font-bold text-indigo-400">{{ routeInfo.duration }}</span>
+            </div>
+        </div>
+
+        <section>
+            <label class="label">Nearby Essentials</label>
+            <div class="poi-chips">
+                <div v-for="poi in poiTypes" :key="poi.val"
+                     @click="findPOI(poi.val)"
+                     class="chip" :class="{ active: activePOI === poi.val }">
+                    {{ poi.icon }} {{ poi.label }}
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <div id="map"></div>
+
+    <div class="map-overlay zoom-controls">
+        <button @click="zoomIn" class="map-btn">＋</button>
+        <button @click="zoomOut" class="map-btn">－</button>
+        <button @click="clearAll" class="map-btn" title="Reset View">🗑️</button>
+        <button @click="locateMe" class="map-btn">📍</button>
+    </div>
+</div>
+
+<script>
+const { createApp, ref, onMounted } = Vue;
+
+createApp({
+    setup() {
+        const startPoint = ref('');
+        const endPoint = ref('');
+        const routeInfo = ref(null);
+        const activePOI = ref(null);
+        let mapInstance = null;
+        let routingControl = null;
+        let poiLayer = L.layerGroup();
+
+        const poiTypes = [
+            { label: 'Food', val: 'restaurant', icon: '🍴' },
+            { label: 'Fuel', val: 'fuel', icon: '⛽' },
+            { label: 'Med', val: 'hospital', icon: '🏥' },
+            { label: 'Park', val: 'park', icon: '🌲' }
+        ];
+
+        const initMap = () => {
+            mapInstance = L.map('map', { zoomControl: false, attributionControl: false })
+                .setView([40.2798, -75.3855], 13);
+
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(mapInstance);
+            poiLayer.addTo(mapInstance);
+        };
+
+        const geocode = async (query) => {
+            const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}`);
+            const data = await res.json();
+            if (data.length > 0) return { lat: data[0].lat, lon: data[0].lon, name: data[0].display_name };
+            throw new Error("Location not found");
+        };
+
+        const planTrip = async () => {
+            if (!startPoint.value || !endPoint.value) return;
+            try {
+                const start = await geocode(startPoint.value);
+                const end = await geocode(endPoint.value);
+
+                if (routingControl) mapInstance.removeControl(routingControl);
+
+                routingControl = L.Routing.control({
+                    waypoints: [L.latLng(start.lat, start.lon), L.latLng(end.lat, end.lon)],
+                    lineOptions: { styles: [{ color: '#6366f1', weight: 6, opacity: 0.8 }] },
+                    createMarker: (i, wp) => L.marker(wp.latLng),
+                    addWaypoints: false,
+                    fitSelectedRoutes: true
+                }).addTo(mapInstance);
+
+                routingControl.on('routesfound', (e) => {
+                    const s = e.routes[0].summary;
+                    routeInfo.value = {
+                        distance: (s.totalDistance / 1609.34).toFixed(1) + ' mi',
+                        duration: Math.round(s.totalTime / 60) + ' mins'
+                    };
+                });
+            } catch (e) { alert(e.message); }
+        };
+
+        const findPOI = async (type) => {
+            activePOI.value = type;
+            poiLayer.clearLayers();
+            const bounds = mapInstance.getBounds();
+            const query = `[out:json];node["amenity"="${type}"](${bounds.getSouth()},${bounds.getWest()},${bounds.getNorth()},${bounds.getEast()});out;`;
+
+            try {
+                const res = await fetch(`https://overpass-api.de/api/interpreter?data=${encodeURIComponent(query)}`);
+                const data = await res.json();
+                data.elements.forEach(el => {
+                    L.circleMarker([el.lat, el.lon], { color: '#6366f1', radius: 6 }).addTo(poiLayer)
+                     .bindPopup(el.tags.name || type);
+                });
+            } catch (e) { console.error("POI search failed"); }
+        };
+
+        const clearAll = () => {
+            if (routingControl) mapInstance.removeControl(routingControl);
+            poiLayer.clearLayers();
+            routeInfo.value = null;
+            activePOI.value = null;
+            startPoint.value = '';
+            endPoint.value = '';
+        };
+
+        const locateMe = () => mapInstance.locate({setView: true, maxZoom: 16});
+        const zoomIn = () => mapInstance.zoomIn();
+        const zoomOut = () => mapInstance.zoomOut();
+
+        onMounted(() => setTimeout(initMap, 100));
+
+        return {
+            startPoint, endPoint, routeInfo, poiTypes, activePOI,
+            planTrip, findPOI, clearAll, locateMe, zoomIn, zoomOut
+        };
+    }
+}).mount('#app');
+</script>
+</body>
+</html>

@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Avero HTML</title>
-    <link rel="stylesheet" href="../../share/theme.css">
     <script src="../../share/cdn.js"></script>
     <style>
         [v-cloak] { display: none; }
@@ -23,8 +22,10 @@
 
         .bottom-dock { height: 80px; display: flex; align-items: center; gap: 20px; justify-content: flex-start; }
 
-        .btn-main { background: #fff; color: #000; font-weight: 900; padding: 12px 30px; border-radius: 100px; text-transform: uppercase; font-size: 11px; letter-spacing: 0.1em; cursor: pointer; border: none; }
-        .btn-ghost { background: rgba(255,255,255,0.05); color: #888; font-weight: 800; padding: 12px 25px; border-radius: 100px; text-transform: uppercase; font-size: 10px; border: 1px solid rgba(255,255,255,0.05); transition: 0.3s; }
+        .btn-main { background: #fff; color: #000; font-weight: 900; padding: 12px 30px; border-radius: 100px; text-transform: uppercase; font-size: 11px; letter-spacing: 0.1em; cursor: pointer; border: none; transition: transform 0.2s; }
+        .btn-main:active { transform: scale(0.95); }
+
+        .btn-ghost { background: rgba(255,255,255,0.05); color: #888; font-weight: 800; padding: 12px 25px; border-radius: 100px; text-transform: uppercase; font-size: 10px; border: 1px solid rgba(255,255,255,0.05); transition: 0.3s; cursor: pointer; }
         .btn-ghost:hover { background: #6366f1; color: #fff; border-color: #6366f1; }
 
         .preset-tray {
@@ -47,7 +48,10 @@
                 <h1 class="text-6xl font-black italic tracking-tighter uppercase leading-none">HTML Console</h1>
                 <p class="text-[9px] text-zinc-600 font-bold tracking-[0.4em] uppercase mt-2">External Link Linker & Preset Console</p>
             </div>
-            <button @click="launchToDesktop" class="btn-main">Launch Live Tab</button>
+            <div class="flex gap-4">
+                <button @click="code = ''" class="btn-ghost" style="border: none;">Clear</button>
+                <button @click="launchToDesktop" class="btn-main">Launch Live Tab</button>
+            </div>
         </div>
 
         <div class="editor-container w-full">
@@ -61,6 +65,7 @@
             <transition name="fade">
                 <div v-if="showPresets" class="preset-tray">
                     <div v-for="p in internalPresets"
+                         :key="p.name"
                          @click="loadPreset(p.content)"
                          class="preset-item uppercase tracking-widest">
                         {{ p.name }}
@@ -77,20 +82,18 @@
                 const code = ref("");
                 const showPresets = ref(false);
 
-                // Add your names and URLs or raw HTML strings here
                 const internalPresets = ref([
                     { name: "", content: "" },
                 ]);
 
                 const loadPreset = async (content) => {
-                    // If content is a URL, fetch it; otherwise, load it directly
                     if (content.startsWith('http')) {
                         try {
                             const res = await fetch(content);
                             code.value = await res.text();
                         } catch (err) {
                             console.error("Avero Protocol Error: Link failed.");
-                            code.value = "";
+                            alert("CORS or Network Error: Could not fetch raw file content.");
                         }
                     } else {
                         code.value = content;
@@ -99,14 +102,25 @@
                 };
 
                 const launchToDesktop = () => {
+                    if (!code.value.trim()) return;
+
+                    // FIX: Escape the closing script tag so it doesn't break the parent script
                     const wrappedCode = `
-                        <script>
-                            document.addEventListener('visibilitychange', () => {
-                                if (document.hidden) { document.body.style.opacity = '0.3'; }
-                                else { document.body.style.opacity = '1'; }
-                            });
-                        <\/script>
-                        ${code.value}
+                        <!DOCTYPE html>
+                        <html>
+                        <head>
+                            <style>body { margin: 0; background: #000; }</style>
+                            <script>
+                                document.addEventListener('visibilitychange', () => {
+                                    if (document.hidden) { document.body.style.opacity = '0.3'; }
+                                    else { document.body.style.opacity = '1'; }
+                                });
+                            <\/script>
+                        </head>
+                        <body>
+                            ${code.value}
+                        </body>
+                        </html>
                     `;
 
                     window.parent.postMessage({
@@ -122,4 +136,3 @@
     </script>
 </body>
 </html>
-
