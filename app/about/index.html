@@ -7,9 +7,7 @@
         <script src="../../share/cdn.js"></script>
 
         <style>
-            [v-cloak] {
-                display: none;
-            }
+            [v-cloak] { display: none; }
 
             .animate-fade-in {
                 animation: fadeIn 0.4s cubic-bezier(0.4, 0, 0.2, 1);
@@ -39,16 +37,31 @@
                 box-shadow: 0 0 20px var(--avero-accent-glow);
             }
 
+            /* 88x31 Button Styling */
+            .web-button {
+                width: 88px;
+                height: 31px;
+                cursor: pointer;
+                transition: transform 0.2s, filter 0.2s;
+                image-rendering: pixelated; /* Keeps that retro crispness */
+                display: block;
+            }
+
+            .web-button:hover {
+                transform: scale(1.1);
+                filter: drop-shadow(0 0 8px var(--avero-accent));
+            }
+
+            .button-grid {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 15px;
+                justify-content: center;
+            }
+
             .ttf-description {
                 line-height: 1.8;
                 font-family: 'Inter', sans-serif;
-            }
-
-            .card-button {
-                display: block;
-                width: 100%;
-                text-align: left;
-                cursor: pointer;
             }
         </style>
     </head>
@@ -77,12 +90,10 @@
                     <h1 class="text-6xl sm:text-7xl font-black mb-8 tracking-tighter italic bg-gradient-to-r from-indigo-400 via-purple-400 to-blue-400 bg-clip-text text-transparent">
                         Hi, this is my website :D
                     </h1>
-
                     <p class="text-xl text-zinc-400 mb-10 max-w-2xl mx-auto leading-relaxed">
                         I am an author and creator currently working on my original series,
                         The Third Formation. I also make games and web projects.
                     </p>
-
                     <button
                         @click="openExternal('https://sites.google.com/view/codyferd')"
                         class="avero-btn inline-flex items-center gap-3 py-5 px-12 text-lg !rounded-2xl bg-indigo-600 hover:bg-indigo-500 transition-colors"
@@ -93,15 +104,12 @@
 
                 <div v-if="activeTab === 'ttf'" class="avero-card p-12 animate-fade-in relative overflow-hidden">
                     <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-500 to-indigo-500"></div>
-
                     <h2 class="text-5xl font-black text-white mb-8 tracking-tighter italic">
                         The Third <span class="text-blue-400">Formation</span>
                     </h2>
-
                     <p class="ttf-description text-xl text-zinc-300 mb-10 leading-relaxed italic border-l-4 border-blue-500 pl-6">
-                        A life spent in the gray dust of the mines ends the moment a silent tear in reality appears before Zeshi. When he reaches out to touch the impossible light, he shatters the walls of his confinement and escapes into a forest that feels suddenly, strangely alive. Now a fugitive, he must survive the cold wilderness while a rhythmic pulse of heat takes root beneath his skin. Every breath brings a new, terrifying vision of glowing threads and vibrating air that he cannot explain. He is no longer a prisoner, but the thing growing inside him ensures he will never be the same.
+                        A life spent in the gray dust of the mines ends the moment a silent tear in reality appears before Zeshi...
                     </p>
-
                     <button
                         @click="openExternal('https://drive.google.com/drive/folders/1eIL_QtLYo0lLcomy-iZyiHJn7I-HW_Qc')"
                         class="avero-btn inline-flex items-center gap-3 py-5 px-12 text-lg !rounded-2xl bg-blue-600 hover:bg-blue-500 transition-colors"
@@ -110,59 +118,44 @@
                     </button>
                 </div>
 
-                <div v-if="activeTab === 'cats'" class="grid grid-cols-1 md:grid-cols-2 gap-10 animate-fade-in">
-                    <div v-for="cat in ['ravi', 'coco']" :key="cat" class="avero-card p-4">
-                        <div class="relative overflow-hidden rounded-lg">
-                            <img :src="`${cat}.avif`" class="w-full h-80 object-cover" :alt="cat" />
-                        </div>
-                        <p class="mt-4 text-center font-bold text-2xl italic capitalize text-indigo-300">
-                            {{ cat }}
-                        </p>
-                    </div>
-                </div>
-
-                <div v-if="activeTab === 'loaf'" class="avero-card p-12 text-center relative overflow-hidden animate-fade-in">
-                    <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-indigo-500 to-purple-500"></div>
-                    <h2 class="text-4xl font-black text-white mb-6 tracking-tighter italic">
-                        Welcome to the official discord, <span class="text-indigo-400">Loaf House!</span>
-                    </h2>
-                    <p class="text-xl text-zinc-400 mb-10 max-w-xl mx-auto leading-relaxed">
-                        Talk about general things, cats, and much more in the Loaf House community.
-                    </p>
-                    <button
-                        @click="openExternal('https://discord.gg/6w9z6rqsgm')"
-                        class="avero-btn inline-block py-5 px-12 text-lg !rounded-2xl"
-                    >
-                        Join the Discord
-                    </button>
-                </div>
-
                 <div v-if="activeTab === 'online'" class="animate-fade-in space-y-8">
-                    <h2 class="text-4xl font-black text-indigo-400 mb-8">Find Me Online</h2>
+                    <h2 class="text-4xl font-black text-indigo-400 mb-8 tracking-tighter italic">Find Me Online</h2>
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <button
                             v-for="link in socialLinks"
                             :key="link.name"
                             @click="openExternal(link.url)"
-                            class="avero-card card-button p-6 !bg-opacity-40 hover:!bg-opacity-100 transition"
+                            class="avero-card p-6 !bg-opacity-40 hover:!bg-opacity-100 transition text-left cursor-pointer"
                         >
-                            <span class="text-[10px] font-black uppercase tracking-widest" :class="link.accent">
-                                {{ link.name }}
-                            </span>
+                            <span class="text-[10px] font-black uppercase tracking-widest" :class="link.accent">{{ link.name }}</span>
                             <p class="text-xl font-bold mt-1 text-white">{{ link.label }}</p>
                         </button>
+                    </div>
+                </div>
 
-                        <div
-                            v-for="contact in contactInfo"
-                            :key="contact.name"
-                            class="avero-card p-6 !bg-black/20"
-                            :class="contact.span ? 'sm:col-span-2' : ''"
-                        >
-                            <span class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">
-                                {{ contact.name }}
-                            </span>
-                            <p class="text-xl font-bold mt-1 text-white">{{ contact.label }}</p>
-                        </div>
+                <div v-if="activeTab === 'cats'" class="grid grid-cols-1 md:grid-cols-2 gap-10 animate-fade-in">
+                    <div v-for="cat in ['ravi', 'coco']" :key="cat" class="avero-card p-4">
+                        <img :src="`${cat}.avif`" class="w-full h-80 object-cover rounded-lg" :alt="cat" />
+                        <p class="mt-4 text-center font-bold text-2xl italic capitalize text-indigo-300">{{ cat }}</p>
+                    </div>
+                </div>
+
+                <div v-if="activeTab === 'loaf'" class="avero-card p-12 text-center animate-fade-in">
+                    <h2 class="text-4xl font-black text-white mb-6 tracking-tighter italic">Join <span class="text-indigo-400">Loaf House!</span></h2>
+                    <button @click="openExternal('https://discord.gg/6w9z6rqsgm')" class="avero-btn py-5 px-12 text-lg !rounded-2xl">Discord Invite</button>
+                </div>
+
+                <div v-if="activeTab === 'buttons'" class="animate-fade-in text-center">
+                    <h2 class="text-4xl font-black text-white mb-10 tracking-tighter italic">Web <span class="text-indigo-400">Buttons</span></h2>
+                    <div class="button-grid">
+                        <img
+                            v-for="btn in imageButtons"
+                            :key="btn.url"
+                            :src="btn.image"
+                            @click="openExternal(btn.url)"
+                            class="web-button"
+                            :title="btn.title"
+                        />
                     </div>
                 </div>
 
@@ -175,27 +168,26 @@
             createApp({
                 setup() {
                     const activeTab = ref("about");
-                    const tabs = ["about", "online", "cats", "loaf", "ttf"];
+                    // Buttons moved to the end
+                    const tabs = ["about", "ttf", "online", "cats", "loaf", "buttons"];
 
-                    const openExternal = (url) => {
-                        const win = window.open(url, '_blank', 'noopener,noreferrer');
-                        if (win) {
-                            win.focus();
-                        } else {
-                            console.error("Popup blocked. Ensure Avero Desktop allows popups to escape sandbox.");
-                        }
-                    };
+                    const openExternal = (url) => window.open(url, '_blank', 'noopener,noreferrer');
 
                     const getTabLabel = (tab) => {
                         const labels = {
-                            about: "About Me",
+                            about: "About",
+                            ttf: "Writing",
+                            online: "Socials",
                             cats: "Cats",
-                            loaf: "Loaf House",
-                            online: "Find Me Online",
-                            ttf: "The Third Formation"
+                            loaf: "Discord",
+                            buttons: "Buttons"
                         };
                         return labels[tab];
                     };
+
+                    const imageButtons = ref([
+                        { image: "button.avif", url: "https://codyferd.github.io/avero" },
+                    ]);
 
                     const socialLinks = [
                         { name: "GitHub", label: "codyferd", url: "https://github.com/codyferd", accent: "text-indigo-400" },
@@ -203,23 +195,9 @@
                         { name: "Mastodon", label: "codyferd@mastodon.social", url: "https://mastodon.social/@codyferd", accent: "text-purple-400" }
                     ];
 
-                    const contactInfo = [
-                        { name: "Snapchat", label: "polycatcodyferd" },
-                        { name: "Discord", label: "codyferd_81960" },
-                        { name: "Google / Email", label: "lucarappferdinand@gmail.com", span: true }
-                    ];
-
-                    return {
-                        activeTab,
-                        tabs,
-                        getTabLabel,
-                        openExternal,
-                        socialLinks,
-                        contactInfo
-                    };
+                    return { activeTab, tabs, getTabLabel, openExternal, socialLinks, imageButtons };
                 }
             }).mount("#app");
         </script>
     </body>
 </html>
-

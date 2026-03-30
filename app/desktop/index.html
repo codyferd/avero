@@ -9,7 +9,7 @@
         [v-cloak] { display: none; }
         body { background: #000; margin: 0; }
 
-        .ui-solid { background: #000000; border-bottom: 1px solid var(--avero-border); }
+        .ui-solid { background: #000000; border-bottom: 1px solid rgba(255,255,255,0.1); }
 
         #loading-screen {
             position: fixed; inset: 0; background: #000000;
@@ -34,57 +34,57 @@
         }
         .avero-start-btn:hover { border-color: var(--avero-accent) !important; box-shadow: 0 0 15px rgba(79, 70, 229, 0.3); }
 
-        @keyframes pulse {
-            0%, 100% { transform: scale(1); opacity: 1; }
-            50% { transform: scale(1.05); opacity: 0.8; }
+        .sub-bar {
+            height: 48px; background: #000000; border-bottom: 1px solid rgba(255,255,255,0.1);
+            display: flex; align-items: center; gap: 12px; z-index: 90; padding: 0 16px;
         }
+
+        .functions-scroll {
+            display: flex; gap: 8px; overflow-x: auto; flex: 1; padding: 4px 0;
+            scrollbar-width: none;
+        }
+        .functions-scroll::-webkit-scrollbar { display: none; }
+
+        .mini-app-card {
+            flex: 0 0 auto; display: flex; align-items: center; gap: 8px;
+            padding: 4px 12px; background: #111; border: 1px solid rgba(255,255,255,0.05);
+            border-radius: 8px; cursor: pointer; transition: 0.2s;
+        }
+        .mini-app-card:hover { border-color: var(--avero-accent); }
 
         .hypr-tab {
             height: 28px; padding: 0 12px; border-radius: 20px;
             border: 1px solid rgba(255, 255, 255, 0.1);
             display: flex; align-items: center; gap: 8px;
-            cursor: pointer; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            background: rgba(255, 255, 255, 0.03); margin: 0 4px; position: relative;
+            cursor: pointer; transition: all 0.3s;
+            background: rgba(255, 255, 255, 0.03); margin: 0 4px;
         }
-        .hypr-tab:hover { background: rgba(255, 255, 255, 0.08); border-color: rgba(255, 255, 255, 0.3); }
-
-        .hypr-tab.active {
-            border-color: var(--avero-accent);
-            background: rgba(99, 102, 241, 0.15);
-            box-shadow: 0 0 15px rgba(99, 102, 241, 0.4), inset 0 0 5px rgba(99, 102, 241, 0.2);
-            animation: border-glow 2s infinite alternate;
-        }
-
-        @keyframes border-glow {
-            from { box-shadow: 0 0 10px rgba(99, 102, 241, 0.3); }
-            to { box-shadow: 0 0 20px rgba(99, 102, 241, 0.6); }
-        }
+        .hypr-tab.active { border-color: var(--avero-accent); background: rgba(99, 102, 241, 0.15); }
 
         .desktop-grid { display: grid; gap: 6px; height: 100%; width: 100%; background: #000000; padding: 6px; box-sizing: border-box; }
         .grid-1 { grid-template-columns: 1fr; }
         .grid-2 { grid-template-columns: 1fr 1fr; }
         .grid-3 { grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; }
         .grid-3 > :first-child { grid-row: span 2; }
-        .grid-4 { grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; }
 
-        .app-window { display: flex; flex-direction: column; background: #000; overflow: hidden; border-radius: 12px; border: 2px solid rgba(255,255,255,0.05); transition: all 0.2s ease; position: relative; }
-        .app-window.focused { border-color: var(--avero-accent); box-shadow: 0 0 20px rgba(99, 102, 241, 0.15); }
+        .app-window { display: flex; flex-direction: column; background: #000; overflow: hidden; border-radius: 12px; border: 2px solid rgba(255,255,255,0.05); position: relative; }
+        .app-window.focused { border-color: var(--avero-accent); }
 
-        /* The click-catcher overlay */
         .focus-overlay { position: absolute; inset: 0; z-index: 50; cursor: pointer; }
-
-        iframe { background: #fff; width: 100%; height: 100%; border: none; pointer-events: auto; }
+        iframe { background: #fff; width: 100%; height: 100%; border: none; }
 
         .action-icon {
-            opacity: 0.4; transition: all 0.2s; cursor: pointer;
-            width: 28px; height: 28px; display: flex; align-items: center; justify-content: center;
-            border-radius: 50%;
+            opacity: 0.6; transition: all 0.2s; cursor: pointer;
+            width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;
+            border-radius: 8px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);
         }
-        .action-icon:hover { opacity: 1; background: rgba(255,255,255,0.1); }
-        .icon-close:hover { color: #ef4444; }
-        .icon-refresh:hover { color: var(--avero-accent); transform: rotate(15deg); }
+        .action-icon:hover { opacity: 1; border-color: var(--avero-accent); }
 
-        .search-small { background: #16161e; border: 1px solid #2d2d3d; border-radius: 8px; padding: 8px 12px; font-size: 11px; color: white; width: 100%; outline: none; }
+        .search-dropdown {
+            position: absolute; top: 52px; left: 16px; width: 280px;
+            background: #111; border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 12px; padding: 12px; box-shadow: 0 10px 40px rgba(0,0,0,0.8); z-index: 1000;
+        }
     </style>
 </head>
 <body class="overflow-hidden text-slate-100 font-sans select-none avero-app">
@@ -99,57 +99,56 @@
     </div>
 
     <header class="h-12 ui-solid flex items-center px-4 z-[100] gap-4 shadow-xl">
-    <button @click="isDrawerOpen = !isDrawerOpen" class="avero-btn avero-start-btn h-8 w-8 !rounded-lg">
-        <img src="../../share/logo.avif" class="start-logo-img" alt="Start">
-    </button>
+        <button @click="isDrawerOpen = !isDrawerOpen" class="avero-btn avero-start-btn h-8 w-8 !rounded-lg">
+            <img src="../../share/logo.avif" class="start-logo-img" alt="Start">
+        </button>
 
-    <div class="flex flex-1 items-center overflow-x-auto no-scrollbar h-full">
-        <div v-for="d in desktops" :key="d.id"
-             @click="activeDesktopId = d.id"
-             class="hypr-tab"
-             :class="{ active: activeDesktopId === d.id }">
-            <span class="text-[9px] font-black uppercase tracking-[0.15em] whitespace-nowrap">{{ d.name }}</span>
-        </div>
-    </div>
-
-    <div v-if="activeDesktopId" class="flex items-center gap-1 mr-2 relative">
-        <button @click="smartClose" class="action-icon icon-close text-lg" title="Close Selected">✕</button>
-        <button @click="smartRefresh" class="action-icon icon-refresh text-sm" title="Refresh Selected">🔄</button>
-
-        <button @click="isSplitMenuOpen = !isSplitMenuOpen" class="action-icon text-sm" title="Split View">🗄️</button>
-
-        <div v-if="isSplitMenuOpen" class="absolute top-10 right-0 w-48 bg-[#111] border border-white/10 rounded-lg shadow-2xl py-2 z-[1100]">
-            <p class="px-3 py-1 text-[8px] font-black opacity-30 uppercase tracking-widest">Merge with Tab</p>
-            <div v-for="d in otherDesktops" :key="d.id"
-                 @click="mergeTabs(d.id, activeDesktopId)"
-                 class="px-3 py-2 hover:bg-white/5 cursor-pointer text-[10px] flex justify-between items-center">
-                <span>{{ d.name }}</span>
-                <span class="opacity-40">+</span>
+        <div class="flex flex-1 items-center overflow-x-auto no-scrollbar h-full">
+            <div v-for="d in desktops" :key="d.id"
+                 @click="activeDesktopId = d.id"
+                 class="hypr-tab"
+                 :class="{ active: activeDesktopId === d.id }">
+                <span class="text-[9px] font-black uppercase tracking-[0.15em] whitespace-nowrap">{{ d.name }}</span>
             </div>
-            <div v-if="otherDesktops.length === 0" class="px-3 py-2 text-[10px] opacity-40 italic">No other tabs open</div>
         </div>
-    </div>
 
-    <div class="flex flex-col items-end leading-tight pr-2">
-        <div class="text-[11px] font-black text-white">{{ currentTime }}</div>
-        <div class="text-[8px] font-bold opacity-30 uppercase tracking-widest">{{ currentDate }}</div>
-    </div>
-</header>
+        <div class="flex flex-col items-end leading-tight pr-2">
+            <div class="text-[11px] font-black text-white">{{ currentTime }}</div>
+            <div class="text-[8px] font-bold opacity-30 uppercase tracking-widest">{{ currentDate }}</div>
+        </div>
+    </header>
 
+    <transition name="slide-down">
+        <nav v-if="isDrawerOpen" class="sub-bar">
+            <div v-if="activeDesktopId" class="flex items-center gap-2 border-r border-white/10 pr-4 relative">
+                <button @click="smartClose" class="action-icon text-sm text-red-400" title="Close">✕</button>
+                <button @click="smartRefresh" class="action-icon text-sm" title="Refresh">🔄</button>
+                <button @click="isSplitMenuOpen = !isSplitMenuOpen" class="action-icon text-sm" title="Split View">🗄️</button>
 
-    <transition name="fade">
-        <div v-if="isDrawerOpen" class="app-drawer absolute top-12 left-0 w-72 h-[calc(100vh-3.1rem)] ui-solid p-5 z-[1000] shadow-2xl border-r">
-            <div class="mb-6">
-                <input v-model="urlInput" @keyup.enter="launchUrl" class="search-small" placeholder="URL or Search...">
-            </div>
-            <div class="grid grid-cols-2 gap-2 pb-10">
-                <div v-for="app in appList" :key="app.id" @click="launchNewDesktop(app)"
-                     class="avero-card flex flex-col items-center gap-2 p-3 cursor-pointer transition-all hover:bg-[#1a1a24] !rounded-xl !bg-[#111] border border-white/5">
-                    <span class="text-2xl">{{ app.icon }}</span>
-                    <span class="text-[9px] font-bold uppercase">{{ app.title }}</span>
+                <div v-if="isSplitMenuOpen" class="absolute top-12 left-0 w-48 bg-[#111] border border-white/10 rounded-lg shadow-2xl py-2 z-[1100]">
+                    <p class="px-3 py-1 text-[8px] font-black opacity-30 uppercase tracking-widest">Merge with Tab</p>
+                    <div v-for="d in otherDesktops" :key="d.id"
+                         @click="mergeTabs(d.id, activeDesktopId)"
+                         class="px-3 py-2 hover:bg-white/5 cursor-pointer text-[10px] flex justify-between items-center">
+                        <span>{{ d.name }}</span>
+                        <span class="opacity-40">+</span>
+                    </div>
                 </div>
             </div>
-        </div>
+
+            <button @click="isSearchOpen = !isSearchOpen" class="action-icon text-xs font-bold" title="Search">🔍</button>
+
+            <div v-if="isSearchOpen" class="search-dropdown">
+                <input v-model="urlInput" @keyup.enter="launchUrl" class="search-small w-full" placeholder="URL or Search..." autofocus>
+            </div>
+
+            <div class="functions-scroll no-scrollbar">
+                <div v-for="app in appList" :key="app.id" @click="launchNewDesktop(app)" class="mini-app-card">
+                    <span class="text-sm">{{ app.icon }}</span>
+                    <span class="text-[9px] font-black uppercase whitespace-nowrap">{{ app.title }}</span>
+                </div>
+            </div>
+        </nav>
     </transition>
 
     <main class="flex-1 relative overflow-hidden bg-black/20">
@@ -162,17 +161,11 @@
                  :key="app.instanceId"
                  class="app-window"
                  :class="{ focused: focusedAppId === app.instanceId }">
-
                 <div v-if="focusedAppId !== app.instanceId"
                      class="focus-overlay"
                      @mousedown="focusedAppId = app.instanceId"></div>
-
                 <div class="flex-1 bg-white relative">
-                    <iframe
-                        :id="'frame-' + app.instanceId"
-                        :src="app.path"
-                        sandbox="allow-scripts allow-forms allow-popups allow-popups-to-escape-sandbox allow-same-origin allow-downloads">
-                    </iframe>
+                    <iframe :id="'frame-' + app.instanceId" :src="app.path"></iframe>
                 </div>
             </div>
         </div>

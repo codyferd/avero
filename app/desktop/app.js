@@ -6,14 +6,14 @@ createApp({
         const currentTime = ref('');
         const currentDate = ref('');
         const isDrawerOpen = ref(false);
-        const isSplitMenuOpen = ref(false); // New state
+        const isSearchOpen = ref(false); // Added for the new sub-bar dropdown
+        const isSplitMenuOpen = ref(false);
         const urlInput = ref('');
         const bgUrl = ref("background.avif");
         const desktops = ref([]);
         const activeDesktopId = ref(null);
         const focusedAppId = ref(null);
 
-        // Filter out the active desktop for the split menu
         const otherDesktops = computed(() =>
         desktops.value.filter(d => d.id !== activeDesktopId.value)
         );
@@ -63,6 +63,7 @@ createApp({
             activeDesktopId.value = id;
             focusedAppId.value = id;
             urlInput.value = "";
+            isSearchOpen.value = false; // Close search on launch
             isDrawerOpen.value = false;
         };
 
@@ -82,7 +83,7 @@ createApp({
                     focusedAppId.value = null;
                 }
             }
-            isSplitMenuOpen.value = false; // Close menu after merge
+            isSplitMenuOpen.value = false;
         };
 
         const closeApp = (instanceId, desktopId) => {
@@ -120,23 +121,17 @@ createApp({
                 currentDate.value = now.toISOString().split('T')[0];
             };
 
-            // Inside your main OS app.js, within setup()
-
             onMounted(() => {
                 updateClock();
                 setInterval(updateClock, 1000);
                 setTimeout(() => { isLoading.value = false; }, 800);
 
-                // --- ADD THIS LISTENER ---
                 window.addEventListener('message', (event) => {
                     if (event.data.type === 'AVERO_OPEN_TAB') {
                         const { title, content } = event.data;
-
-                        // Create a Blob from the raw HTML content
                         const blob = new Blob([content], { type: 'text/html' });
                         const blobUrl = URL.createObjectURL(blob);
 
-                        // Launch a new desktop tab using the Blob URL
                         const id = Date.now();
                         desktops.value.push({
                             id,
@@ -144,7 +139,7 @@ createApp({
                             apps: [{
                                 title: title || 'Live Preview',
                                 icon: '⚡',
-                                path: blobUrl, // Use the generated Blob URL
+                                path: blobUrl,
                                 instanceId: id
                             }]
                         });
@@ -152,13 +147,11 @@ createApp({
                         focusedAppId.value = id;
                     }
                 });
-                // -------------------------
             });
-
 
             return {
                 isLoading, appList, desktops, activeDesktopId,
-          isDrawerOpen, isSplitMenuOpen, otherDesktops, urlInput,
+          isDrawerOpen, isSearchOpen, isSplitMenuOpen, otherDesktops, urlInput,
           currentTime, currentDate, bgUrl, focusedAppId,
           launchNewDesktop, launchUrl, closeDesktop, closeApp, mergeTabs, navAction,
           smartClose, smartRefresh

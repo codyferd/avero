@@ -110,7 +110,6 @@
         </div>
     </div>
 </div>
-
 <script>
 const { createApp, ref, onMounted } = Vue;
 
@@ -118,7 +117,8 @@ createApp({
     setup() {
         const loading = ref(true);
         const weather = ref(null);
-        const cityName = ref('Harleysville');
+        // Changed default to 'Detecting...'
+        const cityName = ref('Detecting...');
         const cityInput = ref('');
         const weatherDesc = ref('Searching...');
         const unit = ref('K');
@@ -144,6 +144,17 @@ createApp({
             return Math.round(c);
         };
 
+        // NEW: Function to get the name of the city from coordinates (Reverse Geocoding)
+        const getCityName = async (lat, lon) => {
+            try {
+                const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`);
+                const data = await res.json();
+                cityName.value = data.address.city || data.address.town || data.address.village || 'Local Area';
+            } catch (e) {
+                cityName.value = 'Current Location';
+            }
+        };
+
         const fetchWeather = async (lat, lon) => {
             loading.value = true;
             try {
@@ -151,8 +162,11 @@ createApp({
                 const res = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&${params}`);
                 weather.value = await res.json();
                 weatherDesc.value = interpretCode(weather.value.current.weather_code);
-            } catch (e) { console.error("Link Failure"); }
-            finally { loading.value = false; }
+            } catch (e) {
+                console.error("Atmospheric Sync Failure");
+            } finally {
+                loading.value = false;
+            }
         };
 
         const getWeatherByCity = async () => {
@@ -172,7 +186,27 @@ createApp({
 
         const formatDate = (d) => new Intl.DateTimeFormat('en-US', { weekday: 'short' }).format(new Date(d));
 
-        onMounted(() => fetchWeather(40.2798, -75.3855));
+        // UPDATED: Logic to handle user location
+        onMounted(() => {
+            if ("geolocation" in navigator) {
+                navigator.geolocation.getCurrentPosition(
+                    async (position) => {
+                        const { latitude, longitude } = position.coords;
+                        await getCityName(latitude, longitude);
+                        await fetchWeather(latitude, longitude);
+                    },
+                    (error) => {
+                        console.warn("Location access denied. Defaulting to Harleysville.");
+                        // Fallback to Harleysville if blocked
+                        cityName.value = 'Harleysville';
+                        fetchWeather(40.2798, -75.3855);
+                    }
+                );
+            } else {
+                // Browser doesn't support Geolocation
+                fetchWeather(40.2798, -75.3855);
+            }
+        });
 
         return {
             loading, weather, cityName, cityInput, weatherDesc, unit,

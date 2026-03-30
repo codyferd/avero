@@ -1,5 +1,6 @@
 const appList = [
     { title: 'About', icon: '👤', path: '../../app/about/index.html' },
+    { title: 'Blocks', icon: '🧱', path: '../../app/blocks/index.html' },
     { title: 'Calculator', icon: '🔢', path: '../../app/calculator/index.html' },
     { title: 'Chess', icon: '♟️', path: '../../app/chess/index.html' },
     { title: 'Clicker', icon: '🖱️', path: '../../app/clicker/index.html' },
