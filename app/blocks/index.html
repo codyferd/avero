@@ -4,8 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Avero Blocks</title>
-    <script>var needs = ["phaser"];</script>
-    <script src="../../share/cdn.js"></script>
+    <script libs="local,tailwind,vue,three" src="../../share/cdn.js"></script>
     <style>
         body { margin: 0; overflow: hidden; background: #020205; font-family: 'Inter', sans-serif; }
         #ui { position: absolute; top: 20px; left: 20px; z-index: 10; pointer-events: none; }
@@ -14,9 +13,11 @@
 <body>
 
     <div id="ui">
-        <h1 class="text-3xl font-black italic tracking-tighter uppercase text-white">Avero <span class="text-indigo-500">Infinite</span></h1>
-        <p class="text-[9px] font-black text-zinc-500 uppercase tracking-[0.3em]">Procedural Chunking v2.1</p>
+        <h1 class="text-3xl font-black italic tracking-tighter uppercase text-white">Avero <span class="text-indigo-500">Blocks</span></h1>
     </div>
+<script src="config.js"></script>
+<script src="terrain.js"></script>
+<script src="player.js"></script>
 <script src="app.js"></script>
 </body>
 </html>

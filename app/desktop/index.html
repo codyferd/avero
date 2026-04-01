@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Avero Desktop</title>
-    <script src="../../share/cdn.js"></script>
+    <script libs="local,tailwind,vue" src="../../share/cdn.js"></script>
     <style>
         [v-cloak] { display: none; }
         body { background: #000; margin: 0; }
@@ -138,9 +138,23 @@
 
             <button @click="isSearchOpen = !isSearchOpen" class="action-icon text-xs font-bold" title="Search">🔍</button>
 
-            <div v-if="isSearchOpen" class="search-dropdown">
-                <input v-model="urlInput" @keyup.enter="launchUrl" class="search-small w-full" placeholder="URL or Search..." autofocus>
+            <div v-if="isSearchOpen" class="search-dropdown-container">
+                <div class="search-dropdown">
+                    <input
+                        v-model="urlInput"
+                        @keyup.enter="launchUrl"
+                        @keyup.esc="isSearchOpen = false"
+                        class="search-small"
+                        placeholder="URL or Search..."
+                        autofocus
+                    >
+
+                    <button @click="isSearchOpen = false" class="close-btn" title="Close">
+                        &times;
+                    </button>
+                </div>
             </div>
+
 
             <div class="functions-scroll no-scrollbar">
                 <div v-for="app in appList" :key="app.id" @click="launchNewDesktop(app)" class="mini-app-card">

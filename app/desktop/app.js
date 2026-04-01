@@ -50,22 +50,42 @@ createApp({
         const launchUrl = () => {
             let query = urlInput.value.trim();
             if (!query) return;
+
             let finalUrl = query.includes('.') && !query.includes(' ')
             ? (query.startsWith('http') ? query : `https://${query}`)
             : `https://www.google.com/search?q=${encodeURIComponent(query)}&igu=1`;
 
+            // --- Dynamic Name Logic Start ---
+            let siteName = 'Web'; // Default fallback
+
+            try {
+                const urlObj = new URL(finalUrl);
+                const hostParts = urlObj.hostname.replace('www.', '').split('.');
+
+                if (hostParts.length > 0) {
+                    // Capitalize the first part (e.g., 'google', 'cern', 'github')
+                    siteName = hostParts[0].charAt(0).toUpperCase() + hostParts[0].slice(1);
+                }
+            } catch (e) {
+                // Fallback to 'Web' if URL parsing fails (e.g., weird search queries)
+                siteName = 'Web';
+            }
+            // --- Dynamic Name Logic End ---
+
             const id = Date.now();
             desktops.value.push({
                 id,
-                name: 'Web',
+                name: siteName, // Uses the dynamic name here
                 apps: [{ title: 'Browser', icon: '🌐', path: finalUrl, instanceId: id }]
             });
+
             activeDesktopId.value = id;
             focusedAppId.value = id;
             urlInput.value = "";
-            isSearchOpen.value = false; // Close search on launch
+            isSearchOpen.value = false;
             isDrawerOpen.value = false;
         };
+
 
         const mergeTabs = (sourceId, targetId) => {
             const sIdx = desktops.value.findIndex(d => d.id === sourceId);
