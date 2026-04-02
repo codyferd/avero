@@ -123,39 +123,63 @@
             </div>
 
             <div class="lg:col-span-2 grid grid-cols-2 gap-6">
-                <div class="glass-panel p-8 flex flex-col justify-between">
-                    <div>
-                        <p class="stat-label">Hydration</p>
-                        <p class="text-3xl font-bold">{{ weather.current.relative_humidity_2m }}<span class="text-sm opacity-40 ml-1">%</span></p>
-                    </div>
-                    <p class="text-[10px] opacity-40 mt-4">Dew point: {{ convertTemp(weather.current.temperature_2m - 2) }}°</p>
-                </div>
-                <div class="glass-panel p-8 flex flex-col justify-between">
-                    <div>
-                        <p class="stat-label">Solar Intensity</p>
-                        <p class="text-3xl font-bold" :class="weather.daily.uv_index_max[0] > 5 ? 'text-orange-400' : ''">
-                            {{ weather.daily.uv_index_max[0] }} <span class="text-sm opacity-40">UVI</span>
-                        </p>
-                    </div>
-                    <div class="w-full bg-white/5 h-1 rounded-full mt-4 overflow-hidden">
-                        <div class="h-full bg-indigo-500" :style="{width: (weather.daily.uv_index_max[0] * 10) + '%'}"></div>
-                    </div>
-                </div>
-                <div class="glass-panel p-8 flex flex-col justify-between">
-                    <div>
-                        <p class="stat-label">Wind Vector</p>
-                        <p class="text-3xl font-bold">{{ weather.current.wind_speed_10m }}<span class="text-sm opacity-40 ml-1">km/h</span></p>
-                    </div>
-                    <p class="text-[10px] opacity-40 mt-4">Gusts: {{ (weather.current.wind_speed_10m * 1.2).toFixed(1) }} km/h</p>
-                </div>
-                <div class="glass-panel p-8 flex flex-col justify-between">
-                    <div>
-                        <p class="stat-label">Visibility</p>
-                        <p class="text-3xl font-bold">10.0<span class="text-sm opacity-40 ml-1">km</span></p>
-                    </div>
-                    <p class="text-[10px] opacity-40 mt-4 text-green-500">Optimal Range</p>
-                </div>
-            </div>
+    <div class="glass-panel p-8 flex flex-col justify-between">
+        <div>
+            <p class="stat-label">Rain Probability</p>
+            <p class="text-3xl font-bold">
+                {{ weather.current.precipitation_probability || 0 }}<span class="text-sm opacity-40 ml-1">%</span>
+            </p>
+        </div>
+        <div class="w-full bg-white/5 h-1 rounded-full mt-4 overflow-hidden">
+            <div class="h-full bg-blue-500 transition-all duration-1000"
+                 :style="{width: (weather.current.precipitation_probability || 0) + '%'}"></div>
+        </div>
+    </div>
+
+    <div class="glass-panel p-8 flex flex-col justify-between border-blue-500/20">
+        <div>
+            <p class="stat-label">Precipitation Volume</p>
+            <p class="text-3xl font-bold">
+                {{ weather.current.precipitation || 0 }}<span class="text-sm opacity-40 ml-1">mm</span>
+            </p>
+        </div>
+        <p class="text-[10px] opacity-40 mt-4" :class="weather.current.precipitation > 0 ? 'text-blue-400' : ''">
+            {{ weather.current.precipitation > 0 ? 'Active Precipitation' : 'Surface Dry' }}
+        </p>
+    </div>
+
+    <div class="glass-panel p-8 flex flex-col justify-between">
+        <div>
+            <p class="stat-label">Solar Intensity</p>
+            <p class="text-3xl font-bold" :class="weather.daily.uv_index_max[0] > 5 ? 'text-orange-400' : ''">
+                {{ weather.daily.uv_index_max[0] }} <span class="text-sm opacity-40">UVI</span>
+            </p>
+        </div>
+        <div class="w-full bg-white/5 h-1 rounded-full mt-4 overflow-hidden">
+            <div class="h-full bg-indigo-500" :style="{width: (weather.daily.uv_index_max[0] * 10) + '%'}"></div>
+        </div>
+    </div>
+
+    <div class="glass-panel p-8 flex flex-col justify-between">
+        <div>
+            <p class="stat-label">Wind Vector</p>
+            <p class="text-3xl font-bold">{{ weather.current.wind_speed_10m }}<span class="text-sm opacity-40 ml-1">km/h</span></p>
+        </div>
+        <p class="text-[10px] opacity-40 mt-4">Humidity: {{ weather.current.relative_humidity_2m }}%</p>
+    </div>
+</div>
+
+<div v-for="(hour, index) in hourlySlice" :key="index" class="hourly-card">
+    <p class="text-[10px] opacity-40 font-black mb-4">{{ formatTime(hour.time) }}</p>
+    <div class="text-xl font-bold mb-1">{{ convertTemp(hour.temp) }}°</div>
+
+    <div class="text-[9px] font-bold mb-3" :class="hour.rainChance > 30 ? 'text-blue-400' : 'opacity-20'">
+        {{ hour.rainChance }}% <span class="text-[7px]">RAIN</span>
+    </div>
+
+    <div class="text-xl filter grayscale contrast-125">{{ getThermalEmoji(hour.temp, hour.rainChance) }}</div>
+</div>
+
         </div>
 
         <div class="glass-panel mb-8 overflow-hidden">
@@ -187,115 +211,6 @@
     </div>
 </div>
 
-<script>
-const { createApp, ref, onMounted, computed } = Vue;
-
-createApp({
-    setup() {
-        const loading = ref(true);
-        const weather = ref(null);
-        const cityName = ref('Detecting...');
-        const cityInput = ref('');
-        const weatherDesc = ref('Searching...');
-        const unit = ref('K');
-        const currentTime = ref('--:--');
-
-        const interpretCode = (code) => {
-            const map = { 0: 'Clear Sky', 1: 'Mainly Clear', 2: 'Partly Cloudy', 3: 'Overcast', 45: 'Foggy', 61: 'Light Rain', 71: 'Snowfall', 95: 'Thunderstorm' };
-            return map[code] || 'Atmospheric Event';
-        };
-
-        const getThermalEmoji = (c) => {
-            if (c >= 30) return '☀️';
-            if (c >= 20) return '🌤️';
-            if (c >= 10) return '🌥️';
-            if (c >= 0) return '🌨️';
-            return '🧊';
-        };
-
-        const convertTemp = (c) => {
-            if (unit.value === 'K') return (c + 273.15).toFixed(1);
-            if (unit.value === 'F') return ((c * 9/5) + 32).toFixed(0);
-            return Math.round(c);
-        };
-
-        const hourlySlice = computed(() => {
-            if (!weather.value) return [];
-            const now = new Date();
-            const hourIndex = weather.value.hourly.time.findIndex(t => new Date(t) > now);
-            return weather.value.hourly.time.slice(hourIndex, hourIndex + 24).map((time, i) => ({
-                time, temp: weather.value.hourly.temperature_2m[hourIndex + i]
-            }));
-        });
-
-        const fetchWeather = async (lat, lon) => {
-            loading.value = true;
-            try {
-                const params = `current=temperature_2m,relative_humidity_2m,weather_code,wind_speed_10m&daily=weather_code,temperature_2m_max,temperature_2m_min,uv_index_max,precipitation_probability_max,sunrise,sunset&hourly=temperature_2m&timezone=auto`;
-                const res = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&${params}`);
-                weather.value = await res.json();
-                weatherDesc.value = interpretCode(weather.value.current.weather_code);
-
-                const temp = weather.value.current.temperature_2m;
-                const color = temp > 25 ? '#fbbf24' : temp < 5 ? '#60a5fa' : '#6366f1';
-                document.documentElement.style.setProperty('--avero-accent', color);
-            } catch (e) { console.error("Sync Failure"); }
-            finally { loading.value = false; }
-        };
-
-        const getCityName = async (lat, lon) => {
-            try {
-                const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`);
-                const data = await res.json();
-                cityName.value = data.address.city || data.address.town || 'Nexus Point';
-            } catch (e) { cityName.value = 'Nexus Point'; }
-        };
-
-        const getWeatherByCity = async () => {
-            if (!cityInput.value) return;
-            loading.value = true;
-            try {
-                const res = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(cityInput.value)}&count=1`);
-                const data = await res.json();
-                if (data.results?.[0]) {
-                    const l = data.results[0];
-                    cityName.value = l.name;
-                    await fetchWeather(l.latitude, l.longitude);
-                }
-            } catch (e) { alert("Target location not found"); }
-            finally { cityInput.value = ''; loading.value = false; }
-        };
-
-        const formatDate = (d) => new Intl.DateTimeFormat('en-US', { weekday: 'short' }).format(new Date(d));
-
-        // Military time formats (24h)
-        const formatTime = (t) => new Date(t).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: false });
-        const formatAstroTime = (t) => new Date(t).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: false });
-
-        const updateClock = () => {
-            currentTime.value = new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
-        };
-
-        onMounted(() => {
-            setInterval(updateClock, 1000);
-            updateClock();
-            if (navigator.geolocation) {
-                navigator.geolocation.getCurrentPosition(
-                    async (p) => {
-                        await getCityName(p.coords.latitude, p.coords.longitude);
-                        await fetchWeather(p.coords.latitude, p.coords.longitude);
-                    },
-                    () => fetchWeather(40.7128, -74.0060)
-                );
-            }
-        });
-
-        return {
-            loading, weather, cityName, cityInput, weatherDesc, unit, currentTime,
-            getWeatherByCity, formatDate, formatTime, formatAstroTime, convertTemp, getThermalEmoji, hourlySlice
-        };
-    }
-}).mount('#app');
-</script>
+<script src="app.js"></script>
 </body>
 </html>
