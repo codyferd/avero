@@ -1,91 +1,151 @@
-const { createApp, ref, nextTick } = Vue;
+const { createApp, ref, nextTick, watch, computed } = Vue;
 
 createApp({
     setup() {
+        // --- REACTIVE STATE ---
         const roomId = ref('');
         const myName = ref('User_' + Math.floor(Math.random() * 999));
         const isJoined = ref(false);
-        const isHost = ref(false); // Track if we own the room
+        const isHost = ref(false);
+        const showSidebar = ref(false);
         const currentInput = ref('');
         const messages = ref([]);
+        const stream = ref(null);
+        const isMuted = ref(false);
 
-        let peer = null;
-        let connections = [];
-        let hostConn = null;
+        // --- SUBCHAT STATE ---
+        const subchats = ref(['GENERAL']);
+        const currentSubchat = ref('GENERAL');
 
+        // --- COMPUTED ---
+        // Filters messages so you only see those belonging to the active subchat or system alerts
+        const filteredMessages = computed(() => {
+            return messages.value.filter(m =>
+            m.subchatId === currentSubchat.value ||
+            m.sender === 'SYS'
+            );
+        });
+
+        // --- WATCHERS ---
+        watch(roomId, (val) => {
+            roomId.value = Utils.cleanRoomId(val);
+        });
+
+        // --- CORE MESH ACTIONS ---
         const initRoom = () => {
-            if (!roomId.value) return;
-            const cleanRoomId = roomId.value.toUpperCase().trim();
+            if (!roomId.value || isJoined.value) return;
 
-            peer = new Peer(cleanRoomId, {
-                config: { 'iceServers': [{ url: 'stun:stun.l.google.com:19302' }] }
-            });
+            Mesh.init(roomId.value, {
+                onJoined: (hostStatus) => {
+                    isJoined.value = true;
+                    isHost.value = hostStatus;
 
-            peer.on('open', (id) => {
-                isJoined.value = true;
-                isHost.value = true; // We successfully claimed the ID
-                addSystemMessage(`Mesh Server Started: ${id}`);
-                setupHostListeners();
-            });
+                    Mesh.peer.on('call', (call) => {
+                        call.answer(stream.value);
+                        handleCall(call);
+                    });
+                },
+                onSystem: (text) => {
+                    messages.value.push(Utils.createSysMsg(text));
+                    scrollToBottom();
+                },
+                onMessage: (data) => {
+                    // Handle channel list synchronization
+                    if (data.type === 'channel-sync') {
+                        data.channels.forEach(c => {
+                            if (!subchats.value.includes(c)) subchats.value.push(c);
+                        });
+                            return;
+                    }
 
-            peer.on('error', (err) => {
-                if (err.type === 'unavailable-id') {
-                    joinAsGuest(cleanRoomId);
-                } else {
-                    console.error("Peer Error:", err);
+                    if (messages.value.find(m => m.id === data.id)) return;
+                    messages.value.push({ ...data, self: false });
+                    scrollToBottom();
+                },
+                onHistory: (history) => {
+                    mergeMessages(history);
+                    scrollToBottom();
+                },
+                requestHistorySync: (conn) => {
+                    // Send text history and the current list of subchats to the new peer
+                    const history = messages.value.filter(m => !m.image);
+                    conn.send({ type: 'history', data: history });
+                    conn.send({ type: 'channel-sync', channels: subchats.value });
+                },
+                onPeerJoin: (peerId) => {
+                    if (stream.value) {
+                        const call = Mesh.peer.call(peerId, stream.value);
+                        handleCall(call);
+                    }
                 }
             });
         };
 
-        // --- HOST LOGIC ---
-        const setupHostListeners = () => {
-            peer.on('connection', (conn) => {
-                connections.push(conn);
+        const sendPayload = () => {
+            if (!currentInput.value || !isJoined.value) return;
 
-                // When a new guest joins, send them the existing chat history
-                conn.on('open', () => {
-                    if (messages.value.length > 0) {
-                        conn.send({ type: 'history', data: messages.value });
-                    }
-                });
+            const payload = {
+                sender: myName.value,
+                text: currentInput.value,
+                subchatId: currentSubchat.value, // Tag message with current channel
+                time: Date.now(),
+          id: Utils.generateId()
+            };
 
-                conn.on('data', (data) => {
-                    broadcastToMesh(data);
-                    receivePayload(data);
-                });
-                addSystemMessage("Peer synchronized with mesh.");
+            Mesh.broadcast(payload);
+            messages.value.push({ ...payload, self: true });
+            currentInput.value = '';
+            scrollToBottom();
+        };
+
+        const sendImage = async (event) => {
+            const file = event.target.files[0];
+            if (!file || !isJoined.value) return;
+
+            try {
+                const base64 = await Utils.fileToBase64(file);
+                const payload = {
+                    sender: myName.value,
+          image: base64,
+          subchatId: currentSubchat.value,
+          time: Date.now(),
+          id: Utils.generateId()
+                };
+
+                Mesh.broadcast(payload);
+                messages.value.push({ ...payload, self: true });
+                scrollToBottom();
+            } catch (err) {
+                messages.value.push(Utils.createSysMsg("Failed to process image."));
+            }
+        };
+
+        // --- SUBCHAT ACTIONS ---
+        const createSubchat = () => {
+            const name = prompt("Enter subchat name:")?.toUpperCase().replace(/[^A-Z0-9]/g, '');
+            if (name && !subchats.value.includes(name)) {
+                subchats.value.push(name);
+                currentSubchat.value = name;
+                // Tell the rest of the mesh about the new channel
+                Mesh.broadcast({ type: 'channel-sync', channels: subchats.value });
+                messages.value.push(Utils.createSysMsg(`Channel #${name} created.`));
+            }
+        };
+
+        // --- STORAGE & MERGE ACTIONS ---
+        const mergeMessages = (newBatch) => {
+            const map = new Map();
+            messages.value.forEach(m => map.set(m.id, m));
+            newBatch.forEach(m => {
+                map.set(m.id, m);
+                // Ensure subchats mentioned in history are added to the list
+                if (m.subchatId && !subchats.value.includes(m.subchatId)) {
+                    subchats.value.push(m.subchatId);
+                }
             });
+            messages.value = Array.from(map.values()).sort((a, b) => a.time - b.time);
         };
 
-        const broadcastToMesh = (payload) => {
-            connections.forEach(c => { if (c.open) c.send(payload); });
-        };
-
-        // --- GUEST LOGIC ---
-        const joinAsGuest = (id) => {
-            peer = new Peer();
-            peer.on('open', () => {
-                hostConn = peer.connect(id);
-                hostConn.on('open', () => {
-                    isJoined.value = true;
-                    isHost.value = false;
-                    addSystemMessage(`Connected to Mesh: ${id}`);
-                });
-                hostConn.on('data', (data) => {
-                    // Check if host is sending full history
-                    if (data.type === 'history') {
-                        messages.value = data.data;
-                        scrollToBottom();
-                    } else {
-                        receivePayload(data);
-                    }
-                });
-            });
-        };
-
-        // --- PERSISTENCE FEATURES ---
-
-        // Only the Host uses this to load a .json file into the mesh
         const importLogs = (event) => {
             const file = event.target.files[0];
             if (!file) return;
@@ -94,57 +154,55 @@ createApp({
             reader.onload = (e) => {
                 try {
                     const imported = JSON.parse(e.target.result);
-                    messages.value = imported;
-                    // If guests are already connected, sync them immediately
-                    broadcastToMesh({ type: 'history', data: messages.value });
-                    addSystemMessage("Historical logs injected into mesh.");
+                    if (Array.isArray(imported)) {
+                        mergeMessages(imported);
+                        if (isHost.value) {
+                            Mesh.broadcast({ type: 'history', data: messages.value.filter(m => !m.image) });
+                            Mesh.broadcast({ type: 'channel-sync', channels: subchats.value });
+                        }
+                        messages.value.push(Utils.createSysMsg("History merged into current session."));
+                        scrollToBottom();
+                    }
                 } catch (err) {
-                    alert("Invalid Avero Log File.");
+                    alert("Failed to parse Avero Mesh logs.");
                 }
             };
             reader.readAsText(file);
+            event.target.value = '';
         };
 
-        const exportHostLogs = () => {
-            if (!isHost.value) return;
-            const dataStr = JSON.stringify(messages.value);
-            const blob = new Blob([dataStr], { type: 'application/json' });
-            const url = URL.createObjectURL(blob);
-            const link = document.createElement('a');
-            link.href = url;
-            link.download = `avero_server_${roomId.value}_backup.json`;
-            link.click();
+        // --- MEDIA ACTIONS ---
+        const toggleVideo = async () => {
+            if (stream.value) {
+                Media.stopLocalStream();
+                stream.value = null;
+            } else {
+                try {
+                    stream.value = await Media.startLocalStream();
+                    const targets = isHost.value ? Mesh.connections : (Mesh.hostConn ? [Mesh.hostConn] : []);
+                    targets.forEach(conn => {
+                        const targetPeer = conn.peer || conn;
+                        if (targetPeer) {
+                            const call = Mesh.peer.call(targetPeer, stream.value);
+                            handleCall(call);
+                        }
+                    });
+                } catch (err) {
+                    messages.value.push(Utils.createSysMsg(err.message));
+                }
+            }
         };
 
-        // --- CORE LOGIC ---
-        const sendPayload = () => {
-            if (!currentInput.value) return;
-            const payload = {
-                sender: myName.value,
-          text: currentInput.value,
-          time: Date.now(),
-          id: Math.random().toString(36).substr(2, 9)
-            };
-            if (hostConn) hostConn.send(payload);
-            else broadcastToMesh(payload);
-
-            messages.value.push({ ...payload, self: true });
-            currentInput.value = '';
-            scrollToBottom();
+        const handleCall = (call) => {
+            call.on('stream', (remoteStream) => {
+                Media.addRemoteVideo(call.peer, remoteStream);
+            });
+            call.on('close', () => {
+                Media.removeRemoteVideo(call.peer);
+            });
         };
 
-        const receivePayload = (data) => {
-            if (messages.value.find(m => m.id === data.id)) return;
-            messages.value.push({ ...data, self: false });
-            scrollToBottom();
-        };
-
-        const formatTime = (ts) => {
-            if (!ts) return '';
-            const d = new Date(ts);
-            return d.getHours().toString().padStart(2, '0') + ':' + d.getMinutes().toString().padStart(2, '0');
-        };
-
+        // --- UI HELPERS ---
         const scrollToBottom = () => {
             nextTick(() => {
                 const el = document.getElementById('msg-container');
@@ -152,11 +210,16 @@ createApp({
             });
         };
 
-        const addSystemMessage = (t) => messages.value.push({ sender: 'SYS', text: t, time: Date.now(), id: Date.now() });
+        const saveChat = () => {
+            Utils.exportJsonLogs(messages.value, roomId.value);
+        };
 
         return {
-            roomId, myName, isJoined, isHost, currentInput, messages,
-          initRoom, sendPayload, exportHostLogs, importLogs, formatTime
+            roomId, myName, isJoined, isHost, showSidebar,
+            currentInput, messages, stream, isMuted,
+            subchats, currentSubchat, filteredMessages, // Subchat exports
+            initRoom, sendPayload, sendImage, importLogs, toggleVideo,
+            createSubchat, saveChat, formatTime: Utils.formatTime
         };
     }
 }).mount('#app');

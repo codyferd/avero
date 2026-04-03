@@ -3,20 +3,27 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+
     <title>Avero</title>
+    <meta name="title" content="Avero">
+    <meta name="description" content="Avero is a user-friendly, open-source web desktop environment built with Vue and TailwindCSS. Explore a suite of applets with weekly updates every Sunday.">
+    <meta name="keywords" content="Avero, Web OS, Web Desktop, Vue project, TailwindCSS, open source, web applets">
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="Avero">
+    <meta property="og:description" content="A user-friendly web desktop built for productivity and ease of use. New applets and updates every Sunday.">
+    <meta property="og:image" content="share/logo.avif">
     <link rel="icon" type="image/avif" href="share/logo.avif">
+
     <style>
-        /* 2. Reset everything and hide overflow */
         html, body {
             margin: 0;
             padding: 0;
             width: 100%;
             height: 100%;
             overflow: hidden;
-            background-color: #000; /* Match your app's background to avoid white flashes */
+            background-color: #000;
         }
 
-        /* 3. Use fixed positioning to bypass address bar issues */
         iframe {
             position: fixed;
             top: 0;
@@ -24,13 +31,35 @@
             width: 100%;
             height: 100%;
             border: none;
-
-            /* Performance & Smoothness */
             -webkit-overflow-scrolling: touch;
+            z-index: 2;
+        }
+        .visually-hidden {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            border: 0;
         }
     </style>
 </head>
 <body>
-    <iframe src="app/desktop/index.html" allow="fullscreen"></iframe>
+
+    <main class="visually-hidden">
+        <h1>Avero Operating Environment</h1>
+        <p>Avero is an open source, web-based operating environment based on Vue and TailwindCSS.</p>
+        <p>Designed to be easy and user-friendly, Avero provides many applets including Avero Blocks.</p>
+        <p>Avero updates every Sunday in a weekly release.</p>
+        <nav>
+            <a href="app/desktop/index.html">Enter Avero Desktop</a>
+        </nav>
+    </main>
+
+    <iframe src="app/desktop/index.html" title="Avero" allow="fullscreen"></iframe>
+
 </body>
 </html>
+

@@ -59,7 +59,7 @@ class Level1 extends Phaser.Scene {
         GameComponents.createNeonPlatform(this, 9750, height - 200, 500, 60, 0x1e293b, 0x4f46e5);
 
         GameComponents.createKillZone(this, worldWidth / 2, height + 80, worldWidth, 100, true);
-        GameComponents.createGoal(this, 9850, height - 320);
+        GameComponents.createGoal(this, 9850, height - 320, 'Level2');
 
         // Physics & Camera
         this.physics.add.collider(this.player, this.platforms);

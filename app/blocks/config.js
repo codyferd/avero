@@ -14,6 +14,10 @@ const TERRAIN_BASE_HEIGHT = 10;  // The "sea level" or flat ground height
 const TERRAIN_AMPLITUDE = 8;     // How high the hills go
 const TERRAIN_ROUGHNESS = 0.05;  // Higher = more frequent hills
 const WORLD_SEED = Math.random() * 10000; // Random seed for every session
+const WATER_LEVEL = 4;
+const TREE_CHANCE = 0.005;
+const FLOWER_CHANCE = 0;
+
 
 // --- VISUALS & COLORS ---
 const SKY_COLOR = 0x87CEEB;

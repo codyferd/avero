@@ -8,14 +8,52 @@
     <style>
         body { margin: 0; overflow: hidden; background: #020205; font-family: 'Inter', sans-serif; }
         #ui { position: absolute; top: 20px; left: 20px; z-index: 10; pointer-events: none; }
+        #crosshair {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 10px;
+            height: 10px;
+            background-color: white;
+            border-radius: 50%;
+            border: 1px solid black; /* Makes it visible against light skies */
+            transform: translate(-50%, -50%);
+            pointer-events: none; /* Crucial: clicks must pass through to the game */
+            z-index: 100;
+        }
+        #hud {
+            position: absolute;
+            top: 60px;
+            left: 20px;
+            padding: 10px;
+            background: rgba(0, 0, 0, 0.8); /* Black with 80% opacity */
+            color: #ffffff; /* Classic "Matrix" green for contrast, or use #ffffff for white */
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 14px;
+            border-radius: 4px;
+            pointer-events: none; /* Clicks go through to the game */
+            z-index: 100;
+            min-width: 100px;
+        }
+
+        #hud div {
+            margin-bottom: 5px;
+        }
+
     </style>
+
 </head>
 <body>
-
+    <div id="crosshair"></div>
     <div id="ui">
         <h1 class="text-3xl font-black italic tracking-tighter uppercase text-white">Avero <span class="text-indigo-500">Blocks</span></h1>
     </div>
+    <div id="hud">
+        <div id="fps-counter">FPS: 0</div>
+    </div>
+
 <script src="config.js"></script>
+<script src="block.js"></script>
 <script src="terrain.js"></script>
 <script src="player.js"></script>
 <script src="app.js"></script>

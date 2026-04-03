@@ -1,6 +1,10 @@
 // --- GLOBAL ENGINE VARIABLES ---
 let scene, camera, renderer;
 let blockGeometry, blockMaterial;
+let lastTime = performance.now();
+let frames = 0;
+const fpsDisplay = document.getElementById('fps-counter');
+const resourceDisplay = document.getElementById('resource-counter');
 
 /**
  * INITIALIZE THE ENGINE
@@ -56,9 +60,13 @@ function initEngine() {
     // 5. Shared Assets
     blockGeometry = new THREE.BoxGeometry(BLOCK_SIZE, BLOCK_SIZE, BLOCK_SIZE);
 
-    // Lambert is great for performance, vertexColors is the bridge for InstancedMesh
+    // FIX: Set base color to white and REMOVE vertexColors.
+    // InstancedMesh colors work automatically on standard materials
+    // as long as the base color isn't dark.
     blockMaterial = new THREE.MeshLambertMaterial({
-        vertexColors: true
+        color: 0xffffff,
+        transparent: false,
+        opacity: 1.0
     });
 
     // 6. Init Player Inputs
@@ -74,6 +82,13 @@ function initEngine() {
 function animate() {
     requestAnimationFrame(animate);
 
+    frames++;
+    const currentTime = performance.now();
+    if (currentTime >= lastTime + 1000) {
+        fpsDisplay.innerText = `FPS: ${frames}`;
+        frames = 0;
+        lastTime = currentTime;
+    }
     // Update Logic
     updatePlayer(camera);
     updateWorldChunks(camera, scene, blockGeometry, blockMaterial);

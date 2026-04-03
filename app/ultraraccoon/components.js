@@ -76,17 +76,33 @@ const GameComponents = {
         return boost;
     },
 
-    createGoal: function(scene, x, y) {
+    // Add this or update your existing GameComponents.createGoal
+    createGoal: function(scene, x, y, nextSceneKey) {
         const goal = scene.add.rectangle(x, y, 100, 200, 0xfacc15, 0.5);
         scene.physics.add.existing(goal, true);
+
         scene.physics.add.overlap(scene.player, goal, () => {
             if (scene.player && !scene.player.isDead) {
+                // Lock player controls
+                scene.player.isDead = true;
                 scene.player.setVelocity(0, 0);
-                scene.add.text(x, y - 150, "SYSTEM CLEAR", { font: "900 48px monospace", fill: "#facc15" }).setOrigin(0.5);
+                scene.player.setAcceleration(0, 0);
+
+                // Victory Text
+                scene.add.text(x, y - 150, "SYSTEM CLEAR", {
+                    font: "900 48px monospace",
+                    fill: "#facc15"
+                }).setOrigin(0.5);
+
+                // Transition to Level 2 after 2 seconds
+                scene.time.delayedCall(2000, () => {
+                    scene.scene.start(nextSceneKey);
+                });
             }
         });
         return goal;
     },
+
 
     // --- EXPERIMENTAL & UTILITY ---
     createWindFan: function(scene, x, y, width, height, force = -1200) {
