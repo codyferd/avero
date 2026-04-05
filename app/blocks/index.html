@@ -5,58 +5,113 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Avero Blocks</title>
     <script libs="local,tailwind,vue,three" src="../../share/cdn.js"></script>
+
     <style>
+        /* Base Reset */
         body { margin: 0; overflow: hidden; background: #020205; font-family: 'Inter', sans-serif; }
+
+        /* Brand UI */
         #ui { position: absolute; top: 20px; left: 20px; z-index: 10; pointer-events: none; }
+
+        /* Crosshair */
         #crosshair {
             position: absolute;
             top: 50%;
             left: 50%;
-            width: 10px;
-            height: 10px;
+            width: 8px;
+            height: 8px;
             background-color: white;
             border-radius: 50%;
-            border: 1px solid black; /* Makes it visible against light skies */
+            border: 1px solid rgba(0,0,0,0.5);
             transform: translate(-50%, -50%);
-            pointer-events: none; /* Crucial: clicks must pass through to the game */
+            pointer-events: none;
             z-index: 100;
         }
+
+        /* HUD (FPS Counter) */
         #hud {
             position: absolute;
-            top: 60px;
+            top: 70px; /* Positioned below the Avero Blocks title */
             left: 20px;
             padding: 10px;
-            background: rgba(0, 0, 0, 0.8); /* Black with 80% opacity */
-            color: #ffffff; /* Classic "Matrix" green for contrast, or use #ffffff for white */
+            background: rgba(0, 0, 0, 0.8);
+            color: #ffffff;
             font-family: 'Courier New', Courier, monospace;
             font-size: 14px;
             border-radius: 4px;
-            pointer-events: none; /* Clicks go through to the game */
+            pointer-events: none;
             z-index: 100;
-            min-width: 100px;
+            min-width: 80px;
+            border-left: 3px solid #6366f1; /* Indigo accent to match brand */
         }
 
-        #hud div {
-            margin-bottom: 5px;
+        /* Block Picker Hotbar */
+        #hotbar {
+            position: absolute;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 8px;
+            background: rgba(0, 0, 0, 0.85);
+            padding: 8px;
+            border-radius: 8px;
+            border: 1px solid #333;
+            pointer-events: all; /* Allows clicking to select blocks */
+            z-index: 101;
         }
 
+        .slot {
+            width: 44px;
+            height: 44px;
+            border: 2px solid #444;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            position: relative;
+        }
+
+        .slot:hover {
+            border-color: #fff;
+            transform: translateY(-5px);
+        }
+
+        .slot.active {
+            border-color: #6366f1;
+            box-shadow: 0 0 15px rgba(99, 102, 241, 0.4);
+            transform: scale(1.1) translateY(-5px);
+        }
     </style>
-
 </head>
 <body>
     <div id="crosshair"></div>
+
     <div id="ui">
-        <h1 class="text-3xl font-black italic tracking-tighter uppercase text-white">Avero <span class="text-indigo-500">Blocks</span></h1>
+        <h1 class="text-3xl font-black italic tracking-tighter uppercase text-white">
+            Avero <span class="text-indigo-500">Blocks</span>
+        </h1>
     </div>
+
     <div id="hud">
         <div id="fps-counter">FPS: 0</div>
     </div>
 
-<script src="config.js"></script>
-<script src="block.js"></script>
-<script src="terrain.js"></script>
-<script src="player.js"></script>
-<script src="app.js"></script>
+    <div id="hotbar">
+        </div>
+
+    <script src="config.js"></script>
+    <script src="block.js"></script>
+    <script src="terrain.js"></script>
+    <script src="player.js"></script>
+    <script src="app.js"></script>
+
+    <script>
+        window.addEventListener('DOMContentLoaded', () => {
+            if (typeof initBlockPicker === 'function') {
+                initBlockPicker();
+            }
+        });
+
+    </script>
 </body>
 </html>
-

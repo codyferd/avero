@@ -6,7 +6,7 @@ const RENDER_DISTANCE = 4;  // Number of chunks to load around the player
 // --- PHYSICS & MOVEMENT ---
 const GRAVITY = -0.015;
 const JUMP_FORCE = 0.25;
-const SPEED = 0.4;          // Walking speed
+const SPEED = 0.2;          // Walking speed
 const PLAYER_HEIGHT = 2.0;  // Eye level height above the ground
 
 // --- TERRAIN GENERATION ---

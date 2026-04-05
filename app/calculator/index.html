@@ -1,243 +1,151 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
-    <head>
-        <meta charset="UTF-8" />
-        <meta name="viewport" content="width=device-width,initial-scale=1" />
-        <title>Avero Calculator</title>
-        <script libs="local,tailwind,vue,math" src="../../share/cdn.js"></script>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Avero Calculator</title>
+    <script libs="tailwind,vue,math" src="../../share/cdn.js"></script>
+    <style>
+        .avero-input {
+            background: rgba(0, 0, 0, 0.4);
+            border-bottom: 2px solid #334155;
+            color: #10b981;
+            font-family: 'ui-monospace', monospace;
+            transition: all 0.3s;
+        }
+        .avero-input:focus { border-color: #6366f1; outline: none; box-shadow: 0 4px 20px -10px #6366f1; }
+        .func-btn {
+            background: #1e293b;
+            border: 1px solid #334155;
+            color: #94a3b8;
+            font-size: 0.65rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            transition: all 0.2s;
+        }
+        .func-btn:hover { background: #334155; color: #fff; border-color: #475569; }
+        .op-btn { color: #fbbf24; border-color: rgba(251, 191, 36, 0.2); }
+        [v-cloak] { display: none; }
+    </style>
+</head>
+<body class="bg-[#020617] text-slate-300 p-4 md:p-8 font-sans">
+    <div id="app" v-cloak class="max-w-5xl mx-auto">
 
-        <style>
-            /* App-specific overrides that don't belong in global theme */
-            .terminal-input {
-                background: rgba(0, 0, 0, 0.6);
-                border-bottom: 2px solid var(--avero-border);
-                color: #10b981; /* Emerald */
-                font-family: monospace;
-                outline: none;
-                transition: all 0.2s;
-            }
-            .terminal-input:focus { border-color: #10b981; }
+        <div class="flex justify-between items-center border-b border-slate-800 pb-6 mb-8">
+            <div>
+                <h1 class="text-3xl font-black italic tracking-tighter uppercase">Avero <span class="text-indigo-500">Calculator</span></h1>
+            </div>
+            <div class="flex gap-4">
+                <button @click="activeTab = 'math'" :class="activeTab === 'math' ? 'text-indigo-400 border-indigo-400' : 'text-slate-600 border-transparent'" class="text-[10px] font-bold border-b-2 pb-1 transition-all">MATH</button>
+                <button @click="activeTab = 'trig'" :class="activeTab === 'trig' ? 'text-indigo-400 border-indigo-400' : 'text-slate-600 border-transparent'" class="text-[10px] font-bold border-b-2 pb-1 transition-all">TRIG</button>
+                <button @click="activeTab = 'prob'" :class="activeTab === 'prob' ? 'text-indigo-400 border-indigo-400' : 'text-slate-600 border-transparent'" class="text-[10px] font-bold border-b-2 pb-1 transition-all">PROB</button>
+            </div>
+        </div>
 
-            .si-tab {
-                padding: 4px 12px;
-                font-size: 10px;
-                border: 1px solid var(--avero-border);
-                border-radius: 99px;
-                cursor: pointer;
-                transition: all 0.2s;
-            }
-            .si-tab:hover {
-                background: rgba(16, 185, 129, 0.1);
-                color: #10b981;
-                border-color: #10b981;
-            }
-
-            .key-sci { color: #818cf8; }
-            .key-op { color: #f59e0b; }
-            .key-exec { background: #059669 !important; }
-        </style>
-    </head>
-
-    <body class="avero-app p-4">
-        <div id="app" v-cloak class="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-4 h-full">
-
-            <div class="lg:col-span-3">
-                <div class="avero-card h-full flex flex-col">
-                    <div class="p-3 border-b border-slate-800 text-[10px] font-black tracking-widest text-slate-500 uppercase">
-                        SI Conversion Matrix
-                    </div>
-                    <div class="p-4 space-y-4 overflow-y-auto flex-grow">
-                        <div v-for="(units, category) in siMatrix" :key="category">
-                            <label class="text-[9px] uppercase text-slate-600 mb-2 block font-bold tracking-tighter">{{ category }}</label>
-                            <div class="flex flex-wrap gap-2 mb-4">
-                                <div v-for="u in units" @click="append(` to ${u}`)" class="si-tab">{{ u }}</div>
-                            </div>
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+            <div class="lg:col-span-3 order-2 lg:order-1">
+                <div class="bg-slate-900/40 border border-slate-800 rounded-2xl p-5 h-[550px] flex flex-col">
+                    <span class="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-4 flex items-center gap-2">
+                        <span class="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse"></span> Data_Log
+                    </span>
+                    <div class="overflow-y-auto flex-grow space-y-4 custom-scrollbar">
+                        <div v-for="h in history" @click="input = h.res" class="group cursor-pointer border-l-2 border-transparent hover:border-indigo-500 pl-3 transition-all">
+                            <div class="text-[10px] text-slate-600 truncate group-hover:text-slate-400">{{ h.exp }}</div>
+                            <div class="text-sm font-mono text-emerald-500 font-bold group-hover:text-emerald-400"> {{ h.res }}</div>
                         </div>
+                        <div v-if="history.length === 0" class="text-[10px] text-slate-700 italic">No entries in current session...</div>
                     </div>
                 </div>
             </div>
 
-            <div class="lg:col-span-6 space-y-4 flex flex-col">
-                <div class="avero-card p-6">
-                    <div class="flex justify-between items-center mb-4">
-                        <div class="flex items-center gap-2">
-                            <div class="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_#10b981]"></div>
-                            <span class="text-[9px] font-mono tracking-[0.2em] uppercase text-slate-500">Core.Compute.Active</span>
+            <div class="lg:col-span-9 order-1 lg:order-2 space-y-6">
+                <div class="bg-slate-900/80 border border-slate-800 rounded-3xl p-8 shadow-2xl relative overflow-hidden">
+                    <div class="relative z-10">
+                        <input
+                            v-model="input"
+                            @keyup.enter="exec"
+                            ref="term"
+                            class="w-full text-6xl avero-input p-2 mb-2 font-light"
+                            placeholder="0"
+                        >
+                        <div class="flex justify-between items-center mt-2">
+                            <div class="text-xs text-slate-500 font-mono italic">{{ formula || 'awaiting_input...' }}</div>
+                            <div class="text-[10px] text-indigo-400 font-bold uppercase tracking-tighter">Deg/Rad Mode: Auto</div>
                         </div>
-                        <span class="text-[9px] font-mono text-slate-600">SI_STANDARD_OFFSETS_LOADED</span>
                     </div>
 
-                    <div class="relative mb-6">
-                        <input type="text" v-model="currentInput" @keyup.enter="calculate"
-                               class="w-full p-4 text-4xl terminal-input" placeholder="f(x)..." ref="terminal" />
-                        <div class="mt-2 text-right h-6 text-slate-500 font-mono text-sm italic">{{ displayFormula }}</div>
-                    </div>
+                    <div class="grid grid-cols-4 md:grid-cols-6 gap-2 mt-10">
+                        <div class="contents" v-if="activeTab === 'math'">
+                            <button v-for="f in ['sqrt','log','log10','abs','ceil','floor','min','max','cbrt','sign','exp','mod']" @click="add(f+'(')" class="func-btn py-3 rounded-lg">{{f}}</button>
+                        </div>
 
-                    <div class="grid grid-cols-5 gap-2">
-                        <button @click="append('sin(')" class="avero-btn py-3 key-sci">sin</button>
-                        <button @click="append('cos(')" class="avero-btn py-3 key-sci">cos</button>
-                        <button @click="append('tan(')" class="avero-btn py-3 key-sci">tan</button>
-                        <button @click="append('log(')" class="avero-btn py-3 key-sci">ln</button>
-                        <button @click="deleteLast" class="avero-btn py-3 !bg-transparent text-rose-500 border border-rose-900/30">DEL</button>
+                        <div class="contents" v-if="activeTab === 'trig'">
+                            <button v-for="f in ['sin','cos','tan','asin','acos','atan','sinh','cosh','tanh','sec','cot','csc']" @click="add(f+'(')" class="func-btn py-3 rounded-lg">{{f}}</button>
+                        </div>
 
-                        <button @click="append('asin(')" class="avero-btn py-3 key-sci">asin</button>
-                        <button @click="append('acos(')" class="avero-btn py-3 key-sci">acos</button>
-                        <button @click="append('atan(')" class="avero-btn py-3 key-sci">atan</button>
-                        <button @click="append('^')" class="avero-btn py-3 key-sci">xʸ</button>
-                        <button @click="clear" class="avero-btn py-3 !bg-transparent text-rose-500 font-bold border border-rose-900/30">AC</button>
+                        <div class="contents" v-if="activeTab === 'prob'">
+                            <button v-for="f in ['factorial','permutations','combinations','random','gamma','erf']" @click="add(f+'(')" class="func-btn py-3 rounded-lg">{{f}}</button>
+                            <button @click="add('pi')" class="func-btn py-3 rounded-lg">π</button>
+                            <button @click="add('e')" class="func-btn py-3 rounded-lg">e</button>
+                        </div>
 
-                        <button v-for="n in ['7','8','9']" @click="append(n)" class="avero-btn py-3 !bg-slate-800/40 hover:!bg-slate-700">{{n}}</button>
-                        <button @click="append('/')" class="avero-btn py-3 key-op !bg-amber-950/10">÷</button>
-                        <button @click="append('sqrt(')" class="avero-btn py-3 key-op !bg-amber-950/10">√</button>
+                        <button @click="add('(')" class="func-btn op-btn rounded-lg">(</button>
+                        <button @click="add(')')" class="func-btn op-btn rounded-lg">)</button>
+                        <button @click="add('^')" class="func-btn op-btn rounded-lg">xʸ</button>
+                        <button @click="input = ''" class="func-btn text-rose-500 border-rose-900/30 rounded-lg">AC</button>
 
-                        <button v-for="n in ['4','5','6']" @click="append(n)" class="avero-btn py-3 !bg-slate-800/40 hover:!bg-slate-700">{{n}}</button>
-                        <button @click="append('*')" class="avero-btn py-3 key-op !bg-amber-950/10">×</button>
-                        <button @click="append('pi')" class="avero-btn py-3 key-op !bg-amber-950/10">π</button>
-
-                        <button v-for="n in ['1','2','3']" @click="append(n)" class="avero-btn py-3 !bg-slate-800/40 hover:!bg-slate-700">{{n}}</button>
-                        <button @click="append('-')" class="avero-btn py-3 key-op !bg-amber-950/10">−</button>
-                        <button @click="drawGraph" class="avero-btn !bg-indigo-600 row-span-2">PLOT</button>
-
-                        <button @click="append('0')" class="avero-btn py-3 col-span-2 !bg-slate-800/40 hover:!bg-slate-700">0</button>
-                        <button @click="append('.')" class="avero-btn py-3 !bg-slate-800/40 hover:!bg-slate-700">.</button>
-                        <button @click="append('+')" class="avero-btn py-3 key-op !bg-amber-950/10">+</button>
-
-                        <button @click="calculate" class="avero-btn key-exec col-span-5 py-4 mt-1">Run Command</button>
+                        <button @click="exec" class="col-span-4 md:col-span-2 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-black tracking-widest py-4 rounded-xl shadow-lg shadow-indigo-900/20 transition-all uppercase mt-2">
+                            Run Command
+                        </button>
                     </div>
                 </div>
 
-                <div class="avero-card flex-grow bg-black relative min-h-[200px]">
-                    <canvas id="graphCanvas" class="w-full h-full rounded-[24px]"></canvas>
-                    <div class="absolute bottom-4 left-4">
-                        <div class="bg-black/80 px-2 py-1 border border-slate-800 rounded text-[9px] font-mono uppercase">
-                            <span class="text-indigo-400">Target:</span> {{ lastFunction || 'Idle' }}
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="lg:col-span-3 space-y-4 flex flex-col">
-                <div class="avero-card flex-grow h-[420px] flex flex-col">
-                    <div class="p-3 border-b border-slate-800 text-[10px] font-black tracking-widest text-slate-500 uppercase">
-                        Data Log
-                    </div>
-                    <div class="overflow-y-auto flex-grow">
-                        <div v-for="(h, i) in history" :key="i" @click="currentInput = h.result"
-                             class="p-3 border-b border-slate-900 hover:bg-slate-800/40 cursor-pointer transition-colors">
-                            <div class="text-[10px] text-slate-600 truncate mb-1">{{ h.exp }}</div>
-                            <div class="text-emerald-500 font-mono text-xs">> {{ h.result }}</div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="avero-card p-4">
-                    <label class="text-[9px] uppercase text-slate-600 mb-3 block font-bold">Physical Constants</label>
-                    <div class="space-y-1">
-                        <div v-for="(val, name) in siConstants" @click="append(name)"
-                             class="flex justify-between p-2 bg-black/40 border border-slate-800 rounded text-[10px] cursor-pointer hover:border-emerald-500 group transition-all">
-                            <span class="text-slate-300 group-hover:text-emerald-400">{{ name }}</span>
-                            <span class="text-slate-600 italic font-mono">{{ val }}</span>
-                        </div>
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div v-for="(val, key) in constants" @click="add(key)" class="bg-slate-900/40 border border-slate-800 p-3 rounded-xl cursor-pointer hover:border-indigo-500 transition-all group">
+                        <div class="text-[9px] text-slate-500 uppercase font-black group-hover:text-indigo-400">{{key}}</div>
+                        <div class="text-xs font-mono text-slate-400">{{val}}</div>
                     </div>
                 </div>
             </div>
         </div>
+    </div>
 
-        <script>
-            const { createApp, ref, onMounted } = Vue;
+    <script>
+        const { createApp, ref, onMounted } = Vue;
+        createApp({
+            setup() {
+                const input = ref(""), formula = ref(""), history = ref([]), activeTab = ref("math"), term = ref(null);
 
-            createApp({
-                setup() {
-                    const currentInput = ref("");
-                    const displayFormula = ref("");
-                    const lastFunction = ref("");
-                    const history = ref([]);
-                    const terminal = ref(null);
+                const constants = {
+                    "phi": "1.618",
+                    "c": "2.997e8",
+                    "G": "6.674e-11",
+                    "h": "6.626e-34"
+                };
 
-                    const siMatrix = {
-                        thermodynamics: ["kelvin", "celsius", "fahrenheit"],
-                        length: ["meter", "km", "cm", "mm", "inch", "foot", "mile"],
-                        mass: ["kg", "gram", "mg", "ton", "lb", "oz"],
-                        force: ["newton", "lbf"],
-                        pressure: ["pascal", "bar", "psi", "atm"],
-                        energy: ["joule", "kcal", "Wh"],
-                    };
+                const add = (v) => {
+                    input.value += v;
+                    term.value.focus();
+                };
 
-                    const siConstants = { c: "2.997e8", G: "6.674e-11", h: "6.626e-34", k: "1.380e-23", e: "1.602e-19" };
+                const exec = () => {
+                    if(!input.value) return;
+                    try {
+                        const res = math.evaluate(input.value);
+                        const out = math.format(res, { precision: 12 }).toString();
+                        formula.value = input.value;
+                        history.value.unshift({ exp: input.value, res: out });
+                        input.value = out;
+                    } catch(e) {
+                        input.value = "SYNTAX_ERROR";
+                        setTimeout(() => input.value = "", 1000);
+                    }
+                };
 
-                    const append = (v) => {
-                        currentInput.value += v;
-                        terminal.value.focus();
-                    };
-
-                    const clear = () => { currentInput.value = ""; displayFormula.value = ""; };
-                    const deleteLast = () => (currentInput.value = currentInput.value.slice(0, -1));
-
-                    const calculate = () => {
-                        if (!currentInput.value) return;
-                        try {
-                            const res = math.evaluate(currentInput.value);
-                            const formatted = math.format(res, { precision: 12 });
-                            displayFormula.value = currentInput.value;
-                            history.value.unshift({ exp: currentInput.value, result: formatted.toString() });
-                            currentInput.value = formatted.toString();
-                        } catch (e) {
-                            currentInput.value = "ERR: SYSTEM_FAIL";
-                            setTimeout(() => (currentInput.value = ""), 1200);
-                        }
-                    };
-
-                    const drawGraph = () => {
-                        const canvas = document.getElementById("graphCanvas");
-                        const ctx = canvas.getContext("2d");
-                        const w = (canvas.width = canvas.offsetWidth);
-                        const h = (canvas.height = canvas.offsetHeight);
-
-                        ctx.clearRect(0, 0, w, h);
-                        ctx.strokeStyle = "#0f172a";
-                        ctx.lineWidth = 1;
-                        ctx.beginPath();
-                        for (let i = 0; i < w; i += 25) { ctx.moveTo(i, 0); ctx.lineTo(i, h); }
-                        for (let i = 0; i < h; i += 25) { ctx.moveTo(0, i); ctx.lineTo(w, i); }
-                        ctx.stroke();
-
-                        ctx.strokeStyle = "#1e293b";
-                        ctx.lineWidth = 2;
-                        ctx.beginPath();
-                        ctx.moveTo(w / 2, 0); ctx.lineTo(w / 2, h);
-                        ctx.moveTo(0, h / 2); ctx.lineTo(w, h / 2);
-                        ctx.stroke();
-
-                        ctx.strokeStyle = "#4f46e5";
-                        ctx.lineWidth = 3;
-                        ctx.beginPath();
-
-                        try {
-                            const expr = math.compile(currentInput.value);
-                            lastFunction.value = currentInput.value;
-                            let first = true;
-                            for (let px = 0; px < w; px++) {
-                                const x = (px - w / 2) / 25;
-                                const y = expr.evaluate({ x: x });
-                                const py = h / 2 - y * 25;
-                                if (isNaN(py) || Math.abs(py) > h * 2) { first = true; continue; }
-                                if (first) { ctx.moveTo(px, py); first = false; } else { ctx.lineTo(px, py); }
-                            }
-                            ctx.stroke();
-                        } catch (e) { lastFunction.value = "Invalid Plottable"; }
-                    };
-
-                    onMounted(() => {
-                        terminal.value.focus();
-                        drawGraph();
-                    });
-
-                    return {
-                        currentInput, displayFormula, lastFunction, history, siMatrix, siConstants,
-                        append, clear, deleteLast, calculate, drawGraph, terminal
-                    };
-                },
-            }).mount("#app");
-        </script>
-    </body>
+                onMounted(() => term.value.focus());
+                return { input, formula, history, activeTab, term, add, exec, constants };
+            }
+        }).mount('#app');
+    </script>
+</body>
 </html>

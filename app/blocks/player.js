@@ -3,6 +3,9 @@ let playerVelocity = new THREE.Vector3(0, 0, 0);
 let canJump = false;
 const keys = {};
 
+// Block Picker State
+let selectedBlock = BLOCKS.GRASS; // Default selection
+
 // Raycaster for block interaction
 const raycaster = new THREE.Raycaster();
 const mouse = new THREE.Vector2(0, 0); // Center of screen
@@ -10,82 +13,128 @@ const mouse = new THREE.Vector2(0, 0); // Center of screen
 /**
  * Sets up Keyboard and Mouse Listeners
  */
+/**
+ * Sets up Keyboard and Mouse Listeners
+ */
 function initPlayerInputs() {
-    window.addEventListener('keydown', (e) => keys[e.code] = true);
+    window.addEventListener('keydown', (e) => {
+        keys[e.code] = true;
+
+        // --- NEW: Q/E Inventory Swapping ---
+        const blockKeys = Object.keys(BLOCKS);
+        let currentIndex = blockKeys.indexOf(
+            Object.keys(BLOCKS).find(key => BLOCKS[key] === selectedBlock)
+        );
+
+        if (e.code === 'KeyQ') {
+            // Move backward: (index - 1 + length) % length handles the wrap-around
+            currentIndex = (currentIndex - 1 + blockKeys.length) % blockKeys.length;
+            selectedBlock = BLOCKS[blockKeys[currentIndex]];
+            updatePickerUI();
+        }
+
+        if (e.code === 'KeyE') {
+            // Move forward
+            currentIndex = (currentIndex + 1) % blockKeys.length;
+            selectedBlock = BLOCKS[blockKeys[currentIndex]];
+            updatePickerUI();
+        }
+    });
+
     window.addEventListener('keyup', (e) => keys[e.code] = false);
 
-    // Pointer Lock & Interaction
     document.addEventListener('mousedown', (e) => {
+        if (e.target.closest('#hotbar')) return;
+
         if (document.pointerLockElement !== document.body) {
             document.body.requestPointerLock();
             return;
         }
 
-        // Left Click = Destroy (0), Right Click = Place (2)
         if (e.button === 0) handleBlockInteraction('destroy');
         if (e.button === 2) handleBlockInteraction('place');
     });
 
-        // Prevent context menu on right-click
-        document.addEventListener('contextmenu', e => e.preventDefault());
+    document.addEventListener('contextmenu', e => e.preventDefault());
 
-        document.addEventListener('mousemove', (e) => {
-            if (document.pointerLockElement === document.body) {
-                camera.rotation.y -= e.movementX * 0.002;
-                camera.rotation.x -= e.movementY * 0.002;
-                const minMaxLook = Math.PI / 2.1;
-                camera.rotation.x = Math.max(-minMaxLook, Math.min(minMaxLook, camera.rotation.x));
-            }
+    document.addEventListener('mousemove', (e) => {
+        if (document.pointerLockElement === document.body) {
+            camera.rotation.y -= e.movementX * 0.002;
+            camera.rotation.x -= e.movementY * 0.002;
+            const minMaxLook = Math.PI / 2.1;
+            camera.rotation.x = Math.max(-minMaxLook, Math.min(minMaxLook, camera.rotation.x));
+        }
+    });
+}
+
+
+/**
+ * Initializes the Visual Block Picker Hotbar
+ */
+function initBlockPicker() {
+    const hotbar = document.getElementById('hotbar');
+    if (!hotbar) return;
+
+    Object.keys(BLOCKS).forEach(key => {
+        const type = BLOCKS[key];
+        const slot = document.createElement('div');
+        slot.className = 'slot';
+        slot.dataset.block = key;
+        slot.style.backgroundColor = `#${type.color.toString(16).padStart(6, '0')}`;
+
+        if (type === selectedBlock) slot.classList.add('active');
+
+        slot.addEventListener('mousedown', (e) => {
+            e.stopPropagation();
+            selectedBlock = type;
+            updatePickerUI();
         });
+
+        hotbar.appendChild(slot);
+    });
+}
+
+/** Updates the border highlight on the hotbar */
+function updatePickerUI() {
+    document.querySelectorAll('.slot').forEach(slot => {
+        slot.classList.toggle('active', BLOCKS[slot.dataset.block] === selectedBlock);
+    });
 }
 
 /**
  * Core Block Interaction Logic
  */
 function handleBlockInteraction(mode) {
-    // 1. Point raycaster from center of camera
     raycaster.setFromCamera(mouse, camera);
-    raycaster.far = 8; // Reach distance (8 blocks)
+    raycaster.far = 8;
 
-    // 2. Get all chunk meshes
     const chunkMeshes = Array.from(chunks.values());
     const intersects = raycaster.intersectObjects(chunkMeshes);
 
     if (intersects.length > 0) {
         const hit = intersects[0];
-        const mesh = hit.object; // The InstancedMesh we hit
+        const mesh = hit.object;
         const instanceId = hit.instanceId;
 
         if (mode === 'destroy') {
-            // HIDE THE BLOCK: Set matrix to a scale of 0
             const matrix = new THREE.Matrix4();
-            matrix.makeScale(0, 0, 0);
+            matrix.makeScale(0, 0, 0); // Shrink to hide
             mesh.setMatrixAt(instanceId, matrix);
             mesh.instanceMatrix.needsUpdate = true;
         }
         else if (mode === 'place') {
-            // FIND PLACEMENT POSITION: Hit position + face normal
             const normal = hit.face.normal.clone();
-
-            // Get the position of the block we hit
             const hitMatrix = new THREE.Matrix4();
             mesh.getMatrixAt(instanceId, hitMatrix);
             const pos = new THREE.Vector3().setFromMatrixPosition(hitMatrix);
 
-            // Add the normal to get the empty space next to it
-            const placeX = Math.round(pos.x + normal.x);
-            const placeY = Math.round(pos.y + normal.y);
-            const placeZ = Math.round(pos.z + normal.z);
+            const px = Math.round(pos.x + normal.x);
+            const py = Math.round(pos.y + normal.y);
+            const pz = Math.round(pos.z + normal.z);
 
-            // Check if we have room in the InstancedMesh for a new block
             if (mesh.count < mesh.instanceMatrix.count) {
-                const newId = mesh.count;
-                const newMatrix = new THREE.Matrix4().setPosition(placeX, placeY, placeZ);
-
-                mesh.setMatrixAt(newId, newMatrix);
-                // Default to Dirt/Stone color for placed blocks
-                _tempColor.setHex(0x6d4c41);
-                mesh.setColorAt(newId, _tempColor);
+                // Use the updated placeBlock function from block.js
+                placeBlock(mesh.count, px, py, pz, selectedBlock, mesh);
 
                 mesh.count++;
                 mesh.instanceMatrix.needsUpdate = true;
@@ -95,9 +144,7 @@ function handleBlockInteraction(mode) {
     }
 }
 
-/**
- * Updates Player Physics (Remains the same)
- */
+/** Physics update remains as previously defined */
 function updatePlayer(camera) {
     playerVelocity.y += GRAVITY;
     camera.position.y += playerVelocity.y;

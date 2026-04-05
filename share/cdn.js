@@ -1,5 +1,3 @@
-// cdn.js
-
 const LIB_MAP = {
     local: [
         "../../share/theme.css",
