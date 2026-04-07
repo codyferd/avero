@@ -3,119 +3,124 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Avero HTML</title>
+    <title>Avero HTML Console</title>
     <script libs="local,tailwind,vue" src="../../share/cdn.js"></script>
     <style>
         [v-cloak] { display: none; }
-        body { background: #000; color: #fff; font-family: 'Inter', sans-serif; height: 100vh; overflow: hidden; }
+        body { background: #000; color: #fff; font-family: 'Inter', sans-serif; height: 100vh; overflow: hidden; margin: 0; }
 
-        .avero-app { padding: 40px; text-align: left; }
+        /* Sidebar Styling */
+        .sidebar {
+            width: 260px;
+            background: #050505;
+            border-right: 1px solid #1a1a1a;
+            display: flex;
+            flex-direction: column;
+            padding: 30px 20px;
+        }
 
-        .editor-container { height: calc(100vh - 220px); position: relative; max-width: 1200px; }
+        .preset-card {
+            background: rgba(255,255,255,0.02);
+            border: 1px solid rgba(255,255,255,0.05);
+            padding: 15px;
+            border-radius: 16px;
+            margin-bottom: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .preset-card:hover {
+            background: #6366f1;
+            border-color: #6366f1;
+            transform: translateX(5px);
+        }
+        .preset-card:hover h3 { color: #fff; }
+
+        /* Editor Area */
+        .main-content { flex: 1; padding: 40px; display: flex; flex-direction: column; }
+
+        .editor-container { flex: 1; position: relative; margin-top: 20px; }
         .editor {
             width: 100%; height: 100%; background: #070707; border: 1px solid #1a1a1a;
             padding: 30px; color: #818cf8; font-family: 'JetBrains Mono', monospace;
-            outline: none; resize: none; border-radius: 24px; font-size: 14px;
-            transition: border-color 0.3s, box-shadow 0.3s;
+            outline: none; resize: none; border-radius: 32px; font-size: 13px;
+            transition: border-color 0.3s; box-sizing: border-box;
         }
-        .editor:focus { border-color: #6366f1; box-shadow: 0 0 30px rgba(99, 102, 241, 0.1); }
+        .editor:focus { border-color: #6366f1; box-shadow: 0 0 40px rgba(99, 102, 241, 0.05); }
 
-        .bottom-dock { height: 80px; display: flex; align-items: center; gap: 20px; justify-content: flex-start; }
+        .btn-main { background: #fff; color: #000; font-weight: 900; padding: 12px 30px; border-radius: 100px; text-transform: uppercase; font-size: 11px; letter-spacing: 0.1em; cursor: pointer; border: none; }
+        .btn-ghost { background: rgba(255,255,255,0.05); color: #888; font-weight: 800; padding: 12px 25px; border-radius: 100px; text-transform: uppercase; font-size: 10px; border: none; cursor: pointer; }
 
-        .btn-main { background: #fff; color: #000; font-weight: 900; padding: 12px 30px; border-radius: 100px; text-transform: uppercase; font-size: 11px; letter-spacing: 0.1em; cursor: pointer; border: none; transition: transform 0.2s; }
-        .btn-main:active { transform: scale(0.95); }
-
-        .btn-ghost { background: rgba(255,255,255,0.05); color: #888; font-weight: 800; padding: 12px 25px; border-radius: 100px; text-transform: uppercase; font-size: 10px; border: 1px solid rgba(255,255,255,0.05); transition: 0.3s; cursor: pointer; }
-        .btn-ghost:hover { background: #6366f1; color: #fff; border-color: #6366f1; }
-
-        .preset-tray {
-            position: absolute; bottom: 80px; left: 0; background: #111;
-            border: 1px solid #222; border-radius: 20px; padding: 15px;
-            display: flex; gap: 10px; z-index: 100; box-shadow: 0 20px 50px rgba(0,0,0,0.8);
-        }
-        .preset-item { background: #1a1a1a; padding: 8px 16px; border-radius: 10px; font-size: 10px; font-weight: 900; white-space: nowrap; cursor: pointer; color: #666; transition: 0.2s; }
-        .preset-item:hover { color: #fff; background: #333; }
-
-        .fade-enter-active, .fade-leave-active { transition: opacity 0.3s; }
-        .fade-enter-from, .fade-leave-to { opacity: 0; }
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-thumb { background: #222; border-radius: 10px; }
     </style>
 </head>
-<body class="avero-app">
-    <div id="app" v-cloak class="h-full flex flex-col items-start">
+<body>
+    <div id="app" v-cloak class="h-full flex">
 
-        <div class="w-full max-width-[1200px] flex justify-between items-end mb-8">
-            <div class="text-left">
-                <h1 class="text-6xl font-black italic tracking-tighter uppercase leading-none">HTML Console</h1>
-                <p class="text-[9px] text-zinc-600 font-bold tracking-[0.4em] uppercase mt-2">External Link Linker & Preset Console</p>
-            </div>
-            <div class="flex gap-4">
-                <button @click="code = ''" class="btn-ghost" style="border: none;">Clear</button>
-                <button @click="launchToDesktop" class="btn-main">Launch Live Tab</button>
-            </div>
-        </div>
-
-        <div class="editor-container w-full">
-            <textarea v-model="code" class="editor" placeholder="Enter code or load a link..."></textarea>
-        </div>
-
-        <div class="bottom-dock relative w-full">
-            <button @click="showPresets = !showPresets" class="btn-ghost">Recommended HTML</button>
-            <span class="text-[9px] font-black text-zinc-800 uppercase tracking-widest">Avero System Link v2.4</span>
-
-            <transition name="fade">
-                <div v-if="showPresets" class="preset-tray">
-                    <div v-for="p in internalPresets"
-                         :key="p.name"
-                         @click="loadPreset(p.content)"
-                         class="preset-item uppercase tracking-widest">
-                        {{ p.name }}
-                    </div>
+        <aside class="sidebar">
+            <h2 class="text-[10px] font-black uppercase tracking-[0.3em] text-zinc-600 mb-6 px-2">External Presets</h2>
+            <div class="overflow-y-auto pr-1">
+                <div v-for="p in externalPresets"
+                     :key="p.name"
+                     @click="code = p.content"
+                     class="preset-card group">
+                    <h3 class="text-xs font-bold text-zinc-400 uppercase tracking-tighter transition-colors">{{ p.name }}</h3>
+                    <p class="text-[9px] text-zinc-600 mt-1 line-clamp-1 uppercase">{{ p.description }}</p>
                 </div>
-            </transition>
-        </div>
+
+                <div v-if="externalPresets.length === 0" class="text-[9px] text-zinc-800 font-bold uppercase p-4 text-center">
+                    Loading Games.json...
+                </div>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <header class="flex justify-between items-end">
+                <div>
+                    <h1 class="text-6xl font-black italic tracking-tighter uppercase leading-none">Console</h1>
+                    <p class="text-[9px] text-zinc-600 font-bold tracking-[0.4em] uppercase mt-2">Avero System Link v2.4</p>
+                </div>
+                <div class="flex gap-4">
+                    <button @click="code = ''" class="btn-ghost">Clear</button>
+                    <button @click="launchToDesktop" class="btn-main">Launch Live Tab</button>
+                </div>
+            </header>
+
+            <div class="editor-container">
+                <textarea v-model="code" class="editor" placeholder="Select a preset or type HTML..."></textarea>
+            </div>
+        </main>
+
     </div>
 
     <script>
-        const { createApp, ref } = Vue;
+        const { createApp, ref, onMounted } = Vue;
         createApp({
             setup() {
                 const code = ref("");
-                const showPresets = ref(false);
+                const externalPresets = ref([]);
 
-                const internalPresets = ref([
-                    { name: "", content: "" },
-                ]);
-
-                const loadPreset = async (content) => {
-                    if (content.startsWith('http')) {
-                        try {
-                            const res = await fetch(content);
-                            code.value = await res.text();
-                        } catch (err) {
-                            console.error("Avero Protocol Error: Link failed.");
-                            alert("CORS or Network Error: Could not fetch raw file content.");
-                        }
-                    } else {
-                        code.value = content;
+                // FETCH DATA FROM EXTERNAL JSON
+                const loadPresets = async () => {
+                    try {
+                        const response = await fetch('games.json');
+                        if (!response.ok) throw new Error('Network response was not ok');
+                        externalPresets.value = await response.json();
+                    } catch (err) {
+                        console.error("Avero Loader Error:", err);
+                        // Fallback in case file is missing
+                        externalPresets.value = [{ name: "Error", description: "Could not load games.json", content: "" }];
                     }
-                    showPresets.value = false;
                 };
 
                 const launchToDesktop = () => {
                     if (!code.value.trim()) return;
 
-                    // FIX: Escape the closing script tag so it doesn't break the parent script
                     const wrappedCode = `
                         <!DOCTYPE html>
                         <html>
                         <head>
-                            <style>body { margin: 0; background: #000; }</style>
-                            <script>
-                                document.addEventListener('visibilitychange', () => {
-                                    if (document.hidden) { document.body.style.opacity = '0.3'; }
-                                    else { document.body.style.opacity = '1'; }
-                                });
-                            <\/script>
+                            <style>body { margin: 0; background: #000; color: #fff; }</style>
                         </head>
                         <body>
                             ${code.value}
@@ -130,7 +135,9 @@
                     }, '*');
                 };
 
-                return { code, internalPresets, showPresets, loadPreset, launchToDesktop };
+                onMounted(loadPresets);
+
+                return { code, externalPresets, launchToDesktop };
             }
         }).mount('#app');
     </script>
