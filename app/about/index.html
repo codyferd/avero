@@ -5,65 +5,7 @@
         <meta name="viewport" content="width=device-width,initial-scale=1" />
         <title>Luca's Website</title>
         <script libs="local,tailwind,vue" src="../../share/cdn.js"></script>
-
-        <style>
-            [v-cloak] { display: none; }
-
-            .animate-fade-in {
-                animation: fadeIn 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-            }
-
-            @keyframes fadeIn {
-                from { opacity: 0; transform: scale(0.98); }
-                to { opacity: 1; transform: scale(1); }
-            }
-
-            .avero-nav {
-                background: var(--avero-surface);
-                border-bottom: 1px solid var(--avero-border);
-                backdrop-filter: blur(20px);
-            }
-
-            .nav-btn {
-                background: transparent;
-                border: 1px solid var(--avero-border);
-                color: var(--avero-text-muted);
-            }
-
-            .nav-btn.active {
-                background: var(--avero-accent);
-                color: white;
-                border-color: transparent;
-                box-shadow: 0 0 20px var(--avero-accent-glow);
-            }
-
-            /* 88x31 Button Styling */
-            .web-button {
-                width: 88px;
-                height: 31px;
-                cursor: pointer;
-                transition: transform 0.2s, filter 0.2s;
-                image-rendering: pixelated; /* Keeps that retro crispness */
-                display: block;
-            }
-
-            .web-button:hover {
-                transform: scale(1.1);
-                filter: drop-shadow(0 0 8px var(--avero-accent));
-            }
-
-            .button-grid {
-                display: flex;
-                flex-wrap: wrap;
-                gap: 15px;
-                justify-content: center;
-            }
-
-            .ttf-description {
-                line-height: 1.8;
-                font-family: 'Inter', sans-serif;
-            }
-        </style>
+        <link rel="stylesheet" href="index.css"></link>
     </head>
     <body class="avero-app selection:bg-indigo-500/40">
         <div id="app" v-cloak>
@@ -90,32 +32,6 @@
                     <h1 class="text-6xl sm:text-7xl font-black mb-8 tracking-tighter italic bg-gradient-to-r from-indigo-400 via-purple-400 to-blue-400 bg-clip-text text-transparent">
                         Hi, this is my website :D
                     </h1>
-                    <p class="text-xl text-zinc-400 mb-10 max-w-2xl mx-auto leading-relaxed">
-                        I am an author and creator currently working on my original series,
-                        The Third Formation. I also make games and web projects.
-                    </p>
-                    <button
-                        @click="openExternal('https://sites.google.com/view/codyferd')"
-                        class="avero-btn inline-flex items-center gap-3 py-5 px-12 text-lg !rounded-2xl bg-indigo-600 hover:bg-indigo-500 transition-colors"
-                    >
-                        <span>🎮 Luca's Games</span>
-                    </button>
-                </div>
-
-                <div v-if="activeTab === 'ttf'" class="avero-card p-12 animate-fade-in relative overflow-hidden">
-                    <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-500 to-indigo-500"></div>
-                    <h2 class="text-5xl font-black text-white mb-8 tracking-tighter italic">
-                        The Third <span class="text-blue-400">Formation</span>
-                    </h2>
-                    <p class="ttf-description text-xl text-zinc-300 mb-10 leading-relaxed italic border-l-4 border-blue-500 pl-6">
-                        A life spent in the gray dust of the mines ends the moment a silent tear in reality appears before Zeshi...
-                    </p>
-                    <button
-                        @click="openExternal('https://drive.google.com/drive/folders/1eIL_QtLYo0lLcomy-iZyiHJn7I-HW_Qc')"
-                        class="avero-btn inline-flex items-center gap-3 py-5 px-12 text-lg !rounded-2xl bg-blue-600 hover:bg-blue-500 transition-colors"
-                    >
-                        <span>📂 View on Google Drive</span>
-                    </button>
                 </div>
 
                 <div v-if="activeTab === 'online'" class="animate-fade-in space-y-8">
@@ -162,45 +78,6 @@
             </main>
         </div>
 
-        <script>
-            const { createApp, ref } = Vue;
-
-            createApp({
-                setup() {
-                    const activeTab = ref("about");
-                    // Buttons moved to the end
-                    const tabs = ["about", "ttf", "online", "cats", "loaf", "buttons"];
-
-                    const openExternal = (url) => window.open(url, '_blank', 'noopener,noreferrer');
-
-                    const getTabLabel = (tab) => {
-                        const labels = {
-                            about: "About",
-                            ttf: "Writing",
-                            online: "Socials",
-                            cats: "Cats",
-                            loaf: "Discord",
-                            buttons: "Buttons"
-                        };
-                        return labels[tab];
-                    };
-
-                    const imageButtons = ref([
-                        { image: "button.avif", url: "https://codyferd.github.io/avero" },
-                    ]);
-
-                    const socialLinks = [
-                        { name: "GitHub", label: "codyferd", url: "https://github.com/codyferd", accent: "text-indigo-400" },
-                        { name: "YouTube", label: "polycat.codyferd", url: "https://www.youtube.com/@Polycat.Codyferd", accent: "text-red-400" },
-                        { name: "Mastodon", label: "codyferd@mastodon.social", url: "https://mastodon.social/@codyferd", accent: "text-purple-400" },
-                        { name: "Discord", label: "codyferd_81960" },
-                        { name: "Snapchat", label: "codyferdpolycat" },
-                        { name: "Email", label: "lucarappferdinand@gmail.com" },
-                    ];
-
-                    return { activeTab, tabs, getTabLabel, openExternal, socialLinks, imageButtons };
-                }
-            }).mount("#app");
-        </script>
+        <script src="index.js"></script>
     </body>
 </html>

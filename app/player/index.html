@@ -5,47 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Avero Player</title>
     <script libs="local,tailwind,vue" src="../../share/cdn.js"></script>
-    <style>
-        [v-cloak] { display: none; }
-        body { background: #000; color: #fff; font-family: 'Inter', sans-serif; height: 100vh; margin: 0; overflow: hidden; }
-
-        .player-container { height: 100vh; display: flex; flex-direction: column; padding: 40px; box-sizing: border-box; }
-
-        .viewport {
-            flex-grow: 1; width: 100%; background: #070707;
-            border: 1px solid #1a1a1a; border-radius: 32px; overflow: hidden;
-            display: flex; align-items: center; justify-content: center; position: relative;
-            box-shadow: 0 40px 100px rgba(0,0,0,0.5);
-        }
-
-        /* Media Elements */
-        video, img { max-width: 100%; max-height: 100%; object-fit: contain; animation: fade-in 0.5s ease; }
-        audio { width: 80%; filter: invert(1); } /* Dark theme audio bars */
-
-        @keyframes fade-in { from { opacity: 0; transform: scale(0.98); } to { opacity: 1; transform: scale(1); } }
-
-        .drop-zone {
-            position: absolute; inset: 0; display: flex; flex-direction: column;
-            align-items: center; justify-content: center; cursor: pointer; z-index: 5;
-        }
-
-        .btn-main {
-            background: #fff; color: #000; font-weight: 900; padding: 14px 32px;
-            border-radius: 100px; text-transform: uppercase; font-size: 11px;
-            letter-spacing: 0.1em; cursor: pointer; border: none;
-        }
-
-        .file-input { display: none; }
-
-        .media-footer {
-            height: 100px; display: flex; justify-content: space-between; align-items: center;
-        }
-
-        .type-tag {
-            background: rgba(255,255,255,0.05); padding: 4px 12px; border-radius: 4px;
-            font-size: 10px; font-weight: 800; color: #6366f1;
-        }
-    </style>
+    <link rel="stylesheet" href="index.css"></link>
 </head>
 <body>
     <div id="app" v-cloak class="player-container" @dragover.prevent @drop.prevent="handleDrop">
@@ -97,49 +57,7 @@
         </div>
     </div>
 
-    <script>
-        const { createApp, ref } = Vue;
-        createApp({
-            setup() {
-                const mediaUrl = ref(null);
-                const fileName = ref("");
-                const fileCategory = ref("");
-                const rawType = ref("");
-
-                const processFile = (file) => {
-                    if (!file) return;
-                    if (mediaUrl.value) URL.revokeObjectURL(mediaUrl.value);
-
-                    fileName.value = file.name;
-                    rawType.value = file.type;
-
-                    if (file.type.startsWith('image/')) fileCategory.value = "IMAGE";
-                    else if (file.type.startsWith('video/')) fileCategory.value = "VIDEO";
-                    else if (file.type.startsWith('audio/')) fileCategory.value = "AUDIO";
-                    else fileCategory.value = "UNKNOWN";
-
-                    mediaUrl.value = URL.createObjectURL(file);
-                };
-
-                const handleFile = (e) => processFile(e.target.files[0]);
-
-                const handleDrop = (e) => {
-                    const file = e.dataTransfer.files[0];
-                    processFile(file);
-                };
-
-                const resetPlayer = () => {
-                    if (mediaUrl.value) URL.revokeObjectURL(mediaUrl.value);
-                    mediaUrl.value = null;
-                    fileName.value = "";
-                    fileCategory.value = "";
-                    rawType.value = "";
-                };
-
-                return { mediaUrl, fileName, fileCategory, rawType, handleFile, handleDrop, resetPlayer };
-            }
-        }).mount('#app');
-    </script>
+    <script src="index.js"></script>
 </body>
 </html>
 

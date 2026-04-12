@@ -4,76 +4,7 @@
     <meta charset="UTF-8">
     <title>Avero Stopwatch</title>
     <script libs="local,tailwind,vue" src="../../share/cdn.js"></script>
-    <style>
-        [v-cloak] { display: none; }
-        body, html { height: 100%; margin: 0; background: #050508; color: #fff; overflow: hidden; font-family: 'Inter', sans-serif; }
-        
-        .app-container {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            height: 100vh;
-            gap: 40px;
-        }
-
-        .timer-display {
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 80px;
-            font-weight: 900;
-            letter-spacing: -2px;
-            text-shadow: 0 0 30px rgba(99, 102, 241, 0.3);
-            display: flex;
-            align-items: baseline;
-        }
-
-        .ms {
-            font-size: 32px;
-            color: var(--avero-accent);
-            width: 60px;
-            margin-left: 10px;
-            opacity: 0.8;
-        }
-
-        .controls {
-            display: flex;
-            gap: 15px;
-        }
-
-        .lap-container {
-            width: 300px;
-            height: 200px;
-            background: rgba(255, 255, 255, 0.02);
-            border: 1px solid rgba(255, 255, 255, 0.05);
-            border-radius: 16px;
-            overflow-y: auto;
-            padding: 10px;
-        }
-
-        .lap-row {
-            display: flex;
-            justify-content: space-between;
-            padding: 8px 15px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.03);
-            font-size: 10px;
-            font-weight: 800;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-
-        .lap-num { color: #555; }
-        .lap-time { color: #fff; font-family: monospace; }
-
-        /* Animation for active state */
-        .pulse {
-            animation: timer-glow 2s infinite;
-        }
-
-        @keyframes timer-glow {
-            0%, 100% { text-shadow: 0 0 20px rgba(99, 102, 241, 0.2); }
-            50% { text-shadow: 0 0 50px rgba(99, 102, 241, 0.5); }
-        }
-    </style>
+    <link rel="stylesheet" href="index.css"><link>
 </head>
 <body class="avero-app">
 
@@ -106,58 +37,6 @@
 
 </div>
 
-<script>
-const { createApp, ref, computed, onBeforeUnmount } = Vue;
-
-createApp({
-    setup() {
-        const time = ref(0); // in milliseconds
-        const isRunning = ref(false);
-        const laps = ref([]);
-        let timerInterval = null;
-        let startTime = 0;
-
-        const formattedTime = computed(() => {
-            const totalMs = time.value;
-            const mins = Math.floor(totalMs / 60000);
-            const secs = Math.floor((totalMs % 60000) / 1000);
-            const ms = Math.floor((totalMs % 1000) / 10);
-
-            return {
-                main: `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`,
-                ms: ms.toString().padStart(2, '0')
-            };
-        });
-
-        const toggle = () => {
-            if (isRunning.value) {
-                clearInterval(timerInterval);
-            } else {
-                startTime = Date.now() - time.value;
-                timerInterval = setInterval(() => {
-                    time.value = Date.now() - startTime;
-                }, 10);
-            }
-            isRunning.value = !isRunning.value;
-        };
-
-        const lap = () => {
-            const f = formattedTime.value;
-            laps.value.push(`${f.main}.${f.ms}`);
-        };
-
-        const reset = () => {
-            clearInterval(timerInterval);
-            isRunning.value = false;
-            time.value = 0;
-            laps.value = [];
-        };
-
-        onBeforeUnmount(() => clearInterval(timerInterval));
-
-        return { time, isRunning, laps, formattedTime, toggle, lap, reset };
-    }
-}).mount('#app');
-</script>
+<script src="index.js"></script>
 </body>
 </html>

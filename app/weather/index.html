@@ -5,79 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Avero Weather</title>
     <script libs="local,tailwind,vue" src="../../share/cdn.js"></script>
-    <style>
-        :root { --avero-accent: #6366f1; }
-        [v-cloak] { display: none; }
-
-        body {
-            background: radial-gradient(circle at top right, #1a1a2e, #050505);
-            color: #fff;
-            margin: 0;
-            font-family: 'Inter', sans-serif;
-            min-height: 100vh;
-            letter-spacing: -0.01em;
-        }
-
-        .glass-panel {
-            background: rgba(255, 255, 255, 0.02);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            border-radius: 28px;
-            backdrop-filter: blur(20px);
-            transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-        }
-        .glass-panel:hover {
-            border-color: rgba(255, 255, 255, 0.2);
-            background: rgba(255,255,255,0.05);
-            transform: translateY(-4px);
-        }
-
-        .search-input {
-            background: rgba(255,255,255,0.03);
-            border: 1px solid rgba(255,255,255,0.1);
-            border-radius: 20px;
-            padding: 16px 24px;
-            width: 100%;
-            color: white;
-            outline: none;
-            transition: 0.3s;
-        }
-        .search-input:focus {
-            border-color: var(--avero-accent);
-            background: rgba(255,255,255,0.07);
-            box-shadow: 0 0 30px rgba(99, 102, 241, 0.15);
-        }
-
-        .unit-select {
-            background: #000; border: 1px solid #333; color: white;
-            font-size: 11px; padding: 10px 16px; border-radius: 14px;
-            text-transform: uppercase; font-weight: 800; cursor: pointer;
-            letter-spacing: 0.1em;
-        }
-
-        .stat-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.25em; opacity: 0.4; font-weight: 900; margin-bottom: 8px; }
-
-        .hide-scroll { -ms-overflow-style: none; scrollbar-width: none; }
-        .hide-scroll::-webkit-scrollbar { display: none; }
-
-        .hourly-card {
-            min-width: 90px;
-            padding: 20px 12px;
-            text-align: center;
-            border-right: 1px solid rgba(255,255,255,0.03);
-        }
-
-        .accent-glow { color: var(--avero-accent); text-shadow: 0 0 30px rgba(99, 102, 241, 0.4); }
-
-        .live-dot {
-            width: 8px; height: 8px; background: #22c55e; border-radius: 50%;
-            display: inline-block; margin-right: 8px; box-shadow: 0 0 10px #22c55e;
-            animation: pulse 2s infinite;
-        }
-
-        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.3; } 100% { opacity: 1; } }
-        @keyframes slideUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
-        .animate-ui { animation: slideUp 1s cubic-bezier(0.16, 1, 0.3, 1); }
-    </style>
+    <link rel="stylesheet" href="index.css"></link>
 </head>
 <body class="p-6 md:p-12 lg:p-16">
 
@@ -211,6 +139,6 @@
     </div>
 </div>
 
-<script src="app.js"></script>
+<script src="index.js"></script>
 </body>
 </html>

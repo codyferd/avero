@@ -1,0 +1,39 @@
+[v-cloak] { display: none; }
+body { background: #000; color: #fff; font-family: 'Inter', sans-serif; height: 100vh; margin: 0; overflow: hidden; }
+
+.player-container { height: 100vh; display: flex; flex-direction: column; padding: 40px; box-sizing: border-box; }
+
+.viewport {
+    flex-grow: 1; width: 100%; background: #070707;
+    border: 1px solid #1a1a1a; border-radius: 32px; overflow: hidden;
+    display: flex; align-items: center; justify-content: center; position: relative;
+    box-shadow: 0 40px 100px rgba(0,0,0,0.5);
+}
+
+/* Media Elements */
+video, img { max-width: 100%; max-height: 100%; object-fit: contain; animation: fade-in 0.5s ease; }
+audio { width: 80%; filter: invert(1); } /* Dark theme audio bars */
+
+@keyframes fade-in { from { opacity: 0; transform: scale(0.98); } to { opacity: 1; transform: scale(1); } }
+
+.drop-zone {
+    position: absolute; inset: 0; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; cursor: pointer; z-index: 5;
+}
+
+.btn-main {
+    background: #fff; color: #000; font-weight: 900; padding: 14px 32px;
+    border-radius: 100px; text-transform: uppercase; font-size: 11px;
+    letter-spacing: 0.1em; cursor: pointer; border: none;
+}
+
+.file-input { display: none; }
+
+.media-footer {
+    height: 100px; display: flex; justify-content: space-between; align-items: center;
+}
+
+.type-tag {
+    background: rgba(255,255,255,0.05); padding: 4px 12px; border-radius: 4px;
+    font-size: 10px; font-weight: 800; color: #6366f1;
+}

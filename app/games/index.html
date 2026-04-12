@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Avero Games</title>
+    <script libs="local,tailwind,vue" src="../../share/cdn.js"></script>
+    <link rel="stylesheet" href="index.css">
+</head>
+<body>
+    <div id="app" v-cloak class="app-layout">
+
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="glitch-box">
+                    <span class="badge">V4.5</span>
+                </div>
+                <h2 class="sidebar-title">Library Node</h2>
+            </div>
+
+            <div class="search-container">
+                <input
+                    v-model="searchQuery"
+                    type="text"
+                    placeholder="FIND PROTOCOL..."
+                    class="search-input"
+                >
+            </div>
+
+            <div class="game-list">
+                <div v-for="p in filteredGames"
+                     :key="p.name"
+                     @click="selectedGame = p"
+                     :class="['game-item', selectedGame?.name === p.name ? 'selected' : '']">
+                    <div class="status-indicator"></div>
+                    <div class="game-info">
+                        <span class="game-name">{{ p.name }}</span>
+                        <span class="game-meta">READY // 0ms</span>
+                    </div>
+                </div>
+
+                <div v-if="filteredGames.length === 0" class="empty-results">
+                    NO NODES FOUND
+                </div>
+            </div>
+        </aside>
+
+        <main class="viewport">
+            <div class="ambient-glow"></div>
+            <div class="scanline"></div>
+
+            <header class="viewport-header">
+                <div class="title-group">
+                    <h1 class="main-title">AVERO<span> GAMES</span></h1>
+                    <div class="breadcrumb">
+                        <span class="text-indigo-500">ROOT</span> /
+                        {{ selectedGame?.name || 'STANDBY' }}
+                    </div>
+                </div>
+            </header>
+
+            <div v-if="selectedGame" class="hero-section">
+                <div class="hero-container">
+                    <div class="hero-tag">UPLINK SELECTION REQUIRED</div>
+                    <h2 class="hero-title">{{ selectedGame.name }}</h2>
+
+                    <div class="stats-row">
+                        <div class="stat-item">
+                            <span class="stat-label">SLUG</span>
+                            <span class="stat-value">{{ selectedGame.slug }}</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">STATUS</span>
+                            <span class="stat-value text-emerald-400">ENCRYPTED</span>
+                        </div>
+                    </div>
+
+                    <div class="hero-actions">
+                        <button @click="launchGame('CRAZY')" class="btn-node crazy">
+                            <span class="node-id">01</span> CRAZYGAMES.COM
+                        </button>
+                        <button @click="launchGame('COOLMATH')" class="btn-node coolmath">
+                            <span class="node-id">02</span> COOLMATHGAMES.COM
+                        </button>
+                        <button @click="launchGame('TWOPLAYER')" class="btn-node twoplayer">
+                            <span class="node-id">03</span> TWOPLAYERGAMES.ORG
+                        </button>
+                    </div>
+
+                    <button @click="selectedGame = null" class="btn-back">TERMINATE SELECTION</button>
+                </div>
+            </div>
+
+            <div v-else class="empty-state">
+                <div class="radar-circle"></div>
+                <p>AWAITING INPUT...</p>
+            </div>
+        </main>
+
+    </div>
+
+    <script src="list.js"></script>
+    <script src="index.js"></script>
+</body>
+</html>

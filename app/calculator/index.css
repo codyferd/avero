@@ -1,0 +1,20 @@
+        .avero-input {
+            background: rgba(0, 0, 0, 0.4);
+            border-bottom: 2px solid #334155;
+            color: #10b981;
+            font-family: 'ui-monospace', monospace;
+            transition: all 0.3s;
+        }
+        .avero-input:focus { border-color: #6366f1; outline: none; box-shadow: 0 4px 20px -10px #6366f1; }
+        .func-btn {
+            background: #1e293b;
+            border: 1px solid #334155;
+            color: #94a3b8;
+            font-size: 0.65rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            transition: all 0.2s;
+        }
+        .func-btn:hover { background: #334155; color: #fff; border-color: #475569; }
+        .op-btn { color: #fbbf24; border-color: rgba(251, 191, 36, 0.2); }
+        [v-cloak] { display: none; }

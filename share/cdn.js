@@ -1,8 +1,4 @@
 const LIB_MAP = {
-    local: [
-        "../../share/theme.css",
-        "../../share/storage.js",
-    ],
     leaflet: [
         "https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.min.css",
         "https://cdn.jsdelivr.net/npm/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.min.css",
@@ -14,6 +10,7 @@ const LIB_MAP = {
         "https://cdn.jsdelivr.net/npm/prismjs@1.30.0/components/prism-core.min.js",
         "https://cdn.jsdelivr.net/npm/prismjs@1.30.0/plugins/autoloader/prism-autoloader.min.js"
     ],
+    local: "../../share/theme.css",
     tailwind: "https://cdn.tailwindcss.com",
     vue: "https://cdn.jsdelivr.net/npm/vue@3.5.31/dist/vue.global.prod.js",
     phaser: "https://cdn.jsdelivr.net/npm/phaser@3.90.0/dist/phaser.min.js",

@@ -1,3 +1,8 @@
+window.addEventListener('DOMContentLoaded', () => {
+    if (typeof initBlockPicker === 'function') {
+        initBlockPicker();
+    }
+});
 // --- GLOBAL ENGINE VARIABLES ---
 let scene, camera, renderer;
 let blockGeometry, blockMaterial;

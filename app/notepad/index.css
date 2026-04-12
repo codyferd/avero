@@ -1,0 +1,95 @@
+:root { --avero-accent: #10b981; }
+[v-cloak] { display: none; }
+
+body {
+    background: #050505;
+    color: #e5e7eb;
+    font-family: 'Inter', system-ui, sans-serif;
+    height: 100vh;
+    margin: 0;
+    overflow: hidden;
+}
+
+.avero-glass {
+    background: rgba(255, 255, 255, 0.02);
+    backdrop-filter: blur(20px);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+/* Syntax Overlay Logic */
+.editor-container {
+    position: relative;
+    flex-grow: 1;
+    height: 100%;
+}
+
+.syntax-layer, .editor-surface {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    padding: 24px;
+    font-family: 'Fira Code', 'JetBrains Mono', monospace;
+    line-height: 1.6;
+    margin: 0;
+    border: none;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    overflow-y: auto;
+}
+
+.editor-surface {
+    background: transparent;
+    color: transparent; /* Text is invisible so highlighting shows through */
+    caret-color: var(--avero-accent);
+    resize: none;
+    outline: none;
+    z-index: 10;
+}
+
+.syntax-layer {
+    z-index: 5;
+    pointer-events: none;
+}
+
+/* Custom selection color */
+.editor-surface::selection {
+    background: rgba(16, 185, 129, 0.3);
+    color: transparent;
+}
+
+.status-bar {
+    background: rgba(0, 0, 0, 0.4);
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    font-weight: 700;
+}
+
+.btn-avero {
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.btn-avero:hover {
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--avero-accent);
+}
+
+/* Folder Sidebar styling */
+.sidebar-item {
+    font-size: 10px;
+    padding: 4px 8px;
+    border-radius: 4px;
+    cursor: pointer;
+    color: rgba(255,255,255,0.4);
+    transition: 0.2s;
+}
+.sidebar-item:hover {
+    color: var(--avero-accent);
+    background: rgba(255,255,255,0.03);
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 10px; }

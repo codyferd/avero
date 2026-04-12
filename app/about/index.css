@@ -1,0 +1,56 @@
+           [v-cloak] { display: none; }
+
+           .animate-fade-in {
+               animation: fadeIn 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+           }
+
+           @keyframes fadeIn {
+               from { opacity: 0; transform: scale(0.98); }
+               to { opacity: 1; transform: scale(1); }
+           }
+
+           .avero-nav {
+               background: var(--avero-surface);
+               border-bottom: 1px solid var(--avero-border);
+               backdrop-filter: blur(20px);
+           }
+
+           .nav-btn {
+               background: transparent;
+               border: 1px solid var(--avero-border);
+               color: var(--avero-text-muted);
+           }
+
+           .nav-btn.active {
+               background: var(--avero-accent);
+               color: white;
+               border-color: transparent;
+               box-shadow: 0 0 20px var(--avero-accent-glow);
+           }
+
+           /* 88x31 Button Styling */
+           .web-button {
+               width: 88px;
+               height: 31px;
+               cursor: pointer;
+               transition: transform 0.2s, filter 0.2s;
+               image-rendering: pixelated; /* Keeps that retro crispness */
+               display: block;
+           }
+
+           .web-button:hover {
+               transform: scale(1.1);
+               filter: drop-shadow(0 0 8px var(--avero-accent));
+           }
+
+           .button-grid {
+               display: flex;
+               flex-wrap: wrap;
+               gap: 15px;
+               justify-content: center;
+           }
+
+           .ttf-description {
+               line-height: 1.8;
+               font-family: 'Inter', sans-serif;
+           }

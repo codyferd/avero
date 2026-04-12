@@ -1,0 +1,33 @@
+body {
+    margin: 0;
+    background: #000;
+    overflow: hidden;
+    touch-action: none;
+    /* Center the game container if the screen aspect ratio differs */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+}
+#app {
+width: 100vw;
+height: 100vh;
+position: relative;
+overflow: hidden;
+}
+.menu-card {
+    background: rgba(0, 0, 0, 0.9);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+}
+/* Input Styles */
+input[type="range"] { -webkit-appearance: none; background: #333; height: 4px; border-radius: 2px; }
+input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 14px; height: 14px; background: #fff; border-radius: 50%; }
+input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; }
+input[type="color"]::-webkit-color-swatch { border: none; border-radius: 4px; }
+
+/* Ensure the Phaser Canvas stays centered */
+canvas {
+    display: block;
+    margin: 0 auto;
+}
