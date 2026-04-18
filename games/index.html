@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Avero Games</title>
+    <script libs="local,tailwind,vue" src="../../share/cdn.js"></script>
+    <link rel="stylesheet" href="index.css">
+</head>
+<body>
+    <div id="app" v-cloak>
+        <div class="arcade-container">
+            <aside class="game-sidebar">
+                <div class="sidebar-header">
+                    <input type="text" v-model="search" placeholder="Search games..." class="search-bar">
+                </div>
+                <ul class="nav-list">
+                    <li v-for="game in filteredGames"
+                        :key="game.name"
+                        @click="openGame(game)"
+                        class="nav-item">
+                        <span class="dot"></span> {{ game.name }}
+                    </li>
+                </ul>
+            </aside>
+
+            <main class="game-gallery">
+                <header class="gallery-header">
+                    <h1>AVERO<span>GAMES</span></h1>
+                </header>
+                <div class="grid-container">
+                    <div v-for="game in filteredGames"
+                         :key="game.name"
+                         class="game-card"
+                         @click="openGame(game)">
+                        <div class="image-wrapper">
+                            <img :src="game.image" :alt="game.name" loading="lazy">
+                            <div class="overlay">
+                                <button class="play-btn">PLAY NOW</button>
+                            </div>
+                        </div>
+                        <div class="game-info">
+                            <h3>{{ game.name }}</h3>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+    <script src="list.js"></script>
+    <script src="index.js"></script>
+</body>
+</html>
+

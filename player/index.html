@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Avero Player</title>
+    <script libs="local,tailwind,vue" src="../share/cdn.js"></script>
+    <link rel="stylesheet" href="index.css"></link>
+</head>
+<body>
+    <div id="app" v-cloak class="player-container" @dragover.prevent @drop.prevent="handleDrop">
+
+        <div class="mb-8 flex justify-between items-end">
+            <div>
+                <h1 class="text-6xl font-black italic tracking-tighter uppercase leading-none truncate max-w-[700px]">
+                    {{ fileName || 'Avero Player' }}
+                </h1>
+                <div class="flex items-center gap-3 mt-3">
+                    <span v-if="fileCategory" class="type-tag">{{ fileCategory }}</span>
+                    <p class="text-[9px] text-zinc-600 font-bold tracking-[0.4em] uppercase">
+                        Avero OS // File Relay v3.0
+                    </p>
+                </div>
+            </div>
+            <button v-if="mediaUrl" @click="resetPlayer" class="btn-main !bg-zinc-900 !text-white text-[10px]">Eject</button>
+        </div>
+
+        <div class="viewport">
+            <div v-if="!mediaUrl" class="drop-zone" @click="$refs.fileInput.click()">
+                <p class="text-zinc-800 font-black text-xs uppercase tracking-[1em] mb-6">Drop Media Anywhere</p>
+                <button class="btn-main">Open File Explorer</button>
+            </div>
+
+            <video v-if="fileCategory === 'VIDEO'" :src="mediaUrl" controls autoplay></video>
+
+            <img v-if="fileCategory === 'IMAGE'" :src="mediaUrl" alt="Preview">
+
+            <div v-if="fileCategory === 'AUDIO'" class="flex flex-col items-center w-full">
+                <div class="w-24 h-24 bg-zinc-900 rounded-full mb-8 flex items-center justify-center animate-pulse">
+                    <div class="w-12 h-12 bg-indigo-500 rounded-full"></div>
+                </div>
+                <audio :src="mediaUrl" controls autoplay></audio>
+            </div>
+        </div>
+
+        <input type="file" ref="fileInput" class="file-input" @change="handleFile" accept="image/*,video/*,audio/*">
+
+        <div class="media-footer">
+            <span class="text-[9px] font-black text-zinc-800 uppercase tracking-widest">
+                {{ rawType || 'No Active Protocol' }}
+            </span>
+            <div class="flex gap-2">
+                <div class="w-1 h-1 bg-zinc-800 rounded-full"></div>
+                <div class="w-1 h-1 bg-zinc-800 rounded-full"></div>
+                <div class="w-12 h-1 bg-zinc-800 rounded-full"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="index.js"></script>
+</body>
+</html>
+

@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width,initial-scale=1" />
+        <title>Luca's Website</title>
+        <script libs="local,tailwind,vue" src="../share/cdn.js"></script>
+        <link rel="stylesheet" href="index.css"></link>
+    </head>
+    <body class="avero-app selection:bg-indigo-500/40">
+        <div id="app" v-cloak>
+
+            <nav class="avero-nav p-4 sticky top-0 z-50">
+                <div class="max-w-4xl mx-auto flex justify-center items-center">
+                    <div class="flex flex-wrap justify-center gap-2 sm:gap-4">
+                        <button
+                            v-for="tab in tabs"
+                            :key="tab"
+                            @click="activeTab = tab"
+                            class="avero-btn px-6 py-2 transition-all duration-300 nav-btn"
+                            :class="{ 'active': activeTab === tab }"
+                        >
+                            {{ getTabLabel(tab) }}
+                        </button>
+                    </div>
+                </div>
+            </nav>
+
+            <main class="max-w-4xl mx-auto p-6 sm:p-12">
+
+                <div v-if="activeTab === 'about'" class="text-center py-24 animate-fade-in">
+                    <h1 class="text-6xl sm:text-7xl font-black mb-8 tracking-tighter italic bg-gradient-to-r from-indigo-400 via-purple-400 to-blue-400 bg-clip-text text-transparent">
+                        Hi, this is my website :D
+                    </h1>
+                </div>
+
+                <div v-if="activeTab === 'online'" class="animate-fade-in space-y-8">
+                    <h2 class="text-4xl font-black text-indigo-400 mb-8 tracking-tighter italic">Find Me Online</h2>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <button
+                            v-for="link in socialLinks"
+                            :key="link.name"
+                            @click="openExternal(link.url)"
+                            class="avero-card p-6 !bg-opacity-40 hover:!bg-opacity-100 transition text-left cursor-pointer"
+                        >
+                            <span class="text-[10px] font-black uppercase tracking-widest" :class="link.accent">{{ link.name }}</span>
+                            <p class="text-xl font-bold mt-1 text-white">{{ link.label }}</p>
+                        </button>
+                    </div>
+                </div>
+
+                <div v-if="activeTab === 'cats'" class="grid grid-cols-1 md:grid-cols-2 gap-10 animate-fade-in">
+                    <div v-for="cat in ['ravi', 'coco']" :key="cat" class="avero-card p-4">
+                        <img :src="`${cat}.avif`" class="w-full h-80 object-cover rounded-lg" :alt="cat" />
+                        <p class="mt-4 text-center font-bold text-2xl italic capitalize text-indigo-300">{{ cat }}</p>
+                    </div>
+                </div>
+
+                <div v-if="activeTab === 'loaf'" class="avero-card p-12 text-center animate-fade-in">
+                    <h2 class="text-4xl font-black text-white mb-6 tracking-tighter italic">Join <span class="text-indigo-400">Loaf House!</span></h2>
+                    <button @click="openExternal('https://discord.gg/6w9z6rqsgm')" class="avero-btn py-5 px-12 text-lg !rounded-2xl">Discord Invite</button>
+                </div>
+
+                <div v-if="activeTab === 'buttons'" class="animate-fade-in text-center">
+                    <h2 class="text-4xl font-black text-white mb-10 tracking-tighter italic">Web <span class="text-indigo-400">Buttons</span></h2>
+                    <div class="button-grid">
+                        <img
+                            v-for="btn in imageButtons"
+                            :key="btn.url"
+                            :src="btn.image"
+                            @click="openExternal(btn.url)"
+                            class="web-button"
+                            :title="btn.title"
+                        />
+                    </div>
+                </div>
+
+            </main>
+        </div>
+
+        <script src="index.js"></script>
+    </body>
+</html>

@@ -1,0 +1,15 @@
+const appList = [
+    { title: 'About', icon: '👤', path: '../about/index.html' },
+    { title: 'Blocks', icon: '🧱', path: '../blocks/index.html' },
+    { title: 'Calculator', icon: '🔢', path: '../calculator/index.html' },
+    { title: 'Chat', icon: '💬', path: '../chat/index.html' },
+    { title: 'Chess', icon: '♟️', path: '../chess/index.html' },
+    { title: 'Games', icon: '🎮', path: '../games/index.html' },
+    { title: 'Maps', icon: '🗺️', path: '../maps/index.html' },
+    { title: 'Notepad', icon: '📝', path: '../notepad/index.html' },
+    { title: 'Player', icon: '🎬', path: '../player/index.html' },
+    { title: 'Stopwatch', icon: '⌚', path: '../stopwatch/index.html'},
+    { title: 'Superbirdjumper3', icon: '🐦', path: '../superbirdjumper3/index.html' },
+    { title: 'Tictactoe', icon: '🌀', path: '../tictactoe/index.html'},
+    { title: 'Weather', icon: '⛅', path: '../weather/index.html'},
+];

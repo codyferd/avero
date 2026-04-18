@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Avero Maps</title>
+    <script libs="local,tailwind,vue,leaflet" src="../share/cdn.js"></script>
+    <link rel="stylesheet" href="index.css"></link>
+</head>
+<body>
+
+<div id="app" v-cloak>
+    <div class="map-overlay side-panel">
+        <div>
+            <h2 class="text-lg font-black uppercase tracking-tighter mb-1">Avero <span class="text-indigo-500">Maps</span></h2>
+            <p class="text-[9px] opacity-30 font-bold uppercase tracking-widest">Navigation & Intelligence</p>
+        </div>
+
+        <section>
+            <div class="input-group">
+                <label class="label">Origin</label>
+                <input v-model="startPoint" placeholder="Search start..." class="map-input">
+            </div>
+            <div class="input-group">
+                <label class="label">Destination</label>
+                <input v-model="endPoint" placeholder="Search destination..." class="map-input">
+            </div>
+            <button @click="planTrip" class="btn-action">Construct Route</button>
+        </section>
+
+        <div v-if="routeInfo" class="route-summary animate-fade-in">
+            <div class="flex justify-between mb-2">
+                <span class="label">Distance</span>
+                <span class="text-sm font-bold">{{ routeInfo.distance }}</span>
+            </div>
+            <div class="flex justify-between">
+                <span class="label">Est. Time</span>
+                <span class="text-sm font-bold text-indigo-400">{{ routeInfo.duration }}</span>
+            </div>
+        </div>
+
+        <section>
+            <label class="label">Nearby Essentials</label>
+            <div class="poi-chips">
+                <div v-for="poi in poiTypes" :key="poi.val"
+                     @click="findPOI(poi.val)"
+                     class="chip" :class="{ active: activePOI === poi.val }">
+                    {{ poi.icon }} {{ poi.label }}
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <div id="map"></div>
+
+    <div class="map-overlay zoom-controls">
+        <button @click="zoomIn" class="map-btn">＋</button>
+        <button @click="zoomOut" class="map-btn">－</button>
+        <button @click="clearAll" class="map-btn" title="Reset View">🗑️</button>
+        <button @click="locateMe" class="map-btn">📍</button>
+    </div>
+</div>
+
+<script src="index.js"></script>
+</body>
+</html>

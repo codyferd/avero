@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Avero Blocks</title>
+    <script libs="local,tailwind,vue,three" src="../share/cdn.js"></script>
+    <link rel="stylesheet" href="index.css"></link>
+</head>
+<body>
+    <div id="crosshair"></div>
+
+    <div id="ui">
+        <h1 class="text-3xl font-black italic tracking-tighter uppercase text-white">
+            Avero <span class="text-indigo-500">Blocks</span>
+        </h1>
+    </div>
+
+    <div id="hud">
+        <div id="fps-counter">FPS: 0</div>
+    </div>
+
+    <div id="hotbar">
+        </div>
+
+    <script src="config.js"></script>
+    <script src="block.js"></script>
+    <script src="terrain.js"></script>
+    <script src="player.js"></script>
+    <script src="index.js"></script>
+
+</body>
+</html>
