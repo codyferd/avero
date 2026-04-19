@@ -3,7 +3,8 @@ const { createApp, ref, computed } = Vue;
 createApp({
     setup() {
         const search = ref("");
-        // gamesList comes from list.js
+        const isSidebarOpen = ref(false);
+        // gamesList is globally available from list.js
         const games = ref(gamesList);
 
         const filteredGames = computed(() => {
@@ -30,6 +31,7 @@ createApp({
             }, '*');
         };
 
-        return { search, filteredGames, openGame };
+        return { search, isSidebarOpen, filteredGames, openGame };
     }
 }).mount('#app');
+

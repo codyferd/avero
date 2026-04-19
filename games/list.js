@@ -51,7 +51,7 @@ const gamesList = [
 },
 {
     name: "Fireboy and Watergirl",
-    url: "https://html5.gamedistribution.com/rvvASMiM/a55c9cc9c21e4fc683c8c6857f3d0c75/index.html",
+    url: "https://fireboyandwatergirl.bitbucket.io/file/",
     image: "https://thiefpuzzle.io/data/image/game/fireboy-and-watergirl.jpg",
 },
 {
@@ -76,7 +76,7 @@ const gamesList = [
 },
 {
     name: "Fruit Ninja",
-    url: "https://html5.gamedistribution.com/a186dc9ac7f548f884db8ff54df6dd9f/",
+    url: "https://distributegames.com/game/lrllu2q2wli15xal5rlmnkiguxqxj6s5/",
     image: "https://cdn.prod.website-files.com/5fa23905123118739c5e21e2/66fb362949bd26dcef72f1d3_64dd8a5de4ae723b46abd674_FNCBG%20(1).jpg",
 },
 {
@@ -86,7 +86,7 @@ const gamesList = [
 },
 {
     name: "Geometry Vibes",
-    url: "https://html5.gamedistribution.com/rvvASMiM/b3507beea8bc46638a6d5e7c768a8202/index.html",
+    url: "https://files.twoplayergames.org/files/games/g1/geometry-vibes-v11/index.html",
     image: "https://geodashlite.io/data/image/geometry-vibes.jpg",
 },
 {
@@ -96,7 +96,7 @@ const gamesList = [
 },
 {
     name: "MotoX3M",
-    url: "https://html5.gamedistribution.com/rvvASMiM/5b0abd4c0faa4f5eb190a9a16d5a1b4c/index.html",
+    url: "https://moto-x3m.bitbucket.io/file/",
     image: "https://img.cdn.famobi.com/portal/html5games/images/tmp/MotoX3mTeaser.jpg?v=0.2-6b1f34f6",
 },
 {
