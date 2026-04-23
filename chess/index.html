@@ -3,7 +3,7 @@
     <head>
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width,initial-scale=1" />
-        <title>Avero Chess - PvP</title>
+        <title>Avero Chess</title>
         <script libs="local,tailwind,vue,chess,peer" src="../share/cdn.js"></script>
         <link rel="stylesheet" href="index.css"></link>
 <body class="bg-[#050505] text-slate-300 font-sans overflow-hidden">
@@ -17,6 +17,9 @@
             <div class="space-y-4">
                 <button @click="initLocalGame" class="w-full bg-white text-black py-4 rounded-xl font-black text-xs uppercase hover:scale-105 active:scale-95 transition-all shadow-xl">
                     Local PvP Match
+                </button>
+                <button @click="initAiGame" class="w-full bg-emerald-500 text-black py-4 rounded-xl font-black text-xs uppercase hover:scale-105 active:scale-95 transition-all shadow-xl">
+                    Play vs AI
                 </button>
 
                 <div class="flex items-center gap-4 my-6">
@@ -37,6 +40,7 @@
                             <button @click="joinMeshGame" class="flex-1 bg-white/5 border border-white/10 text-white py-3 rounded-lg font-black text-[10px] uppercase hover:bg-white/10 transition-all">
                                 Join
                             </button>
+
                         </div>
                     </div>
                 </div>

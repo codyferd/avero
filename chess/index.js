@@ -1,17 +1,21 @@
-const { createApp, ref, reactive, onMounted, computed } = Vue;
+const { createApp, ref, reactive, onMounted, computed, watch } = Vue;
 
 createApp({
     setup() {
         const game = new Chess();
 
-        // --- UI & LOBBY STATE ---
+        // --- STATE ---
         const gameStarted = ref(false);
         const lobbyId = ref('');
         const meshStatus = ref('');
         const connectionMode = ref('Local');
         const gameOverMessage = ref('');
 
-        // --- BOARD STATE ---
+        // AI State
+        const isAiMode = ref(false);
+        const isAiThinking = ref(false);
+
+        // Board State
         const boardState = ref([]);
         const turn = ref('w');
         const flipped = ref(false);
@@ -36,22 +40,71 @@ createApp({
                 }
             });
 
+            // Checkmate & End Detection
             if (game.game_over()) {
-                if (game.in_checkmate()) gameOverMessage.value = `Checkmate! ${turn.value === 'w' ? 'Black' : 'White'} wins.`;
-                else if (game.in_draw()) gameOverMessage.value = "Draw!";
-                else gameOverMessage.value = "Game Over";
+                if (game.in_checkmate()) {
+                    gameOverMessage.value = `Checkmate! ${turn.value === 'w' ? 'Black' : 'White'} wins.`;
+                } else if (game.in_draw()) {
+                    gameOverMessage.value = "Draw!";
+                } else {
+                    gameOverMessage.value = "Game Over";
+                }
             }
         };
+
         const formatLobbyId = () => {
-            // 1. Replace spaces with hyphens
-            // 2. Remove any character that isn't a-z, 0-9, or -
-            // 3. Force lowercase
             lobbyId.value = lobbyId.value
             .replace(/\s+/g, '-')
             .replace(/[^a-zA-Z0-9-]/g, '')
             .toLowerCase();
         };
-        // --- BUTTON ACTIONS ---
+
+        // --- AI LOGIC ---
+        const initAiGame = () => {
+            isAiMode.value = true;
+            connectionMode.value = 'AI Mode';
+            gameStarted.value = true;
+            syncState();
+        };
+
+        const fetchAiMove = async () => {
+            if (isAiThinking.value || game.game_over()) return;
+            isAiThinking.value = true;
+
+            try {
+                const response = await fetch(`https://lichess.org/api/cloud-eval?fen=${encodeURIComponent(game.fen())}`);
+                const data = await response.json();
+
+                if (data.pvs && data.pvs.length > 0) {
+                    const uci = data.pvs[0].moves.split(' ')[0];
+                    const from = uci.substring(0, 2);
+                    const to = uci.substring(2, 4);
+
+                    // Validate the move before applying
+                    const move = game.move({ from, to, promotion: 'q' });
+                    if (move) {
+                        lastMove.value = { from, to };
+                        syncState();
+                    } else {
+                        console.warn("AI attempted illegal move:", from, to);
+                    }
+                }
+            } catch (e) {
+                console.error("AI Connection Failed:", e);
+            } finally {
+                isAiThinking.value = false;
+            }
+        };
+
+
+        // Watch for turn changes to trigger AI
+        watch(turn, (newTurn) => {
+            if (isAiMode.value && newTurn === 'b' && !game.game_over()) {
+                setTimeout(fetchAiMove, 500); // Artificial delay for realism
+            }
+        });
+
+        // --- MESH ACTIONS ---
         const initLocalGame = () => {
             connectionMode.value = 'Local PvP';
             gameStarted.value = true;
@@ -61,7 +114,6 @@ createApp({
         const hostMeshGame = () => {
             if (!lobbyId.value) return meshStatus.value = "Enter a room name";
             connectionMode.value = 'Mesh (Host)';
-
             Mesh.initHost(lobbyId.value, {
                 onStatus: (s) => meshStatus.value = s,
                           onStarted: () => gameStarted.value = true,
@@ -76,12 +128,11 @@ createApp({
         const joinMeshGame = () => {
             if (!lobbyId.value) return meshStatus.value = "Enter room name";
             connectionMode.value = 'Mesh (Peer)';
-
             Mesh.initJoin(lobbyId.value, {
                 onStatus: (s) => meshStatus.value = s,
                           onStarted: () => {
                               gameStarted.value = true;
-                              flipped.value = true; // Black perspective
+                              flipped.value = true;
                           },
                           onRemoteMove: (m) => {
                               game.move(m);
@@ -94,6 +145,7 @@ createApp({
         const resetGame = () => {
             game.reset();
             gameStarted.value = false;
+            isAiMode.value = false;
             gameOverMessage.value = '';
             meshStatus.value = '';
             flipped.value = false;
@@ -103,10 +155,20 @@ createApp({
 
             // --- INTERACTION ---
             const handleSquareClick = (r, c) => {
-                // If Mesh, prevent moving opponent's pieces
-                if (Mesh.state.isMesh && game.turn() !== Mesh.state.myColor) return;
+                // Guard: Game Over
+                if (game.game_over()) return;
+
+                // Guard: AI Thinking
+                if (isAiMode.value && game.turn() === 'b') return;
 
                 const square = String.fromCharCode(97 + c) + (8 - r);
+                const piece = game.get(square);
+
+                // Guard: Mesh Protection
+                if (Mesh.state.isMesh) {
+                    if (game.turn() !== Mesh.state.myColor) return;
+                    if (!selected.value && piece && piece.color !== Mesh.state.myColor) return;
+                }
 
                 if (selected.value) {
                     const moveObj = { from: selected.value, to: square, promotion: 'q' };
@@ -119,7 +181,6 @@ createApp({
                     }
                     selected.value = null;
                 } else {
-                    const piece = game.get(square);
                     if (piece && piece.color === game.turn()) {
                         selected.value = square;
                     }
@@ -147,11 +208,12 @@ createApp({
 
             return {
                 gameStarted, lobbyId, meshStatus, connectionMode, gameOverMessage,
-          boardState, turn, flipped, moveHistory, captured,
-          initLocalGame, hostMeshGame, joinMeshGame, resetGame, formatLobbyId,
-          handleSquareClick, isSelected, isLastMove, isLegalMove, isCaptureMove,
-          evalScore: computed(() => 50), // Static for now, can add engine later
+                boardState, turn, flipped, moveHistory, captured,
+                initLocalGame, hostMeshGame, joinMeshGame, initAiGame, resetGame, formatLobbyId,
+                handleSquareClick, isSelected, isLastMove, isLegalMove, isCaptureMove,
+                evalScore: computed(() => 50),
           getPieceURL: (p) => `https://lichess1.org/assets/piece/cburnett/${p.color}${p.type.toUpperCase()}.svg`
             };
     }
 }).mount('#app');
+

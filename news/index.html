@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Avero News</title>
+    <script libs="local,tailwind,vue" src="../share/cdn.js"></script>
+    <link rel="stylesheet" href="index.css">
+</head>
+<body>
+    <div id="app" v-cloak>
+        <div v-if="!activeArticle">
+            <header class="app-bar">
+                <h1>AVERO<span>NEWS</span></h1>
+                <nav class="categories">
+                    <button v-for="cat in categories" @click="fetchNews(cat)" :class="{active: currentCat === cat}">
+                        {{ cat.toUpperCase() }}
+                    </button>
+                </nav>
+            </header>
+
+            <main class="news-grid">
+                <div v-if="loading" class="loader">Loading latest news...</div>
+                <div v-else v-for="article in articles" :key="article.url" class="news-card" @click="openArticle(article)">
+                    <div class="content">
+                        <h3>{{ article.title }}</h3>
+                        <p>{{ article.description }}</p>
+                        <small>{{ article.source.name }}</small>
+                    </div>
+                </div>
+            </main>
+        </div>
+
+        <div v-if="activeArticle" class="reader-overlay">
+            <header class="reader-header">
+                <button @click="activeArticle = null" class="back-btn">← BACK TO FEED</button>
+                <h2>{{ activeArticle.title }}</h2>
+            </header>
+            <div class="reader-content" v-html="articleBody"></div>
+        </div>
+    </div>
+    <script src="index.js"></script>
+</body>
+</html>

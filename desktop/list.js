@@ -6,6 +6,7 @@ const appList = [
     { title: 'Chess', icon: '♟️', path: '../chess/index.html' },
     { title: 'Games', icon: '🎮', path: '../games/index.html' },
     { title: 'Maps', icon: '🗺️', path: '../maps/index.html' },
+    { title: 'News', icon: '📰', path: '../news/index.html' },
     { title: 'Notepad', icon: '📝', path: '../notepad/index.html' },
     { title: 'Player', icon: '🎬', path: '../player/index.html' },
     { title: 'Stopwatch', icon: '⌚', path: '../stopwatch/index.html'},
