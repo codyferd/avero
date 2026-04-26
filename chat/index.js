@@ -1,225 +1,146 @@
-const { createApp, ref, nextTick, watch, computed } = Vue;
+const { createApp, ref } = Vue;
 
 createApp({
     setup() {
-        // --- REACTIVE STATE ---
         const roomId = ref('');
-        const myName = ref('User_' + Math.floor(Math.random() * 999));
+        const username = ref('User_' + Math.floor(Math.random() * 999));
+        const input = ref('');
+        const messages = ref([]);
+        const onlineUsers = ref([]);
         const isJoined = ref(false);
         const isHost = ref(false);
-        const showSidebar = ref(false);
-        const currentInput = ref('');
-        const messages = ref([]);
-        const stream = ref(null);
-        const isMuted = ref(false);
 
-        // --- SUBCHAT STATE ---
-        const subchats = ref(['GENERAL']);
-        const currentSubchat = ref('GENERAL');
+        let peer = null;
+        let connections = []; // Host's list of guests
+        let hostConn = null;  // Guest's connection to host
 
-        // --- COMPUTED ---
-        // Filters messages so you only see those belonging to the active subchat or system alerts
-        const filteredMessages = computed(() => {
-            return messages.value.filter(m =>
-            m.subchatId === currentSubchat.value ||
-            m.sender === 'SYS'
-            );
-        });
+        const init = () => {
+            if (!roomId.value) return alert("Enter a Room ID");
 
-        // --- WATCHERS ---
-        watch(roomId, (val) => {
-            roomId.value = Utils.cleanRoomId(val);
-        });
+            peer = new Peer(roomId.value);
 
-        // --- CORE MESH ACTIONS ---
-        const initRoom = () => {
-            if (!roomId.value || isJoined.value) return;
+            // 1. If we successfully claim the Room ID, we are the Host
+            peer.on('open', () => {
+                isJoined.value = true;
+                isHost.value = true;
+                updateUsers();
+            });
 
-            Mesh.init(roomId.value, {
-                onJoined: (hostStatus) => {
-                    isJoined.value = true;
-                    isHost.value = hostStatus;
-
-                    Mesh.peer.on('call', (call) => {
-                        call.answer(stream.value);
-                        handleCall(call);
-                    });
-                },
-                onSystem: (text) => {
-                    messages.value.push(Utils.createSysMsg(text));
-                    scrollToBottom();
-                },
-                onMessage: (data) => {
-                    // Handle channel list synchronization
-                    if (data.type === 'channel-sync') {
-                        data.channels.forEach(c => {
-                            if (!subchats.value.includes(c)) subchats.value.push(c);
+            // 2. If the ID is taken, we are a Guest
+            peer.on('error', (err) => {
+                if (err.type === 'unavailable-id') {
+                    peer = new Peer(); // Random ID for guest
+                    peer.on('open', () => {
+                        hostConn = peer.connect(roomId.value);
+                        hostConn.on('open', () => {
+                            isJoined.value = true
                         });
-                            return;
-                    }
-
-                    if (messages.value.find(m => m.id === data.id)) return;
-                    messages.value.push({ ...data, self: false });
-                    scrollToBottom();
-                },
-                onHistory: (history) => {
-                    mergeMessages(history);
-                    scrollToBottom();
-                },
-                requestHistorySync: (conn) => {
-                    // Send text history and the current list of subchats to the new peer
-                    const history = messages.value.filter(m => !m.image);
-                    conn.send({ type: 'history', data: history });
-                    conn.send({ type: 'channel-sync', channels: subchats.value });
-                },
-                onPeerJoin: (peerId) => {
-                    if (stream.value) {
-                        const call = Mesh.peer.call(peerId, stream.value);
-                        handleCall(call);
-                    }
+                        hostConn.on('data', (d) => handleData(d));
+                    });
                 }
             });
+
+            // 3. Listen for incoming Guest connections (Host only)
+            peer.on('connection', (c) => handleConnection(c));
         };
 
-        const sendPayload = () => {
-            if (!currentInput.value || !isJoined.value) return;
+        const handleConnection = (c) => {
+            connections.push(c);
+            c.on('data', (d) => handleData(d, c.peer));
+            c.on('close', () => {
+                connections = connections.filter(x => x.peer !== c.peer);
+                updateUsers();
+            });
+            updateUsers();
+        };
 
-            const payload = {
-                sender: myName.value,
-                text: currentInput.value,
-                subchatId: currentSubchat.value, // Tag message with current channel
-                time: Date.now(),
-          id: Utils.generateId()
+        const handleData = (d, senderPeerId) => {
+            // If it's a message/image, display it
+            if (d.type === 'msg' || d.type === 'image') {
+                messages.value.push(d.payload);
+                // If Host, relay to other guests
+                if (isHost.value) broadcast(d, senderPeerId);
+            }
+            // If it's a user update, refresh the list
+            else if (d.type === 'user-update') {
+                onlineUsers.value = d.users;
+            }
+        };
+
+        const broadcast = (data, excludePeerId) => {
+            connections.forEach(c => { if(c.peer !== excludePeerId) c.send(data); });
+        };
+
+        const updateUsers = () => {
+            // Update local user list
+            onlineUsers.value = [username.value, ...connections.map(c => c.peer)];
+
+            // If host, push updated list to all guests
+            if (isHost.value) {
+                const data = { type: 'user-update', users: onlineUsers.value };
+                connections.forEach(c => c.send(data));
+            }
+        };
+
+        const broadcastUserUpdate = () => {
+            // Triggered when username changes
+            updateUsers();
+        };
+
+        const send = (payload = { text: input.value, type: 'msg' }) => {
+            if (!payload.text && !payload.image) return;
+
+            const msg = {
+                sender: username.value,
+                id: Date.now(),
+          ...payload
             };
 
-            Mesh.broadcast(payload);
-            messages.value.push({ ...payload, self: true });
-            currentInput.value = '';
-            scrollToBottom();
+            // Push to own screen
+            messages.value.push({ ...msg, self: true });
+
+            // Send to peers
+            const data = { type: payload.type === 'image' ? 'image' : 'msg', payload: msg };
+
+            if (isHost.value) broadcast(data);
+            else if (hostConn) hostConn.send(data);
+
+            input.value = '';
         };
 
-        const sendImage = async (event) => {
-            const file = event.target.files[0];
-            if (!file || !isJoined.value) return;
-
-            try {
-                const base64 = await Utils.fileToBase64(file);
-                const payload = {
-                    sender: myName.value,
-          image: base64,
-          subchatId: currentSubchat.value,
-          time: Date.now(),
-          id: Utils.generateId()
-                };
-
-                Mesh.broadcast(payload);
-                messages.value.push({ ...payload, self: true });
-                scrollToBottom();
-            } catch (err) {
-                messages.value.push(Utils.createSysMsg("Failed to process image."));
-            }
-        };
-
-        // --- SUBCHAT ACTIONS ---
-        const createSubchat = () => {
-            const name = prompt("Enter subchat name:")?.toUpperCase().replace(/[^A-Z0-9]/g, '');
-            if (name && !subchats.value.includes(name)) {
-                subchats.value.push(name);
-                currentSubchat.value = name;
-                // Tell the rest of the mesh about the new channel
-                Mesh.broadcast({ type: 'channel-sync', channels: subchats.value });
-                messages.value.push(Utils.createSysMsg(`Channel #${name} created.`));
-            }
-        };
-
-        // --- STORAGE & MERGE ACTIONS ---
-        const mergeMessages = (newBatch) => {
-            const map = new Map();
-            messages.value.forEach(m => map.set(m.id, m));
-            newBatch.forEach(m => {
-                map.set(m.id, m);
-                // Ensure subchats mentioned in history are added to the list
-                if (m.subchatId && !subchats.value.includes(m.subchatId)) {
-                    subchats.value.push(m.subchatId);
-                }
-            });
-            messages.value = Array.from(map.values()).sort((a, b) => a.time - b.time);
-        };
-
-        const importLogs = (event) => {
-            const file = event.target.files[0];
+        const sendImage = (e) => {
+            const file = e.target.files[0];
             if (!file) return;
-
             const reader = new FileReader();
-            reader.onload = (e) => {
+            reader.onload = (ev) => send({ image: ev.target.result, type: 'image' });
+            reader.readAsDataURL(file);
+        };
+
+        const importChat = (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (ev) => {
                 try {
-                    const imported = JSON.parse(e.target.result);
-                    if (Array.isArray(imported)) {
-                        mergeMessages(imported);
-                        if (isHost.value) {
-                            Mesh.broadcast({ type: 'history', data: messages.value.filter(m => !m.image) });
-                            Mesh.broadcast({ type: 'channel-sync', channels: subchats.value });
-                        }
-                        messages.value.push(Utils.createSysMsg("History merged into current session."));
-                        scrollToBottom();
-                    }
-                } catch (err) {
-                    alert("Failed to parse Avero Mesh logs.");
-                }
+                    const imported = JSON.parse(ev.target.result);
+                    messages.value = [...messages.value, ...imported];
+                } catch (err) { alert("Invalid chat file"); }
             };
             reader.readAsText(file);
-            event.target.value = '';
         };
 
-        // --- MEDIA ACTIONS ---
-        const toggleVideo = async () => {
-            if (stream.value) {
-                Media.stopLocalStream();
-                stream.value = null;
-            } else {
-                try {
-                    stream.value = await Media.startLocalStream();
-                    const targets = isHost.value ? Mesh.connections : (Mesh.hostConn ? [Mesh.hostConn] : []);
-                    targets.forEach(conn => {
-                        const targetPeer = conn.peer || conn;
-                        if (targetPeer) {
-                            const call = Mesh.peer.call(targetPeer, stream.value);
-                            handleCall(call);
-                        }
-                    });
-                } catch (err) {
-                    messages.value.push(Utils.createSysMsg(err.message));
-                }
-            }
-        };
-
-        const handleCall = (call) => {
-            call.on('stream', (remoteStream) => {
-                Media.addRemoteVideo(call.peer, remoteStream);
-            });
-            call.on('close', () => {
-                Media.removeRemoteVideo(call.peer);
-            });
-        };
-
-        // --- UI HELPERS ---
-        const scrollToBottom = () => {
-            nextTick(() => {
-                const el = document.getElementById('msg-container');
-                if (el) el.scrollTop = el.scrollHeight;
-            });
-        };
-
-        const saveChat = () => {
-            Utils.exportJsonLogs(messages.value, roomId.value);
+        const exportChat = () => {
+            const textOnly = messages.value.filter(m => !m.image);
+            const blob = new Blob([JSON.stringify(textOnly, null, 2)], {type: 'application/json'});
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = `chat_export_${Date.now()}.json`;
+            a.click();
         };
 
         return {
-            roomId, myName, isJoined, isHost, showSidebar,
-            currentInput, messages, stream, isMuted,
-            subchats, currentSubchat, filteredMessages, // Subchat exports
-            initRoom, sendPayload, sendImage, importLogs, toggleVideo,
-            createSubchat, saveChat, formatTime: Utils.formatTime
+            roomId, username, input, messages, onlineUsers, isJoined,
+          init, send, sendImage, exportChat, broadcastUserUpdate, importChat
         };
     }
 }).mount('#app');
