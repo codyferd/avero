@@ -16,6 +16,7 @@ const LIB_MAP = {
     phaser: "https://cdn.jsdelivr.net/npm/phaser@3.90.0/dist/phaser.min.js",
     math: "https://cdn.jsdelivr.net/npm/mathjs@15.1.1/lib/browser/math.js",
     peer: "https://cdn.jsdelivr.net/npm/peerjs@1.5.5/dist/peerjs.min.js",
+    qr: "https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js",
     chess: "https://cdn.jsdelivr.net/npm/chess.js@0.12.1/chess.min.js", // Do Not Update
     three: "https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js", // Do Not Update
 };
@@ -44,4 +45,5 @@ if (requested) {
         });
     });
 }
+document.write(`<link rel="icon" type="image/avif" href="../share/logo.avif">`);
 

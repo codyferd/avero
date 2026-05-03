@@ -8,22 +8,27 @@
     <link rel="stylesheet" href="index.css"></link>
 </head>
 <body>
-
 <div id="app" v-cloak>
     <div class="map-overlay side-panel">
         <div>
             <h2 class="text-lg font-black uppercase tracking-tighter mb-1">Avero <span class="text-indigo-500">Maps</span></h2>
-            <p class="text-[9px] opacity-30 font-bold uppercase tracking-widest">Navigation & Intelligence</p>
+            <p class="text-[9px] opacity-30 font-bold uppercase tracking-widest">High-Speed Navigation</p>
         </div>
 
-        <section>
+        <section class="relative">
             <div class="input-group">
                 <label class="label">Origin</label>
-                <input v-model="startPoint" placeholder="Search start..." class="map-input">
+                <input v-model="startPoint" @input="debounceSearch('start')" placeholder="Search start..." class="map-input">
+                <div v-if="suggestions.start.length" class="search-results">
+                    <div v-for="res in suggestions.start" @click="selectLoc('start', res)" class="search-item">{{ res.display_name }}</div>
+                </div>
             </div>
             <div class="input-group">
                 <label class="label">Destination</label>
-                <input v-model="endPoint" placeholder="Search destination..." class="map-input">
+                <input v-model="endPoint" @input="debounceSearch('end')" placeholder="Search destination..." class="map-input">
+                <div v-if="suggestions.end.length" class="search-results">
+                    <div v-for="res in suggestions.end" @click="selectLoc('end', res)" class="search-item">{{ res.display_name }}</div>
+                </div>
             </div>
             <button @click="planTrip" class="btn-action">Construct Route</button>
         </section>
@@ -34,13 +39,13 @@
                 <span class="text-sm font-bold">{{ routeInfo.distance }}</span>
             </div>
             <div class="flex justify-between">
-                <span class="label">Est. Time</span>
+                <span class="label">Travel Time</span>
                 <span class="text-sm font-bold text-indigo-400">{{ routeInfo.duration }}</span>
             </div>
         </div>
 
         <section>
-            <label class="label">Nearby Essentials</label>
+            <label class="label">POI Explorer</label>
             <div class="poi-chips">
                 <div v-for="poi in poiTypes" :key="poi.val"
                      @click="findPOI(poi.val)"
@@ -56,10 +61,11 @@
     <div class="map-overlay zoom-controls">
         <button @click="zoomIn" class="map-btn">＋</button>
         <button @click="zoomOut" class="map-btn">－</button>
-        <button @click="clearAll" class="map-btn" title="Reset View">🗑️</button>
+        <button @click="clearAll" class="map-btn">🗑️</button>
         <button @click="locateMe" class="map-btn">📍</button>
     </div>
 </div>
+
 
 <script src="index.js"></script>
 </body>
