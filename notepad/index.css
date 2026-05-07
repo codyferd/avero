@@ -1,95 +1,75 @@
-:root { --avero-accent: #10b981; }
+:root { --avero-green: #10b981; }
 [v-cloak] { display: none; }
 
-body {
-    background: #050505;
-    color: #e5e7eb;
-    font-family: 'Inter', system-ui, sans-serif;
-    height: 100vh;
-    margin: 0;
-    overflow: hidden;
-}
-
 .avero-glass {
-    background: rgba(255, 255, 255, 0.02);
+    background: rgba(10, 10, 10, 0.95);
     backdrop-filter: blur(20px);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    border-bottom: 1px solid rgba(255,255,255,0.05);
 }
 
-/* Syntax Overlay Logic */
 .editor-container {
     position: relative;
     flex-grow: 1;
-    height: 100%;
+    background: #050505;
+    overflow: hidden;
 }
 
 .syntax-layer, .editor-surface {
     position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
+    inset: 0;
     padding: 24px;
-    font-family: 'Fira Code', 'JetBrains Mono', monospace;
+    font-family: 'JetBrains Mono', 'Fira Code', monospace;
+    font-size: 14px;
     line-height: 1.6;
-    margin: 0;
-    border: none;
-    white-space: pre-wrap;
-    word-wrap: break-word;
-    overflow-y: auto;
+    /* CRITICAL: These must match exactly */
+    white-space: pre;
+    word-wrap: normal;
+    tab-size: 4;
+    -moz-tab-size: 4;
 }
 
 .editor-surface {
     background: transparent;
-    color: transparent; /* Text is invisible so highlighting shows through */
-    caret-color: var(--avero-accent);
+    color: transparent;
+    caret-color: var(--avero-green);
+    z-index: 20;
     resize: none;
     outline: none;
-    z-index: 10;
+    border: none;
+    width: 100%;
+    height: 100%;
 }
 
 .syntax-layer {
-    z-index: 5;
-    pointer-events: none;
+    z-index: 10;
+    pointer-events: none; /* User cannot click/highlight this layer */
+    color: #94a3b8;
+    overflow: hidden; /* Scroll is handled by the textarea */
 }
 
-/* Custom selection color */
+/* Tokens - Use specific classes to avoid generic collisions */
+.token-keyword { color: #569cd6; font-weight: bold; }
+.token-string { color: #ce9178; }
+.token-comment { color: #6a9955; font-style: italic; }
+.token-number { color: #b5cea8; }
+.token-bool { color: #569cd6; }
+
+/* Custom selection to see what you are doing */
 .editor-surface::selection {
-    background: rgba(16, 185, 129, 0.3);
-    color: transparent;
+    background: rgba(16, 185, 129, 0.2);
 }
 
-.status-bar {
-    background: rgba(0, 0, 0, 0.4);
-    border-top: 1px solid rgba(255, 255, 255, 0.05);
+.btn-ide {
     font-size: 10px;
+    font-weight: 800;
     text-transform: uppercase;
-    letter-spacing: 0.1em;
-    font-weight: 700;
-}
-
-.btn-avero {
-    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-}
-.btn-avero:hover {
-    background: rgba(255, 255, 255, 0.05);
-    color: var(--avero-accent);
-}
-
-/* Folder Sidebar styling */
-.sidebar-item {
-    font-size: 10px;
-    padding: 4px 8px;
-    border-radius: 4px;
-    cursor: pointer;
-    color: rgba(255,255,255,0.4);
+    padding: 6px 12px;
+    border-radius: 6px;
     transition: 0.2s;
-}
-.sidebar-item:hover {
-    color: var(--avero-accent);
-    background: rgba(255,255,255,0.03);
+    background: transparent;
 }
 
-/* Scrollbar styling */
-::-webkit-scrollbar { width: 4px; }
-::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 10px; }
+.btn-ide:hover {
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--avero-green);
+}

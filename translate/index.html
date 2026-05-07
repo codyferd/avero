@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Avero Translate Pro</title>
+    <script libs="core" src="../share/cdn.js"></script>
+</head>
+<body class="bg-slate-900 text-slate-100 min-h-screen flex items-center justify-center p-4 font-sans">
+
+    <div id="app" class="w-full max-w-3xl bg-slate-800 rounded-2xl shadow-2xl overflow-hidden border border-slate-700">
+        <div class="bg-blue-600 p-6 flex justify-between items-center">
+            <div>
+                <h1 class="text-2xl font-bold">Avero Translate</h1>
+                <p class="text-blue-100 text-xs uppercase tracking-widest">Real-World API Mode</p>
+            </div>
+            <select v-model="targetLang" class="bg-blue-700 text-white text-sm rounded-lg px-3 py-2 border-none focus:ring-2 focus:ring-white outline-none max-w-[150px]">
+                <option v-for="lang in languages" :key="lang.code" :value="lang.code">
+                    {{ lang.name }}
+                </option>
+            </select>
+
+        </div>
+
+        <div class="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="space-y-2">
+                <label class="text-xs font-bold text-slate-400 uppercase">English Source</label>
+                <textarea
+                    v-model="inputText"
+                    @input="debouncedTranslate"
+                    placeholder="Enter text to translate..."
+                    class="w-full h-48 p-4 bg-slate-900 border border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none resize-none transition-all"
+                ></textarea>
+            </div>
+
+            <div class="space-y-2">
+                <label class="text-xs font-bold text-slate-400 uppercase">Translation</label>
+                <div class="w-full h-48 p-4 bg-slate-700 border border-slate-600 rounded-xl overflow-auto relative">
+                    <div v-if="loading" class="absolute inset-0 flex items-center justify-center bg-slate-700 bg-opacity-50">
+                        <div class="animate-spin rounded-full h-8 w-8 border-t-2 border-blue-400"></div>
+                    </div>
+                    <p class="text-lg leading-relaxed" :class="{'text-slate-500 italic': !translatedText}">
+                        {{ translatedText || 'Waiting for input...' }}
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <div class="px-6 py-4 bg-slate-800 border-t border-slate-700 flex justify-between items-center text-[10px] text-slate-500">
+            <span>STATUS: {{ loading ? 'TRANSLATING...' : 'READY' }}</span>
+            <button @click="clear" class="hover:text-white transition-colors">RESET APP</button>
+        </div>
+    </div>
+    <script src="list.js"></script>
+    <script src="index.js"></script>
+</body>
+</html>
+

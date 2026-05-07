@@ -1,145 +1,124 @@
-const { createApp, ref, computed, watch, onMounted, nextTick } = Vue;
+const { createApp, ref, computed } = Vue;
+
+const TreeItem = {
+    name: 'TreeItem',
+    props: ['item'],
+    template: `
+    <div class="select-none">
+    <div @click="handleClick" class="flex items-center gap-2 p-1 rounded cursor-pointer hover:bg-white/5 text-[11px]">
+    <span class="opacity-40 w-4">{{ item.kind === 'directory' ? (isOpen ? '📂' : '📁') : '📄' }}</span>
+    <span class="truncate opacity-80">{{ item.name }}</span>
+    </div>
+    <div v-if="isOpen && item.children" class="ml-3 border-l border-white/10">
+    <tree-item v-for="child in item.children" :key="child.name" :item="child" @open-file="$emit('open-file', $event)"></tree-item>
+    </div>
+    </div>
+    `,
+    data() { return { isOpen: false }; },
+    methods: {
+        handleClick() {
+            if (this.item.kind === 'directory') this.isOpen = !this.isOpen;
+            else this.$emit('open-file', this.item.handle);
+        }
+    }
+};
 
 createApp({
+    components: { TreeItem },
     setup() {
         const content = ref('');
         const fileHandle = ref(null);
-        const folderFiles = ref([]);
+        const projectTree = ref([]);
         const isDirty = ref(false);
-        const fontSize = ref(16);
-        const spellcheck = ref(false);
-        const saveStatus = ref('');
-        const showConfirmModal = ref(false);
-        const editor = ref(null); // Reference to the textarea
+        const showTerminal = ref(false);
+        const terminalOutput = ref([]);
 
-        // --- STATS ---
-        const wordCount = computed(() => {
-            const words = content.value.trim().split(/\s+/);
-            return content.value.trim() === '' ? 0 : words.length;
-        });
-        const lineCount = computed(() => content.value.split('\n').length);
-
-        // --- SYNTAX HIGHLIGHTING ENGINE ---
+        // Robust Single-Pass Visual Logic
         const highlightedContent = computed(() => {
-            if (!content.value) return '';
-            if (typeof Prism === 'undefined') return content.value;
+            // Step 1: Escape HTML characters to prevent rendering collision
+            let html = content.value
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;");
 
-            const ext = fileHandle.value?.name.split('.').pop() || 'md';
-            const langMap = {
-                js: 'javascript',
-                py: 'python',
-                html: 'markup',
-                xml: 'markup',
-                css: 'css',
-                md: 'markdown'
-            };
+            // Step 2: Apply highlighting using specific CSS classes
+            // We use capture groups to ensure we don't double-wrap
+            html = html
+            // Comments (match first to avoid highlighting keywords inside them)
+            .replace(/\/\/.*$/gm, '<span class="token-comment">$&</span>')
+            // Strings
+            .replace(/(['"`])(.*?)\1/g, '<span class="token-string">$1$2$1</span>')
+            // Keywords (Strict word boundaries \b to prevent partial matches)
+            .replace(/\b(const|let|var|function|return|if|else|for|while|import|export|class|new|await|async|yield|switch|case|break|continue|default|try|catch|finally)\b/g, '<span class="token-keyword">$1</span>')
+            // Booleans & Numbers
+            .replace(/\b(true|false|null|undefined)\b/g, '<span class="token-bool">$1</span>')
+            .replace(/\b(\d+)\b/g, '<span class="token-number">$1</span>');
 
-            const lang = langMap[ext] || 'markdown';
-            const grammar = Prism.languages[lang];
-
-            // If the autoloader hasn't loaded the language yet, return plain text
-            // Prism will catch up on the next tick
-            if (!grammar) return content.value.replace(/&/g, "&amp;").replace(/</g, "&lt;");
-
-            try {
-                // Prism returns a string of HTML spans
-                return Prism.highlight(content.value, grammar, lang);
-            } catch (e) {
-                return content.value;
-            }
+            return html + "\n";
         });
 
-        // --- SCROLL SYNCHRONIZATION ---
-        const syncScroll = (e) => {
-            const syntaxLayer = document.querySelector('.syntax-layer');
-            if (syntaxLayer) {
-                syntaxLayer.scrollTop = e.target.scrollTop;
-                syntaxLayer.scrollLeft = e.target.scrollLeft;
+        const openFolder = async () => {
+            try {
+                const dirHandle = await window.showDirectoryPicker();
+                projectTree.value = [await scanDirectory(dirHandle)];
+            } catch (e) { console.error("Access Denied", e); }
+        };
+
+        const scanDirectory = async (handle) => {
+            const node = { name: handle.name, handle: handle, kind: handle.kind, children: [] };
+            if (handle.kind === 'directory') {
+                for await (const entry of handle.values()) {
+                    node.children.push(await scanDirectory(entry));
+                }
+                node.children.sort((a, b) => (b.kind === 'directory') - (a.kind === 'directory') || a.name.localeCompare(b.name));
             }
-        };
-
-        const markDirty = () => { isDirty.value = true; };
-
-        // --- FILE OPERATIONS ---
-        const triggerCreateNew = () => {
-            if (isDirty.value) { showConfirmModal.value = true; }
-            else { performCreateNew(); }
-        };
-
-        const performCreateNew = () => {
-            content.value = '';
-            fileHandle.value = null;
-            isDirty.value = false;
-            showConfirmModal.value = false;
+            return node;
         };
 
         const openFile = async (handle = null) => {
             try {
-                const actualHandle = handle || (await window.showOpenFilePicker({
-                    types: [{ description: 'Project Files', accept: { '*/*': ['.txt', '.md', '.js', '.py', '.html', '.css'] } }]
-                }))[0];
-
-                const file = await actualHandle.getFile();
+                const actual = handle || (await window.showOpenFilePicker())[0];
+                const file = await actual.getFile();
                 content.value = await file.text();
-                fileHandle.value = actualHandle;
+                fileHandle.value = actual;
                 isDirty.value = false;
-
-                // Force Prism to recognize the new language
-                nextTick(() => {
-                    if (typeof Prism !== 'undefined') Prism.highlightAll();
-                });
-            } catch (err) { console.warn('User cancelled open.'); }
-        };
-
-        const openFolder = async () => {
-            try {
-                const directoryHandle = await window.showDirectoryPicker();
-                const files = [];
-                for await (const entry of directoryHandle.values()) {
-                    if (entry.kind === 'file') files.push(entry);
-                }
-                folderFiles.value = files.sort((a, b) => a.name.localeCompare(b.name));
-                showStatus(`Project Loaded: ${files.length} files`);
-            } catch (err) { console.warn('Directory access denied.'); }
+            } catch (e) {}
         };
 
         const saveFile = async () => {
-            if (!fileHandle.value) return saveAs();
+            if (!fileHandle.value) fileHandle.value = await window.showSaveFilePicker();
+            const writable = await fileHandle.value.createWritable();
+            await writable.write(content.value);
+            await writable.close();
+            isDirty.value = false;
+        };
+
+        const runCode = () => {
+            showTerminal.value = true;
             try {
-                const writable = await fileHandle.value.createWritable();
-                await writable.write(content.value);
-                await writable.close();
-                isDirty.value = false;
-                showStatus('File Saved');
-            } catch (err) { showStatus('Write Error'); }
+                const originalLog = console.log;
+                console.log = (m) => terminalOutput.value.push({ type: 'info', msg: String(m) });
+                new Function(content.value)();
+                console.log = originalLog;
+            } catch (err) {
+                terminalOutput.value.push({ type: 'error', msg: err.message });
+            }
         };
 
-        const saveAs = async () => {
-            try {
-                fileHandle.value = await window.showSaveFilePicker();
-                await saveFile();
-            } catch (err) { console.warn('Save As cancelled.'); }
+        const syncScroll = (e) => {
+            const syntax = document.querySelector('.syntax-layer');
+            if (syntax) {
+                syntax.scrollTop = e.target.scrollTop;
+                syntax.scrollLeft = e.target.scrollLeft;
+            }
         };
-
-        const showStatus = (msg) => {
-            saveStatus.value = msg;
-            setTimeout(() => saveStatus.value = '', 3000);
-        };
-
-        const toggleSpellcheck = () => { spellcheck.value = !spellcheck.value; };
-
-        onMounted(() => {
-            window.addEventListener('keydown', (e) => {
-                if (e.ctrlKey && e.key === 's') { e.preventDefault(); saveFile(); }
-                if (e.ctrlKey && e.key === 'o') { e.preventDefault(); openFile(); }
-            });
-        });
 
         return {
-            content, fileHandle, folderFiles, isDirty, fontSize, spellcheck, saveStatus,
-          wordCount, lineCount, highlightedContent, showConfirmModal,
-          triggerCreateNew, openFile, openFolder, saveFile, saveAs, markDirty,
-          performCreateNew, syncScroll, toggleSpellcheck, editor
+            content, fileHandle, projectTree, isDirty, showTerminal, terminalOutput,
+          highlightedContent, lineCount: computed(() => content.value.split('\n').length || 1),
+          openFolder, openFile, saveFile, runCode, syncScroll, markDirty: () => isDirty.value = true,
+          toggleTerminal: () => showTerminal.value = !showTerminal.value
         };
     }
 }).mount('#app');
+

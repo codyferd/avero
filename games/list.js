@@ -144,4 +144,9 @@ const gamesList = [
     url: "https://tomb-of-the-mask.bitbucket.io/file/",
     image: "https://m.media-amazon.com/images/I/61ljJZNJV0L.png",
 },
+{
+    name: "What Beats Rock",
+    url: "https://www.whatbeatsrock.net/",
+    image: "https://dlcn7yodlhcnn.cloudfront.net/optimized/4X/b/6/e/b6e81877dda1c3e4ec21edaf6379c1483877c797_2_1024x619.png",
+}
 ];
