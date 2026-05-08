@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Avero Files</title>
+    <script libs="core" src="../share/cdn.js"></script>
+</head>
+<body class="bg-black text-white/90 overflow-hidden">
+
+    <div id="app" v-cloak class="flex flex-col h-screen w-screen border-t border-white/10 relative">
+        <!-- Toolbar -->
+        <header class="bg-[#111] p-3 flex items-center justify-between border-b border-white/10 select-none">
+            <div class="flex items-center gap-4">
+                <button @click="goBack" class="nav-btn" :disabled="pathStack.length <= 1">←</button>
+                <div class="flex items-center gap-1 text-[11px] font-medium opacity-60">
+                    <template v-for="(part, i) in breadcrumbs">
+                        <span class="hover:text-emerald-400 cursor-pointer" @click="jumpTo(i)">{{ part }}</span>
+                        <span v-if="i < breadcrumbs.length - 1" class="mx-1">/</span>
+                    </template>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-2">
+                <!-- Action Group -->
+                <div v-if="rootHandle" class="flex items-center gap-1 mr-4 bg-white/5 p-1 rounded-lg border border-white/5">
+                    <button @click="createNew('file')" class="btn-icon" title="New File">📄+</button>
+                    <button @click="createNew('directory')" class="btn-icon" title="New Folder">📂+</button>
+                    <div class="w-[1px] h-4 bg-white/10 mx-1"></div>
+                    <button @click="copyItem" :disabled="!selectedFile" class="btn-icon" title="Copy">📋</button>
+                    <button @click="cutItem" :disabled="!selectedFile" class="btn-icon" title="Cut">✂️</button>
+                    <button @click="pasteItem" :disabled="!clipboard.item" class="btn-icon" title="Paste">📥</button>
+                    <button @click="deleteItem" :disabled="!selectedFile" class="btn-icon text-red-400" title="Delete">🗑️</button>
+                </div>
+
+                <button v-if="!rootHandle" @click="initFileSystem" class="btn-primary">Mount Drive</button>
+                <input type="text" v-model="search" placeholder="Search..." class="search-input">
+            </div>
+        </header>
+
+        <main class="flex flex-grow overflow-hidden">
+            <!-- Sidebar -->
+            <aside class="w-56 bg-[#0a0a0a] border-r border-white/5 p-4 hidden md:flex flex-col gap-6">
+                <div>
+                    <h3 class="text-[9px] font-black uppercase opacity-30 tracking-widest mb-4">Locations</h3>
+                    <div class="space-y-1">
+                        <div @click="jumpTo(0)" class="side-link" :class="{active: breadcrumbs.length === 1}">
+                            <span class="w-5">🏠</span> System Root
+                        </div>
+                        <div class="side-link opacity-20 cursor-not-allowed"><span class="w-5">⭐</span> Starred</div>
+                        <div class="side-link opacity-20 cursor-not-allowed"><span class="w-5">🕒</span> Recent</div>
+                    </div>
+                </div>
+            </aside>
+
+            <!-- File Grid -->
+            <div class="flex-grow p-6 overflow-y-auto bg-[#050505]" @click.self="selectedFile = null">
+                <div v-if="!rootHandle" class="h-full flex flex-col items-center justify-center opacity-20">
+                    <span class="text-6xl mb-4">📂</span>
+                    <p class="text-sm font-bold">No Drive Mounted</p>
+                </div>
+
+                <div v-else class="grid grid-cols-[repeat(auto-fill,minmax(100px,1fr))] gap-4">
+                    <div v-for="file in filteredFiles" :key="file.name"
+                         @dblclick="handleOpen(file)"
+                         @click="selectedFile = file"
+                         class="file-card" :class="{selected: selectedFile?.name === file.name}">
+                        <div class="icon-box">
+                            <span v-if="file.kind === 'directory'" class="text-4xl">📂</span>
+                            <span v-else class="text-4xl">{{ getIcon(file.name) }}</span>
+                        </div>
+                        <span class="text-[11px] truncate w-full text-center mt-2 px-1 font-medium">{{ file.name }}</span>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Status Bar -->
+        <footer class="bg-[#111] p-2 px-4 flex justify-between items-center text-[10px] font-bold border-t border-white/5">
+            <div class="flex gap-4 opacity-40">
+                <span>{{ filteredFiles.length }} objects</span>
+                <span v-if="selectedFile">{{ selectedFile.kind === 'directory' ? 'Folder' : 'File' }}</span>
+                <span v-if="clipboard.item" class="text-emerald-500 font-black italic">Clipboard: {{ clipboard.mode }}</span>
+            </div>
+            <div v-if="selectedFile" class="text-emerald-500 uppercase tracking-tighter truncate max-w-[200px]">
+                Selected: {{ selectedFile.name }}
+            </div>
+        </footer>
+
+        <!-- Internal Modal Overlay (Built inside Avero) -->
+        <transition name="fade">
+            <div v-if="modal.show" class="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-black/70 backdrop-blur-sm" @click.self="modal.show = false">
+                <div class="bg-[#151515] border border-white/10 w-full max-w-xs rounded-2xl shadow-2xl overflow-hidden animate-pop">
+                    <div class="p-6">
+                        <h3 class="text-sm font-bold mb-2 text-white">{{ modal.title }}</h3>
+                        <p class="text-xs text-white/50 mb-4">{{ modal.message }}</p>
+
+                        <div v-if="modal.type === 'prompt'" class="relative">
+                            <input
+                                v-model="modal.input"
+                                @keyup.enter="confirmModal"
+                                ref="modalInput"
+                                class="w-full bg-black border border-white/10 rounded-lg p-3 text-xs text-white outline-none focus:border-emerald-500 transition-colors"
+                                placeholder="Enter name..."
+                                autocomplete="off">
+                        </div>
+                    </div>
+
+                    <div class="flex border-t border-white/5">
+                        <button @click="modal.show = false" class="flex-1 p-4 text-[10px] font-black uppercase opacity-40 hover:opacity-100 hover:bg-white/5 transition-all">Cancel</button>
+                        <button @click="confirmModal" class="flex-1 p-4 text-[10px] font-black uppercase text-emerald-500 bg-emerald-500/5 hover:bg-emerald-500/10 transition-all border-l border-white/5">Confirm</button>
+                    </div>
+                </div>
+            </div>
+        </transition>
+    </div>
+
+    <script src="index.js"></script>
+</body>
+</html>

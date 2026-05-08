@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Avero QR</title>
+    <script libs="core,qr" src="../share/cdn.js"></script>
+</head>
+<body class="bg-black text-white/90 overflow-hidden">
+
+    <div id="app" v-cloak class="flex flex-col h-screen w-screen border-t border-white/10">
+        <!-- Header -->
+        <header class="bg-[#111] p-4 flex items-center justify-between border-b border-white/10 select-none">
+            <div class="flex items-center gap-3">
+                <div class="w-8 h-8 bg-emerald-500 rounded-lg flex items-center justify-center text-black font-black">QR</div>
+                <h1 class="text-xs font-black uppercase tracking-widest">Avero QR</h1>
+            </div>
+            <div class="flex gap-2">
+                <button @click="downloadQR" :disabled="!text" class="btn-primary">Download PNG</button>
+            </div>
+        </header>
+
+        <main class="flex flex-grow overflow-hidden flex-col md:flex-row">
+            <!-- Controls -->
+            <aside class="w-full md:w-80 bg-[#0a0a0a] border-r border-white/5 p-6 flex flex-col gap-6">
+                <div>
+                    <label class="text-[9px] font-black uppercase opacity-30 tracking-widest mb-3 block">Content</label>
+                    <textarea
+                        v-model="text"
+                        placeholder="Paste URL or text here..."
+                        class="w-full h-32 bg-black border border-white/10 rounded-xl p-4 text-xs outline-none focus:border-emerald-500 transition-colors resize-none"
+                    ></textarea>
+                </div>
+
+                <div class="space-y-4">
+                    <label class="text-[9px] font-black uppercase opacity-30 tracking-widest block">Settings</label>
+
+                    <div class="flex justify-between items-center bg-white/5 p-3 rounded-lg border border-white/5">
+                        <span class="text-[11px]">Size</span>
+                        <select v-model="size" class="bg-transparent text-xs outline-none text-emerald-400 font-bold">
+                            <option value="128">128px</option>
+                            <option value="256">256px</option>
+                            <option value="512">512px</option>
+                        </select>
+                    </div>
+
+                    <div class="flex justify-between items-center bg-white/5 p-3 rounded-lg border border-white/5">
+                        <span class="text-[11px]">Correction</span>
+                        <select v-model="level" class="bg-transparent text-xs outline-none text-emerald-400 font-bold">
+                            <option value="L">Low (7%)</option>
+                            <option value="M">Medium (15%)</option>
+                            <option value="Q">Quartile (25%)</option>
+                            <option value="H">High (30%)</option>
+                        </select>
+                    </div>
+                </div>
+            </aside>
+
+            <!-- Preview Area -->
+            <div class="flex-grow bg-[#050505] flex items-center justify-center p-10 relative">
+                <div v-show="!text" class="opacity-20 text-center">
+                    <span class="text-6xl block mb-4">🔳</span>
+                    <p class="text-xs font-bold uppercase tracking-widest">Awaiting Input</p>
+                </div>
+
+                <div v-show="text" class="p-6 bg-white rounded-2xl shadow-[0_0_50px_rgba(16,185,129,0.2)] transition-all duration-500 transform hover:scale-105">
+                    <div id="qrcode-container" ref="qrContainer"></div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Footer Info -->
+        <footer class="bg-[#111] p-2 px-4 flex justify-between items-center text-[10px] font-bold border-t border-white/5 opacity-40">
+            <span>Avero Creative Engine</span>
+            <span class="uppercase italic">v1.0 Ready</span>
+        </footer>
+    </div>
+
+    <script src="index.js"></script>
+</body>
+</html>
+

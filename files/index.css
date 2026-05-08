@@ -1,0 +1,110 @@
+:root { --avero-accent: #10b981; }
+[v-cloak] { display: none; }
+
+body { background: #000; margin: 0; }
+
+.nav-btn, .btn-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.08);
+    color: white;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: 0.1s;
+}
+
+.btn-icon { background: transparent; border: none; font-size: 14px; }
+.btn-icon:hover:not(:disabled) { background: rgba(255,255,255,0.1); color: var(--avero-accent); }
+
+.nav-btn:disabled, .btn-icon:disabled { opacity: 0.1; cursor: default; }
+.nav-btn:not(:disabled):hover { background: rgba(255,255,255,0.1); border-color: var(--avero-accent); }
+
+.search-input {
+    background: #000;
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 8px;
+    padding: 8px 14px;
+    font-size: 12px;
+    color: white;
+    width: 200px;
+    outline: none;
+}
+.search-input:focus { border-color: var(--avero-accent); }
+
+.btn-primary {
+    background: var(--avero-accent);
+    color: #000;
+    font-size: 11px;
+    font-weight: 900;
+    padding: 8px 16px;
+    border-radius: 8px;
+    cursor: pointer;
+    border: none;
+}
+
+.side-link {
+    font-size: 12px;
+    padding: 10px 14px;
+    border-radius: 10px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    transition: 0.2s;
+}
+.side-link:hover { background: rgba(255,255,255,0.05); }
+.side-link.active { background: rgba(16, 185, 129, 0.15); color: var(--avero-accent); font-weight: bold; }
+
+.file-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 16px 8px;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: 0.1s;
+    border: 1px solid transparent;
+    user-select: none;
+}
+.file-card:hover { background: rgba(255,255,255,0.04); }
+.file-card.selected { background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.4); }
+
+.icon-box {
+    width: 56px;
+    height: 56px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 4px;
+}
+
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 10px; }
+/* Core Styling */
+:root { --avero-accent: #10b981; }
+[v-cloak] { display: none; }
+
+/* Existing Button/Card Styles... */
+.btn-icon { background: transparent; border: none; cursor: pointer; padding: 4px; border-radius: 4px; }
+.btn-icon:hover { background: rgba(255,255,255,0.1); }
+
+/* Modal Transitions */
+.fade-enter-active, .fade-leave-active { transition: opacity 0.2s ease; }
+.fade-enter-from, .fade-leave-to { opacity: 0; }
+
+@keyframes pop {
+    from { transform: scale(0.95); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+}
+.animate-pop { animation: pop 0.2s cubic-bezier(0.34, 1.56, 0.64, 1); }
+
+/* Mobile optimization */
+@media (max-width: 768px) {
+    .side-link span { display: none; }
+    .side-link { justify-content: center; }
+    aside { width: 60px; }
+    .search-input { width: 100px; }
+}

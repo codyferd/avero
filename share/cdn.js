@@ -4,7 +4,7 @@ const LIB_MAP = {
         "../share/logo.avif",
         "../share/theme.css",
         "https://cdn.tailwindcss.com",
-        "https://cdn.jsdelivr.net/npm/vue@3.5.31/dist/vue.global.prod.js",
+        "https://cdn.jsdelivr.net/npm/vue@3.5.34/dist/vue.global.prod.js",
     ],
     leaflet: [
         "https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.min.css",
@@ -12,9 +12,10 @@ const LIB_MAP = {
         "https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.min.js",
         "https://cdn.jsdelivr.net/npm/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.min.js",
     ],
-    phaser: "https://cdn.jsdelivr.net/npm/phaser@3.90.0/dist/phaser.min.js",
-    math: "https://cdn.jsdelivr.net/npm/mathjs@15.1.1/lib/browser/math.js",
+    phaser: "https://cdn.jsdelivr.net/npm/phaser@4.1.0/dist/phaser.min.js",
+    math: "https://cdn.jsdelivr.net/npm/mathjs@15.2.0/lib/browser/math.js",
     peer: "https://cdn.jsdelivr.net/npm/peerjs@1.5.5/dist/peerjs.min.js",
+    qr: "https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js",
     chess: "https://cdn.jsdelivr.net/npm/chess.js@0.12.1/chess.min.js", // Do Not Update
     three: "https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js", // Do Not Update
 };
