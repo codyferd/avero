@@ -5,8 +5,11 @@ createApp({
         const isLoading = ref(true);
         const currentTime = ref('');
         const currentDate = ref('');
-        const isDrawerOpen = ref(false);
-        const isSearchOpen = ref(false); // Added for the new sub-bar dropdown
+
+        // 3-Layer UI State: 0 = hidden, 1 = taskbar, 2 = full
+        const uiLevel = ref(0);
+
+        const isSearchOpen = ref(false);
         const isSplitMenuOpen = ref(false);
         const urlInput = ref('');
         const bgUrl = ref("background.avif");
@@ -17,6 +20,11 @@ createApp({
         const otherDesktops = computed(() =>
         desktops.value.filter(d => d.id !== activeDesktopId.value)
         );
+
+        // Core UI Logic
+        const cycleUI = () => {
+            uiLevel.value = (uiLevel.value + 1) % 3;
+        };
 
         const smartClose = () => {
             if (focusedAppId.value && activeDesktopId.value) {
@@ -44,7 +52,9 @@ createApp({
             });
             activeDesktopId.value = id;
             focusedAppId.value = id;
-            isDrawerOpen.value = false;
+
+            // Auto-collapse to Level 1 (Taskbar) after launching
+            uiLevel.value = 1;
         };
 
         const launchUrl = () => {
@@ -55,27 +65,21 @@ createApp({
             ? (query.startsWith('http') ? query : `https://${query}`)
             : `https://www.google.com/search?q=${encodeURIComponent(query)}&igu=1`;
 
-            // --- Dynamic Name Logic Start ---
-            let siteName = 'Web'; // Default fallback
-
+            let siteName = 'Web';
             try {
                 const urlObj = new URL(finalUrl);
                 const hostParts = urlObj.hostname.replace('www.', '').split('.');
-
                 if (hostParts.length > 0) {
-                    // Capitalize the first part (e.g., 'google', 'cern', 'github')
                     siteName = hostParts[0].charAt(0).toUpperCase() + hostParts[0].slice(1);
                 }
             } catch (e) {
-                // Fallback to 'Web' if URL parsing fails (e.g., weird search queries)
                 siteName = 'Web';
             }
-            // --- Dynamic Name Logic End ---
 
             const id = Date.now();
             desktops.value.push({
                 id,
-                name: siteName, // Uses the dynamic name here
+                name: siteName,
                 apps: [{ title: 'Browser', icon: '🌐', path: finalUrl, instanceId: id }]
             });
 
@@ -83,9 +87,10 @@ createApp({
             focusedAppId.value = id;
             urlInput.value = "";
             isSearchOpen.value = false;
-            isDrawerOpen.value = false;
-        };
 
+            // Auto-collapse to Level 1 (Taskbar) after launching
+            uiLevel.value = 1;
+        };
 
         const mergeTabs = (sourceId, targetId) => {
             const sIdx = desktops.value.findIndex(d => d.id === sourceId);
@@ -124,57 +129,50 @@ createApp({
             const navAction = (id, action) => {
                 const frame = document.getElementById('frame-' + id);
                 if (!frame) return;
-                try {
-                    if (action === 'reload') frame.src = frame.src;
-                } catch (e) {
-                    if (action === 'reload') {
-                        const currentSrc = frame.src;
-                        frame.src = '';
-                        frame.src = currentSrc;
-                    }
-                }
+                if (action === 'reload') frame.src = frame.src;
             };
 
-            const updateClock = () => {
-                const now = new Date();
-                currentTime.value = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
-                currentDate.value = now.toISOString().split('T')[0];
-            };
+                const updateClock = () => {
+                    const now = new Date();
+                    currentTime.value = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
+                    currentDate.value = now.toISOString().split('T')[0];
+                };
 
-            onMounted(() => {
-                updateClock();
-                setInterval(updateClock, 1000);
-                setTimeout(() => { isLoading.value = false; });
+                onMounted(() => {
+                    updateClock();
+                    setInterval(updateClock, 1000);
+                    setTimeout(() => { isLoading.value = false; }, 800);
 
-                window.addEventListener('message', (event) => {
-                    if (event.data.type === 'AVERO_OPEN_TAB') {
-                        const { title, content } = event.data;
-                        const blob = new Blob([content], { type: 'text/html' });
-                        const blobUrl = URL.createObjectURL(blob);
+                    window.addEventListener('message', (event) => {
+                        if (event.data.type === 'AVERO_OPEN_TAB') {
+                            const { title, content } = event.data;
+                            const blob = new Blob([content], { type: 'text/html' });
+                            const blobUrl = URL.createObjectURL(blob);
 
-                        const id = Date.now();
-                        desktops.value.push({
-                            id,
-                            name: title || 'Live Preview',
-                            apps: [{
-                                title: title || 'Live Preview',
-                                icon: '⚡',
-                                path: blobUrl,
-                                instanceId: id
-                            }]
-                        });
-                        activeDesktopId.value = id;
-                        focusedAppId.value = id;
-                    }
+                            const id = Date.now();
+                            desktops.value.push({
+                                id,
+                                name: title || 'Live Preview',
+                                apps: [{
+                                    title: title || 'Live Preview',
+                                    icon: '⚡',
+                                    path: blobUrl,
+                                    instanceId: id
+                                }]
+                            });
+                            activeDesktopId.value = id;
+                            focusedAppId.value = id;
+                            uiLevel.value = 1; // Show taskbar to reveal the new tab
+                        }
+                    });
                 });
-            });
 
-            return {
-                isLoading, appList, desktops, activeDesktopId,
-          isDrawerOpen, isSearchOpen, isSplitMenuOpen, otherDesktops, urlInput,
+                return {
+                    isLoading, appList, desktops, activeDesktopId,
+          uiLevel, isSearchOpen, isSplitMenuOpen, otherDesktops, urlInput,
           currentTime, currentDate, bgUrl, focusedAppId,
           launchNewDesktop, launchUrl, closeDesktop, closeApp, mergeTabs, navAction,
-          smartClose, smartRefresh
-            };
+          smartClose, smartRefresh, cycleUI
+                };
     }
 }).mount('#app');

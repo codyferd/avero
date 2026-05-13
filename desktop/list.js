@@ -5,6 +5,7 @@ const appList = [
     { title: 'Chat', icon: '💬', path: '../chat/index.html' },
     { title: 'Chess', icon: '♟️', path: '../chess/index.html' },
     { title: 'Controls', icon: '🎛️', path: '../controls/index.html' },
+    { title: 'Fallpiece', icon: '🧩', path: '../fallpiece/index.html' },
     { title: 'Files', icon: '📁', path: '../files/index.html' },
     { title: 'Games', icon: '🎮', path: '../games/index.html' },
     { title: 'Maps', icon: '🗺️', path: '../maps/index.html' },
