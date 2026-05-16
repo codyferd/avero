@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Avero Recorder</title>
+    <script libs="core" src="../share/cdn.js"></script>
+</head>
+<body class="bg-[#070707] text-white font-sans min-h-screen margin-0 overflow-hidden select-none">
+    <div id="app" v-cloak class="recorder-container">
+
+        <!-- Header HUD -->
+        <header class="recorder-hdr">
+            <div>
+                <h1 class="text-xl font-black italic tracking-tighter uppercase leading-none">Avero Capture</h1>
+                <p class="text-[8px] text-zinc-500 font-bold tracking-[0.3em] uppercase mt-1">Signal Deck v1.0</p>
+            </div>
+            <!-- Live Recording Status Pulse -->
+            <div v-if="isRecording" class="rec-indicator">
+                <span class="pulse-dot"></span>
+                <span class="font-mono text-xs font-bold">{{ formatTime(recordingSeconds) }}</span>
+            </div>
+        </header>
+
+        <!-- Mode Selector System Matrix -->
+        <div class="mode-grid" v-if="!isRecording">
+            <button @click="activeMode = 'SCREEN'" :class="{ active: activeMode === 'SCREEN' }" class="mode-card">
+                <div class="mode-icon">🖥️</div>
+                <div class="mode-label">Screen Capture</div>
+            </button>
+            <button @click="activeMode = 'AUDIO'" :class="{ active: activeMode === 'AUDIO' }" class="mode-card">
+                <div class="mode-icon">🎙️</div>
+                <div class="mode-label">Voice & Audio</div>
+            </button>
+            <button @click="activeMode = 'SCREENSHOT'" :class="{ active: activeMode === 'SCREENSHOT' }" class="mode-card">
+                <div class="mode-icon">📸</div>
+                <div class="mode-label">Screenshot</div>
+            </button>
+        </div>
+
+        <!-- Central Telemetry Viewport -->
+        <div class="viewport-wrapper">
+            <div class="viewfinder">
+                <!-- Informational Overlay Messages -->
+                <div class="text-center p-6 z-10">
+                    <p class="text-zinc-500 font-black text-xs uppercase tracking-[0.4em] mb-2">
+                        {{ getStatusMessage() }}
+                    </p>
+                    <p v-if="errorMessage" class="text-red-500 text-[10px] mt-2 font-mono max-w-[280px] mx-auto">{{ errorMessage }}</p>
+                </div>
+
+                <!-- Custom Grid Overlay Guidelines for visual framework continuity -->
+                <div class="capture-grid-lines"></div>
+            </div>
+        </div>
+
+        <!-- Master Operational Control Deck -->
+        <div class="control-deck">
+            <div class="w-20"></div> <!-- Layout Balance Anchor -->
+
+            <!-- Main Stream Lifecycle Trigger Button -->
+            <div class="flex flex-col items-center justify-center">
+                <button
+                    @click="handlePrimaryAction"
+                    :class="['shutter-trigger', activeMode.toLowerCase(), { recording: isRecording }]"
+                    :title="isRecording ? 'Stop Capture Protocol' : 'Initialize Capture Protocol'"
+                >
+                    <div class="shutter-inner"></div>
+                </button>
+            </div>
+
+            <!-- Global Clear / Reset State Actions -->
+            <button v-if="isRecording" @click="abortRecording" class="deck-btn-side text-red-400" title="Abort Recording">
+                ✕
+            </button>
+            <div v-else class="w-20"></div>
+        </div>
+
+        <!-- Hidden processing elements used during system encoding sequences -->
+        <a ref="downloadAnchor" class="hidden"></a>
+    </div>
+
+    <script src="index.js"></script>
+</body>
+</html>

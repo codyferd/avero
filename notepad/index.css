@@ -1,4 +1,7 @@
-:root { --avero-green: #10b981; }
+:root { 
+    --avero-green: #10b981; 
+    --avero-accent: #6366f1;
+}
 [v-cloak] { display: none; }
 
 .avero-glass {
@@ -21,11 +24,11 @@
     font-family: 'JetBrains Mono', 'Fira Code', monospace;
     font-size: 14px;
     line-height: 1.6;
-    /* CRITICAL: These must match exactly */
     white-space: pre;
     word-wrap: normal;
     tab-size: 4;
     -moz-tab-size: 4;
+    box-sizing: border-box;
 }
 
 .editor-surface {
@@ -38,23 +41,23 @@
     border: none;
     width: 100%;
     height: 100%;
+    overflow: auto;
 }
 
 .syntax-layer {
     z-index: 10;
-    pointer-events: none; /* User cannot click/highlight this layer */
+    pointer-events: none;
     color: #94a3b8;
-    overflow: hidden; /* Scroll is handled by the textarea */
+    overflow: hidden;
 }
 
-/* Tokens - Use specific classes to avoid generic collisions */
+/* Token Colors */
 .token-keyword { color: #569cd6; font-weight: bold; }
 .token-string { color: #ce9178; }
 .token-comment { color: #6a9955; font-style: italic; }
 .token-number { color: #b5cea8; }
 .token-bool { color: #569cd6; }
 
-/* Custom selection to see what you are doing */
 .editor-surface::selection {
     background: rgba(16, 185, 129, 0.2);
 }
@@ -72,4 +75,39 @@
 .btn-ide:hover {
     background: rgba(255, 255, 255, 0.05);
     color: var(--avero-green);
+}
+
+/* File System Workspace Tabs */
+.tab-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 16px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    background: rgba(0, 0, 0, 0.4);
+    border-right: 1px solid rgba(255, 255, 255, 0.03);
+    cursor: pointer;
+    transition: 0.2s;
+}
+.tab-item.active {
+    background: #050505;
+    color: var(--avero-green);
+    border-bottom: 2px solid var(--avero-green);
+}
+
+/* Layout Split Gutter Controls */
+.sidebar-resizer {
+    width: 4px;
+    cursor: col-resize;
+    background: rgba(255, 255, 255, 0.02);
+    transition: background 0.2s;
+}
+.sidebar-resizer:hover, .sidebar-resizer:active {
+    background: var(--avero-accent);
+}
+
+.resizing-active * {
+    pointer-events: none !important;
+    user-select: none !important;
 }

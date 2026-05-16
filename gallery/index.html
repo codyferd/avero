@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Avero Gallery</title>
+    <script libs="core" src="../share/cdn.js"></script>
+</head>
+<body class="bg-[#070707] text-white font-sans min-h-screen margin-0 overflow-x-hidden selection:bg-indigo-500/30">
+    <div id="app" v-cloak class="gallery-container">
+
+        <!-- Top Navigation HUD -->
+        <header class="gallery-hdr">
+            <div>
+                <h1 class="text-2xl font-black italic tracking-tighter uppercase leading-none">Avero Gallery</h1>
+                <p class="text-[8px] text-zinc-500 font-bold tracking-[0.3em] uppercase mt-1">
+                    {{ mediaItems.length ? `Indexed Matrix // ${mediaItems.length} Objects Loaded` : 'Local Storage Hub // Standby' }}
+                </p>
+            </div>
+
+            <div class="flex items-center gap-4">
+                <!-- Filter Protocol Switches -->
+                <div v-if="mediaItems.length" class="filter-deck">
+                    <button @click="activeFilter = 'ALL'" :class="{ active: activeFilter === 'ALL' }">All</button>
+                    <button @click="activeFilter = 'IMAGE'" :class="{ active: activeFilter === 'IMAGE' }">Images</button>
+                    <button @click="activeFilter = 'VIDEO'" :class="{ active: activeFilter === 'VIDEO' }">Videos</button>
+                </div>
+
+                <!-- Custom Directory Picker Button Trigger -->
+                <button @click="$refs.dirInput.click()" class="btn-scan">Scan Directory</button>
+            </div>
+        </header>
+
+        <!-- Native hidden input using webkitdirectory layout rules -->
+        <input type="file" ref="dirInput" class="hidden" webkitdirectory directory multiple @change="handleDirectoryScan">
+
+        <!-- Initial Empty State -->
+        <div v-if="!mediaItems.length" class="empty-state" @click="$refs.dirInput.click()">
+            <div class="scan-radar-ring"></div>
+            <p class="text-zinc-600 font-black text-xs uppercase tracking-[0.6em] mb-4 text-center">No Data Stream Connected</p>
+            <button class="btn-scan !bg-transparent !text-zinc-400 !border-zinc-800 border">Select System Folder</button>
+        </div>
+
+        <!-- Media Matrix Grid System -->
+        <main v-else class="media-matrix">
+            <div v-for="(item, index) in filteredItems" :key="index" class="media-box" @click="openLightbox(item)">
+
+                <!-- Thumbnails Content -->
+                <div class="aspect-square w-full relative flex items-center justify-center overflow-hidden bg-zinc-950">
+                    <img v-if="item.category === 'IMAGE'" :src="item.url" loading="lazy" class="grid-asset" alt="Thumb">
+
+                    <div v-if="item.category === 'VIDEO'" class="w-full h-full relative">
+                        <video :src="item.url" class="grid-asset muted-preview"></video>
+                        <div class="video-icon-indicator">▶</div>
+                    </div>
+                </div>
+
+                <!-- Descriptive Metadata Overlay Info -->
+                <div class="box-meta">
+                    <span class="truncate pr-2">{{ item.name }}</span>
+                    <span class="text-[8px] font-black opacity-40 uppercase">{{ item.extension }}</span>
+                </div>
+            </div>
+        </main>
+
+        <!-- Lightbox Immersive Overlay Module -->
+        <div v-if="activeLightboxItem" class="lightbox-overlay" @click.self="closeLightbox">
+            <button class="lightbox-close" @click="closeLightbox">✕</button>
+
+            <div class="lightbox-content">
+                <img v-if="activeLightboxItem.category === 'IMAGE'" :src="activeLightboxItem.url" alt="Preview">
+                <video v-if="activeLightboxItem.category === 'VIDEO'" :src="activeLightboxItem.url" controls autoplay></video>
+            </div>
+
+            <div class="lightbox-caption">
+                <p class="text-sm font-bold tracking-tight truncate">{{ activeLightboxItem.name }}</p>
+                <p class="text-[9px] text-zinc-500 font-mono tracking-widest mt-1">{{ activeLightboxItem.path }}</p>
+            </div>
+        </div>
+
+    </div>
+
+    <script src="index.js"></script>
+</body>
+</html>

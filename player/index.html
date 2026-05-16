@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Avero Player</title>
-    <script libs="core" src="../share/cdn.js"></script>
+    <script libs="core,three,threeview" src="../share/cdn.js"></script>
 </head>
 <body>
     <div id="app" v-cloak class="player-container" @dragover.prevent @drop.prevent="handleDrop">
@@ -40,9 +40,13 @@
                 </div>
                 <audio :src="mediaUrl" controls autoplay></audio>
             </div>
+
+            <!-- 3D Viewport Target -->
+            <div v-show="fileCategory === '3D'" ref="threeContainer" class="w-full h-full"></div>
         </div>
 
-        <input type="file" ref="fileInput" class="file-input" @change="handleFile" accept="image/*,video/*,audio/*">
+        <!-- Added .gltf and .glb support -->
+        <input type="file" ref="fileInput" class="file-input" @change="handleFile" accept="image/*,video/*,audio/*,.gltf,.glb">
 
         <div class="media-footer">
             <span class="text-[9px] font-black text-zinc-800 uppercase tracking-widest">
@@ -56,7 +60,8 @@
         </div>
     </div>
 
+    <!-- 3D engine script loads first, followed by application lifecycle manager -->
+    <script src="3d.js"></script>
     <script src="index.js"></script>
 </body>
 </html>
-

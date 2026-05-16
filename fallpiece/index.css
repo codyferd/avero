@@ -9,7 +9,11 @@
 
 .stat-label {
     display: block;
-    font-[8px] font-black uppercase text-slate-500 tracking-[0.2em];
+    font-size: 8px;
+    font-weight: 900;
+    text-transform: uppercase;
+    color: #64748b;
+    letter-spacing: 0.2em;
     margin-bottom: 4px;
 }
 
@@ -46,10 +50,24 @@ canvas {
     display: block;
 }
 
+/* Added: Interactive Virtual Layout Control Modules */
+.touch-btn {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 12px;
+    padding: 14px;
+    color: #cbd5e1;
+    font-weight: 800;
+    text-align: center;
+    transition: background 0.1s ease, transform 0.05s ease;
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+.touch-btn:active {
+    background: rgba(255, 255, 255, 0.12);
+    transform: scale(0.97);
+}
+
 /* Animations */
 [v-cloak] { display: none; }
-
-@keyframes flash {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.5; }
-}

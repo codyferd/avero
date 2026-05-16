@@ -48,6 +48,7 @@ createApp({
             desktops.value.push({
                 id,
                 name: app.title,
+                splitRatio: 50, // Added initialization state baseline
                 apps: [{ ...app, instanceId: id }]
             });
             activeDesktopId.value = id;
@@ -80,6 +81,7 @@ createApp({
             desktops.value.push({
                 id,
                 name: siteName,
+                splitRatio: 50, // Added initialization state baseline
                 apps: [{ title: 'Browser', icon: '🌐', path: finalUrl, instanceId: id }]
             });
 
@@ -103,6 +105,7 @@ createApp({
                 if (target.apps.length + source.apps.length <= 4) {
                     target.apps.push(...source.apps);
                     target.name = "Split View";
+                    target.splitRatio = 50; // Dynamic baseline configuration layout split tracking
                     desktops.value.splice(sIdx, 1);
                     activeDesktopId.value = targetId;
                     focusedAppId.value = null;
@@ -132,6 +135,38 @@ createApp({
                 if (action === 'reload') frame.src = frame.src;
             };
 
+                // Gutter resizer controller interaction engine loop
+                const startTileResize = (mouseDownEvent, desktopTarget) => {
+                    mouseDownEvent.preventDefault();
+
+                    const gridContainer = mouseDownEvent.target.parentElement;
+                    gridContainer.classList.add('desktop-grid-resizing');
+
+                    const startX = mouseDownEvent.clientX;
+                    const containerWidth = gridContainer.clientWidth;
+                    const initialRatio = desktopTarget.splitRatio || 50;
+
+                    const onMouseMove = (moveEvent) => {
+                        const deltaX = moveEvent.clientX - startX;
+                        const deltaPercentage = (deltaX / containerWidth) * 100;
+
+                        let newPercentage = initialRatio + deltaPercentage;
+                        if (newPercentage < 15) newPercentage = 15;
+                        if (newPercentage > 85) newPercentage = 85;
+
+                        desktopTarget.splitRatio = Math.round(newPercentage);
+                    };
+
+                    const onMouseUp = () => {
+                        gridContainer.classList.remove('desktop-grid-resizing');
+                        window.removeEventListener('mousemove', onMouseMove);
+                        window.removeEventListener('mouseup', onMouseUp);
+                    };
+
+                    window.addEventListener('mousemove', onMouseMove);
+                    window.addEventListener('mouseup', onMouseUp);
+                };
+
                 const updateClock = () => {
                     const now = new Date();
                     currentTime.value = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
@@ -153,6 +188,7 @@ createApp({
                             desktops.value.push({
                                 id,
                                 name: title || 'Live Preview',
+                                splitRatio: 50,
                                 apps: [{
                                     title: title || 'Live Preview',
                                     icon: '⚡',
@@ -169,10 +205,10 @@ createApp({
 
                 return {
                     isLoading, appList, desktops, activeDesktopId,
-          uiLevel, isSearchOpen, isSplitMenuOpen, otherDesktops, urlInput,
-          currentTime, currentDate, bgUrl, focusedAppId,
-          launchNewDesktop, launchUrl, closeDesktop, closeApp, mergeTabs, navAction,
-          smartClose, smartRefresh, cycleUI
+                    uiLevel, isSearchOpen, isSplitMenuOpen, otherDesktops, urlInput,
+                    currentTime, currentDate, bgUrl, focusedAppId,
+                    launchNewDesktop, launchUrl, closeDesktop, closeApp, mergeTabs, navAction,
+                    smartClose, smartRefresh, cycleUI, startTileResize
                 };
     }
 }).mount('#app');

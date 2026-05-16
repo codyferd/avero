@@ -2,18 +2,29 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Avero Fallpiece</title>
     <script libs="core" src="../share/cdn.js"></script>
 </head>
-<body class="bg-[#080808] text-slate-200 font-sans overflow-hidden select-none">
-    <div id="app" v-cloak class="min-h-screen flex items-center justify-center p-4">
+<body class="bg-[#080808] text-slate-200 font-sans overflow-hidden select-none touch-none">
+    <div id="app" v-cloak class="min-h-screen flex flex-col justify-between md:justify-center items-center p-3 md:p-4">
 
-        <!-- Game Interface -->
-        <div class="flex flex-col md:flex-row gap-8 items-start">
+        <!-- Top Status Row for Mobile / Hidden on Desktop -->
+        <div class="flex md:hidden w-full max-w-[340px] justify-between items-center mb-2 px-1">
+            <div class="flex gap-2">
+                <span class="text-xs font-bold text-emerald-400">Score: {{ score }}</span>
+                <span class="text-xs font-bold text-white">Lv: {{ level }}</span>
+            </div>
+            <div class="w-10 h-10 bg-white/5 rounded-lg border border-white/10 flex items-center justify-center">
+                <canvas ref="nextCanvasMobile" width="40" height="40"></canvas>
+            </div>
+        </div>
 
-            <!-- Side Panel: Stats -->
-            <div class="flex flex-col gap-4 w-32 order-2 md:order-1">
+        <!-- Main Game Interface -->
+        <div class="flex flex-col md:flex-row gap-4 md:gap-8 items-center md:items-start w-full max-w-[340px] md:max-w-none justify-center flex-1 md:flex-none">
+
+            <!-- Side Panel: Stats (Desktop Only) -->
+            <div class="hidden md:flex flex-col gap-4 w-32">
                 <div class="stat-card">
                     <label class="stat-label">Score</label>
                     <div class="stat-value text-emerald-400">{{ score }}</div>
@@ -28,16 +39,16 @@
                 </div>
             </div>
 
-            <!-- Main Canvas -->
-            <div class="relative order-1 md:order-2">
-                <div class="game-border p-1 bg-white/5 rounded-xl">
-                    <canvas ref="gameCanvas" width="300" height="600" class="rounded-lg bg-black"></canvas>
+            <!-- Main Canvas Container -->
+            <div class="relative w-full aspect-[1/2] max-h-[65vh] md:max-h-none md:w-[300px] md:h-[600px] flex-1 md:flex-none" ref="canvasWrapper">
+                <div class="game-border p-1 bg-white/5 rounded-xl h-full w-full box-border">
+                    <canvas ref="gameCanvas" class="rounded-lg bg-black w-full h-full object-contain"></canvas>
                 </div>
 
                 <!-- Overlays -->
-                <div v-if="!gameState.running" class="absolute inset-0 flex items-center justify-center bg-black/80 backdrop-blur-sm rounded-xl">
-                    <div class="text-center">
-                        <h2 class="text-4xl font-black italic tracking-tighter mb-6 uppercase text-white">
+                <div v-if="!gameState.running" class="absolute inset-0 flex items-center justify-center bg-black/80 backdrop-blur-sm rounded-xl z-50">
+                    <div class="text-center px-4">
+                        <h2 class="text-3xl md:text-4xl font-black italic tracking-tighter mb-6 uppercase text-white">
                             {{ gameState.gameOver ? 'Terminated' : 'Fallpiece' }}
                         </h2>
                         <button @click="startGame" class="avero-btn">
@@ -47,8 +58,8 @@
                 </div>
             </div>
 
-            <!-- Side Panel: Next Piece -->
-            <div class="flex flex-col gap-4 w-32 order-3">
+            <!-- Side Panel: Next Piece (Desktop Only) -->
+            <div class="hidden md:flex flex-col gap-4 w-32">
                 <div class="stat-card h-32 flex flex-col items-center justify-center">
                     <label class="stat-label mb-2">Next</label>
                     <canvas ref="nextCanvas" width="80" height="80"></canvas>
@@ -60,7 +71,20 @@
                     P: Pause
                 </div>
             </div>
+        </div>
 
+        <!-- Mobile Touch Controller Interface -->
+        <div class="flex flex-col gap-2 w-full max-w-[340px] mt-2 md:hidden mb-4 z-40">
+            <div class="flex justify-between gap-2">
+                <button @mousedown="sendInput(37)" @touchstart.prevent="sendInput(37)" class="touch-btn flex-1">◀</button>
+                <button @mousedown="sendInput(38)" @touchstart.prevent="sendInput(38)" class="touch-btn flex-1">🔄</button>
+                <button @mousedown="sendInput(39)" @touchstart.prevent="sendInput(39)" class="touch-btn flex-1">▶</button>
+            </div>
+            <div class="flex justify-between gap-2">
+                <button @mousedown="sendInput(40)" @touchstart.prevent="sendInput(40)" class="touch-btn flex-1 py-3 text-sm">⏬ SOFT</button>
+                <button @mousedown="sendInput(32)" @touchstart.prevent="sendInput(32)" class="touch-btn flex-1 py-3 text-sm bg-emerald-500/20 border-emerald-500/40 text-emerald-400">💥 DROP</button>
+                <button @mousedown="sendInput(80)" @touchstart.prevent="sendInput(80)" class="touch-btn w-12 text-xs">⏸</button>
+            </div>
         </div>
 
     </div>

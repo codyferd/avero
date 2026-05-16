@@ -1,0 +1,121 @@
+[v-cloak] { display: none; }
+
+.gallery-container {
+    padding: 40px;
+    box-sizing: border-box;
+}
+
+.gallery-hdr {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 40px;
+    border-bottom: 1px solid #141414;
+    padding-bottom: 24px;
+}
+
+/* Filter Tags Console */
+.filter-deck {
+    display: flex;
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.05);
+    padding: 4px;
+    border-radius: 100px;
+    gap: 2px;
+}
+.filter-deck button {
+    background: transparent; border: none; color: #a1a1aa; font-size: 10px;
+    font-weight: 800; text-transform: uppercase; padding: 6px 16px;
+    border-radius: 100px; cursor: pointer; transition: all 0.2s ease;
+}
+.filter-deck button.active {
+    background: #fff; color: #000;
+}
+
+.btn-scan {
+    background: #fff; color: #000; font-weight: 900; padding: 12px 28px;
+    border-radius: 100px; text-transform: uppercase; font-size: 11px;
+    letter-spacing: 0.1em; cursor: pointer; border: none; transition: transform 0.2s;
+}
+.btn-scan:active { transform: scale(0.97); }
+
+/* Empty Workspace Placeholder */
+.empty-state {
+    height: 60vh; border: 1px dashed #1a1a1a; border-radius: 32px;
+    display: flex; flex-direction: column; align-items: center;
+    justify-content: center; cursor: pointer; position: relative;
+}
+.scan-radar-ring {
+    width: 64px; height: 64px; border: 2px dashed #27272a;
+    border-radius: 50%; margin-bottom: 24px; animation: rotateRadar 20s linear infinite;
+}
+@keyframes rotateRadar { to { transform: rotate(360deg); } }
+
+/* CSS Grid Dashboard Architecture */
+.media-matrix {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 24px;
+}
+
+.media-box {
+    background: #0d0d0d;
+    border: 1px solid #1a1a1a;
+    border-radius: 16px;
+    overflow: hidden;
+    cursor: pointer;
+    transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.3s;
+}
+.media-box:hover {
+    transform: translateY(-4px);
+    border-color: #333;
+}
+
+.grid-asset {
+    width: 100%; height: 100%; object-fit: cover;
+    transition: transform 0.5s ease;
+}
+.media-box:hover .grid-asset {
+    transform: scale(1.04);
+}
+
+.video-icon-indicator {
+    position: absolute; bottom: 12px; right: 12px;
+    background: rgba(0,0,0,0.7); width: 24px; height: 24px;
+    display: flex; align-items: center; justify-content: center;
+    border-radius: 50%; font-size: 9px; border: 1px solid rgba(255,255,255,0.2);
+}
+
+.box-meta {
+    padding: 12px 16px; font-size: 11px; font-weight: 700;
+    display: flex; justify-content: space-between; align-items: center;
+    background: #0d0d0d; border-top: 1px solid #141414;
+}
+
+/* Lightbox Modal Structure overlay */
+.lightbox-overlay {
+    position: fixed; inset: 0; background: rgba(3,3,3,0.98);
+    z-index: 100; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; padding: 40px;
+    animation: fadeIn 0.2s ease;
+}
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+.lightbox-content {
+    max-width: 90%; max-height: 75vh; display: flex;
+    align-items: center; justify-content: center;
+}
+.lightbox-content img, .lightbox-content video {
+    max-width: 100%; max-height: 75vh; object-fit: contain;
+    border-radius: 12px; box-shadow: 0 50px 100px rgba(0,0,0,0.8);
+}
+
+.lightbox-close {
+    position: absolute; top: 40px; right: 40px; background: transparent;
+    border: none; color: #666; font-size: 24px; cursor: pointer; transition: color 0.2s;
+}
+.lightbox-close:hover { color: #fff; }
+
+.lightbox-caption {
+    margin-top: 30px; text-align: center; max-w: 600px;
+}

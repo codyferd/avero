@@ -86,13 +86,16 @@
         </nav>
     </transition>
 
+
     <main class="flex-1 relative overflow-hidden bg-black/20">
         <div v-for="d in desktops"
              :key="'desktop-' + d.id"
              v-show="activeDesktopId === d.id"
-             :class="['desktop-grid', 'grid-' + d.apps.length]">
+             :class="['desktop-grid', 'grid-' + d.apps.length]"
+             :style="d.apps.length === 2 ? { gridTemplateColumns: `${d.splitRatio || 50}% ${100 - (d.splitRatio || 50)}%` } : {}">
 
-            <div v-for="app in d.apps"
+            <!-- Loop active applications layout inside workspace -->
+            <div v-for="(app, index) in d.apps"
                  :key="app.instanceId"
                  class="app-window"
                  :class="{ focused: focusedAppId === app.instanceId }">
@@ -102,6 +105,14 @@
                 <div class="flex-1 bg-white relative">
                     <iframe :id="'frame-' + app.instanceId" :src="app.path"></iframe>
                 </div>
+            </div>
+
+            <!-- Interactive Dynamic Tile Resize Bar Gutter Handle -->
+            <div v-if="d.apps.length === 2"
+                 class="tile-resizer-bar"
+                 :style="{ left: `calc(${d.splitRatio || 50}% - 3px)` }"
+                 @mousedown="startTileResize($event, d)">
+                 <div class="resizer-knob"></div>
             </div>
         </div>
     </main>

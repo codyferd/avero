@@ -81,3 +81,47 @@
         .search-small {
             color: black
         }
+
+        /* ... Keep existing desktop styles intact ... */
+
+        /* Dynamic Layout Adjustments override logic rules */
+        .desktop-grid.grid-2 {
+            position: relative;
+            grid-template-columns: 1fr 1fr; /* Fallback baseline rule layout */
+        }
+
+        /* Master Gutter Resizer Interactive Interface Element */
+        .tile-resizer-bar {
+            position: absolute;
+            top: 6px;
+            bottom: 6px;
+            width: 6px;
+            cursor: col-resize;
+            z-index: 1000;
+            background: transparent;
+            transition: background 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .tile-resizer-bar:hover, .tile-resizer-bar:active {
+            background: var(--avero-accent, #6366f1);
+            box-shadow: 0 0 10px var(--avero-accent, #6366f1);
+        }
+
+        .resizer-knob {
+            width: 2px;
+            height: 24px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 1px;
+        }
+        .tile-resizer-bar:hover .resizer-knob {
+            background: #fff;
+        }
+
+        /* Clear iframe select conflict bugs during tracking mouse moves */
+        .desktop-grid-resizing iframe {
+            pointer-events: none !important;
+        }
+        /* ... Keep initial desktop layout structures ... */

@@ -16,8 +16,13 @@ const LIB_MAP = {
     math: "https://cdn.jsdelivr.net/npm/mathjs@15.2.0/lib/browser/math.js",
     peer: "https://cdn.jsdelivr.net/npm/peerjs@1.5.5/dist/peerjs.min.js",
     qr: "https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js",
+    threeview: [
+        "https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/loaders/GLTFLoader.js",
+        "https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/controls/OrbitControls.js",
+    ], // Do Not Update
     chess: "https://cdn.jsdelivr.net/npm/chess.js@0.12.1/chess.min.js", // Do Not Update
     three: "https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js", // Do Not Update
+
 };
 
 // 1. Get the script tag that called this file

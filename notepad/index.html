@@ -3,53 +3,85 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Avero IDE</title>
+    <title>Avero Notepad</title>
     <script libs="core" src="../share/cdn.js"></script>
 </head>
 <body class="bg-[#050505] text-white overflow-hidden">
 
-    <div id="app" v-cloak class="flex flex-col h-screen">
+    <div id="app" v-cloak class="flex flex-col h-screen" :class="{ 'resizing-active': isResizing }">
+        <!-- Main Top Navigation System Header -->
         <header class="avero-glass px-4 py-2 flex items-center justify-between z-50">
             <div class="flex items-center gap-4">
                 <div class="w-6 h-6 bg-emerald-500 rounded flex items-center justify-center text-black font-black italic text-xs">A</div>
                 <nav class="flex gap-1">
-                    <button @click="openFile()" class="btn-ide">Open</button>
-                    <button @click="openFolder" class="btn-ide">Project</button>
+                    <button @click="openFile()" class="btn-ide">Open File</button>
+                    <button @click="openFolder" class="btn-ide">Open Folder</button>
                     <button @click="saveFile" :class="{'text-emerald-400': isDirty}" class="btn-ide">Save</button>
                     <div class="w-[1px] h-4 bg-white/10 mx-2"></div>
                     <button @click="runCode" class="btn-ide text-emerald-500">▶ Run</button>
                 </nav>
             </div>
             <div class="flex items-center gap-4">
-                <span class="text-[9px] font-mono opacity-40">{{ fileHandle?.name || 'Untitled' }}</span>
                 <button @click="toggleTerminal" class="text-[10px] font-bold opacity-40 hover:opacity-100">TERM</button>
             </div>
         </header>
 
+        <!-- Workbench Display Windows Split Matrix -->
         <main class="flex-grow flex overflow-hidden">
-            <aside class="w-64 bg-black/40 border-r border-white/5 flex flex-col">
+            <!-- Left Navigation Bar Explorer Workspace -->
+            <aside :style="{ width: sidebarWidth + 'px' }" class="bg-black/40 border-r border-white/5 flex flex-col shrink-0">
                 <div class="p-4 flex justify-between items-center border-b border-white/5">
                     <span class="text-[9px] font-black uppercase opacity-30 tracking-widest">Explorer</span>
                 </div>
                 <div class="flex-grow overflow-y-auto p-2">
-                    <tree-item v-for="node in projectTree" :key="node.name" :item="node" @open-file="openFile"></tree-item>
+                    <tree-item v-for="node in projectTree" :key="node.name" :item="node" @open-file="selectFileByHandle"></tree-item>
                 </div>
             </aside>
 
-            <div class="flex-grow flex flex-col relative">
-                <div class="flex-grow flex overflow-hidden">
-                    <div class="w-10 pt-6 bg-black/20 text-right pr-3 text-[10px] font-mono opacity-20 select-none">
+            <!-- Gutter Splitting Resizer Panel Strip -->
+            <div class="sidebar-resizer" @mousedown="startSidebarDrag"></div>
+
+            <!-- Code Working Space & Editor Engine Viewports -->
+            <div class="flex-grow flex flex-col relative overflow-hidden">
+                <!-- Master Dynamic File Tab System -->
+                <div class="flex bg-black/20 border-b border-white/5 overflow-x-auto select-none">
+                    <div v-for="tab in openTabs" :key="tab.id" 
+                         class="tab-item" :class="{ active: currentTabId === tab.id }"
+                         @click="switchTab(tab.id)">
+                        <span>{{ tab.name }}</span>
+                        <span v-if="tab.isDirty" class="text-emerald-400 text-[8px]">●</span>
+                        <span @click.stop="closeTab(tab.id)" class="hover:text-red-400 ml-2 opacity-40 hover:opacity-100">×</span>
+                    </div>
+                </div>
+
+                <!-- Empty State Baseline Landing Screen -->
+                <div v-if="!currentTabId" class="flex-grow flex flex-col items-center justify-center opacity-20 font-mono text-xs">
+                    <p>No Active Workspace Buffer Stream Open</p>
+                    <p class="text-[10px] mt-1">Select an item from the sidebar tree registry or create a file pool entry</p>
+                </div>
+
+                <!-- Live Text Input Canvas Core Node -->
+                <div v-show="currentTabId" class="flex-grow flex overflow-hidden">
+                    <div class="w-12 pt-6 bg-black/10 text-right pr-3 text-[10px] font-mono opacity-20 select-none border-r border-white/5">
                         <div v-for="n in lineCount" :key="n">{{ n }}</div>
                     </div>
 
                     <div class="editor-container">
                         <pre class="syntax-layer" v-html="highlightedContent"></pre>
-                        <textarea v-model="content" @input="markDirty" @scroll="syncScroll"
-                                  spellcheck="false" ref="editor" class="editor-surface"></textarea>
+                        <textarea v-model="content" 
+                                  @input="handleInput" 
+                                  @scroll="syncScroll"
+                                  @keydown.tab.prevent="handleTab"
+                                  @keyup="trackCursor"
+                                  @click="trackCursor"
+                                  spellcheck="false" 
+                                  ref="editor" 
+                                  class="editor-surface"></textarea>
                     </div>
                 </div>
 
-                <div v-if="showTerminal" class="h-48 border-t border-white/10 bg-[#080808] flex flex-col animate-slide-up">
+                <!-- Process Monitoring Terminal Panel Drawer -->
+                <div v-if="showTerminal" class="h-48 border-t border-white/10 bg-[#080808] flex flex-col shrink-0">
                     <div class="px-4 py-1 flex justify-between bg-white/5 items-center">
                         <span class="text-[9px] font-black opacity-40 uppercase">Output Console</span>
                         <button @click="terminalOutput = []" class="text-[9px] opacity-40">Clear</button>
@@ -63,14 +95,15 @@
             </div>
         </main>
 
-        <footer class="bg-emerald-600 text-black px-4 py-1 flex justify-between items-center text-[10px] font-bold">
+        <!-- Status Matrix Metadata Footer -->
+        <footer class="bg-emerald-600 text-black px-4 py-1 flex justify-between items-center text-[10px] font-bold select-none z-50">
             <div class="flex gap-4">
-                <span>Ln {{ lineCount }}, Col {{ content.length }}</span>
-                <span>UTF-8</span>
+                <span>Ln {{ cursorLine }}, Col {{ cursorCol }}</span>
+                <span>Workspace Active Buffers: {{ openTabs.length }}</span>
             </div>
             <div class="flex items-center gap-2">
                 <span>{{ isDirty ? 'Modified' : 'Synced' }}</span>
-                <div class="w-2 h-2 bg-black rounded-full"></div>
+                <div class="w-2 h-2 bg-black rounded-full" :class="{ 'animate-pulse bg-amber-300': isDirty }"></div>
             </div>
         </footer>
     </div>

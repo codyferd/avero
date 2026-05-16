@@ -3,54 +3,74 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Avero Translate Pro</title>
+    <title>Avero Translate</title>
     <script libs="core" src="../share/cdn.js"></script>
 </head>
-<body class="bg-slate-900 text-slate-100 min-h-screen flex items-center justify-center p-4 font-sans">
+<body class="bg-[#070707] text-slate-100 min-h-screen flex items-center justify-center p-4 font-sans select-none">
 
-    <div id="app" class="w-full max-w-3xl bg-slate-800 rounded-2xl shadow-2xl overflow-hidden border border-slate-700">
-        <div class="bg-blue-600 p-6 flex justify-between items-center">
+    <div id="app" v-cloak class="w-full max-w-3xl bg-[#0d0d0d] rounded-2xl shadow-2xl overflow-hidden border border-zinc-800">
+        <!-- Top HUD Header -->
+        <div class="bg-zinc-900 p-6 flex justify-between items-center border-b border-zinc-800">
             <div>
-                <h1 class="text-2xl font-bold">Avero Translate</h1>
-                <p class="text-blue-100 text-xs uppercase tracking-widest">Real-World API Mode</p>
+                <h1 class="text-xl font-black italic tracking-tighter uppercase leading-none">Avero Translate</h1>
+                <p class="text-[8px] text-zinc-500 font-bold tracking-[0.3em] uppercase mt-1">Two-Way Relay Matrix</p>
             </div>
-            <select v-model="targetLang" class="bg-blue-700 text-white text-sm rounded-lg px-3 py-2 border-none focus:ring-2 focus:ring-white outline-none max-w-[150px]">
-                <option v-for="lang in languages" :key="lang.code" :value="lang.code">
-                    {{ lang.name }}
-                </option>
-            </select>
 
+            <!-- Language Selection Bar -->
+            <div class="flex items-center gap-3">
+                <select v-model="sourceLang" @change="translateText" class="bg-zinc-800 text-white text-xs font-bold uppercase rounded-lg px-3 py-2 border border-zinc-700 outline-none focus:border-zinc-500 max-w-[130px]">
+                    <option v-for="lang in languages" :key="lang.code" :value="lang.code">
+                        {{ lang.name }}
+                    </option>
+                </select>
+
+                <button @click="swapLanguages" class="w-8 h-8 rounded-lg bg-zinc-800 border border-zinc-700 flex items-center justify-center font-bold text-sm hover:bg-zinc-700 active:scale-95 transition-all" title="Swap Directions">
+                    ⇆
+                </button>
+
+                <select v-model="targetLang" @change="translateText" class="bg-zinc-800 text-white text-xs font-bold uppercase rounded-lg px-3 py-2 border border-zinc-700 outline-none focus:border-zinc-500 max-w-[130px]">
+                    <option v-for="lang in languages" :key="lang.code" :value="lang.code">
+                        {{ lang.name }}
+                    </option>
+                </select>
+            </div>
         </div>
 
-        <div class="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+        <!-- Translation Working Grid -->
+        <div class="p-6 grid grid-cols-1 md:grid-cols-2 gap-6 relative">
+            <!-- Source Input Pane -->
             <div class="space-y-2">
-                <label class="text-xs font-bold text-slate-400 uppercase">English Source</label>
+                <label class="text-[9px] font-black text-zinc-500 uppercase tracking-widest">Source Buffer</label>
                 <textarea
                     v-model="inputText"
                     @input="debouncedTranslate"
-                    placeholder="Enter text to translate..."
-                    class="w-full h-48 p-4 bg-slate-900 border border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none resize-none transition-all"
+                    placeholder="Type text to process..."
+                    class="w-full h-48 p-4 bg-black border border-zinc-800 text-slate-200 rounded-xl focus:border-zinc-700 outline-none resize-none transition-all text-base leading-relaxed"
                 ></textarea>
             </div>
 
+            <!-- Translation Output Pane -->
             <div class="space-y-2">
-                <label class="text-xs font-bold text-slate-400 uppercase">Translation</label>
-                <div class="w-full h-48 p-4 bg-slate-700 border border-slate-600 rounded-xl overflow-auto relative">
-                    <div v-if="loading" class="absolute inset-0 flex items-center justify-center bg-slate-700 bg-opacity-50">
-                        <div class="animate-spin rounded-full h-8 w-8 border-t-2 border-blue-400"></div>
+                <label class="text-[9px] font-black text-zinc-500 uppercase tracking-widest">Output Matrix</label>
+                <div class="w-full h-48 p-4 bg-[#111111] border border-zinc-800 rounded-xl overflow-auto relative">
+                    <!-- Spinner Component -->
+                    <div v-if="loading" class="absolute inset-0 flex items-center justify-center bg-black/40 backdrop-blur-[1px]">
+                        <div class="animate-spin rounded-full h-6 w-6 border-2 border-zinc-700 border-t-white"></div>
                     </div>
-                    <p class="text-lg leading-relaxed" :class="{'text-slate-500 italic': !translatedText}">
-                        {{ translatedText || 'Waiting for input...' }}
+                    <p class="text-base leading-relaxed font-medium" :class="{'text-zinc-600 italic': !translatedText}">
+                        {{ translatedText || 'Awaiting stream calculation...' }}
                     </p>
                 </div>
             </div>
         </div>
 
-        <div class="px-6 py-4 bg-slate-800 border-t border-slate-700 flex justify-between items-center text-[10px] text-slate-500">
-            <span>STATUS: {{ loading ? 'TRANSLATING...' : 'READY' }}</span>
-            <button @click="clear" class="hover:text-white transition-colors">RESET APP</button>
+        <!-- Footer Control Status Strip -->
+        <div class="px-6 py-4 bg-zinc-900/50 border-t border-zinc-800 flex justify-between items-center text-[9px] font-mono text-zinc-500 tracking-wider">
+            <span>STATUS: {{ loading ? 'PROCESSING_STREAM' : 'READY' }}</span>
+            <button @click="clear" class="hover:text-white uppercase font-bold transition-colors">Reset App</button>
         </div>
     </div>
+
     <script src="list.js"></script>
     <script src="index.js"></script>
 </body>

@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Avero Camera</title>
+    <script libs="core" src="../share/cdn.js"></script>
+</head>
+<body class="bg-[#070707] text-white font-sans h-screen margin-0 overflow-hidden select-none">
+    <div id="app" v-cloak class="camera-container">
+
+        <!-- Header HUD -->
+        <div class="camera-hdr">
+            <div>
+                <h1 class="text-xl font-black italic tracking-tighter uppercase leading-none">Avero Cam</h1>
+                <p class="text-[8px] text-zinc-500 font-bold tracking-[0.3em] uppercase mt-1">Optical Relay v1.0</p>
+            </div>
+            <!-- Dynamic Status Badge -->
+            <span :class="['status-tag', streamActive ? 'active' : 'inactive']">
+                {{ streamActive ? 'LIVE' : 'OFFLINE' }}
+            </span>
+        </div>
+
+        <!-- Viewport Display Matrix -->
+        <div class="viewport-wrapper">
+            <div class="viewfinder">
+                <!-- Video stream feed -->
+                <video ref="videoElement" autoplay playsinline class="video-feed" :class="{ 'mirror': isFrontCamera }"></video>
+
+                <!-- Fallback/Permission Block Overlay -->
+                <div v-if="!streamActive" class="absolute inset-0 flex flex-col items-center justify-center bg-zinc-950/90 p-6 text-center z-10">
+                    <p class="text-zinc-500 font-black text-xs uppercase tracking-[0.5em] mb-4">Hardware access required</p>
+                    <button @click="initCamera" class="btn-capture !text-xs !px-6 !py-3">Initialize Optics</button>
+                    <p v-if="errorMessage" class="text-red-500 text-[10px] mt-4 font-mono max-w-[250px]">{{ errorMessage }}</p>
+                </div>
+
+                <!-- Custom Grid Overlay Guidelines -->
+                <div v-if="streamActive" class="capture-grid-lines"></div>
+            </div>
+        </div>
+
+        <!-- Interface Control Deck -->
+        <div class="camera-deck">
+            <!-- Environment / Front Facing Toggle -->
+            <button @click="flipCamera" :disabled="!hasMultipleCameras || !streamActive" class="deck-btn-side" title="Flip Camera">
+                🔄
+            </button>
+
+            <!-- Main Trigger Shutter Action -->
+            <button @click="capturePhoto" :disabled="!streamActive" class="shutter-trigger" title="Capture Frame">
+                <div class="shutter-inner"></div>
+            </button>
+
+            <!-- Hidden anchor element for managing downloads -->
+            <a ref="downloadAnchor" class="hidden"></a>
+
+            <!-- Static Spacer for structural balanced composition -->
+            <div class="w-12 h-12 flex items-center justify-center text-zinc-700 font-mono text-[10px]">
+                SYS
+            </div>
+        </div>
+    </div>
+
+    <script src="index.js"></script>
+</body>
+</html>
