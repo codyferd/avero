@@ -35,6 +35,11 @@ const gamesList = [
     image: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSKhZxUKP9Da7FoPB5vI18rhewKWt62BOfK0A&s",
 },
 {
+    name: "Doom",
+    url: "https://ustymukhman.github.io/WebDOOM/public/",
+    image: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQmyM_T92hB198SIYZqCcuukyReVndMxLAmcg&s",
+},
+{
     name: "Drift Boss",
     url: "https://gamecollections.me/game/owner/drift-boss-gm/",
     image: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTunZVAxdtSgLi40iQMHWjHNBsXdOuVH61PJA&s",
