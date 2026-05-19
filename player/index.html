@@ -9,34 +9,41 @@
 <body>
     <div id="app" v-cloak class="player-container" @dragover.prevent @drop.prevent="handleDrop">
 
-        <div class="mb-8 flex justify-between items-end">
-            <div>
-                <h1 class="text-6xl font-black italic tracking-tighter uppercase leading-none truncate max-w-[700px]">
+        <!-- Floating High-Fidelity HUD Controller Overlay -->
+        <div class="hud-header" :class="{ 'hud-active': mediaUrl }">
+            <div class="min-w-0">
+                <h1 class="text-xl font-black tracking-tight uppercase truncate max-w-[500px]">
                     {{ fileName || 'Avero Player' }}
                 </h1>
-                <div class="flex items-center gap-3 mt-3">
+                <div class="flex items-center gap-3 mt-1">
                     <span v-if="fileCategory" class="type-tag">{{ fileCategory }}</span>
-                    <p class="text-[9px] text-zinc-600 font-bold tracking-[0.4em] uppercase">
+                    <p class="text-[8px] text-zinc-400 font-bold tracking-[0.3em] uppercase font-mono">
                         Avero OS // File Relay v3.0
                     </p>
                 </div>
             </div>
-            <button v-if="mediaUrl" @click="resetPlayer" class="btn-main !bg-zinc-900 !text-white text-[10px]">Eject</button>
+            <button v-if="mediaUrl" @click="resetPlayer" class="btn-main !bg-red-500/10 !text-red-400 border border-red-500/20 text-[10px] hover:!bg-red-500 hover:!text-black transition-colors duration-200">Eject</button>
         </div>
 
+        <!-- Expanded Full-Screen Main Viewport Canvas -->
         <div class="viewport">
             <div v-if="!mediaUrl" class="drop-zone" @click="$refs.fileInput.click()">
-                <p class="text-zinc-800 font-black text-xs uppercase tracking-[1em] mb-6">Drop Media Anywhere</p>
-                <button class="btn-main">Open File Explorer</button>
+                <div class="w-16 h-16 bg-white/5 rounded-full flex items-center justify-center border border-white/10 mb-4 transition-all duration-300 hover:scale-110">
+                    <span class="text-xl">📂</span>
+                </div>
+                <p class="text-zinc-400 font-bold text-[10px] uppercase tracking-[0.8em] mb-4 font-mono">Drop Media Anywhere</p>
+                <button class="btn-main text-xs">Open File Explorer</button>
             </div>
 
             <video v-if="fileCategory === 'VIDEO'" :src="mediaUrl" controls autoplay></video>
 
             <img v-if="fileCategory === 'IMAGE'" :src="mediaUrl" alt="Preview">
 
-            <div v-if="fileCategory === 'AUDIO'" class="flex flex-col items-center w-full">
-                <div class="w-24 h-24 bg-zinc-900 rounded-full mb-8 flex items-center justify-center animate-pulse">
-                    <div class="w-12 h-12 bg-indigo-500 rounded-full"></div>
+            <div v-if="fileCategory === 'AUDIO'" class="flex flex-col items-center w-full max-w-xl px-6">
+                <div class="w-32 h-32 bg-zinc-900/50 backdrop-blur-md border border-white/5 rounded-full mb-8 flex items-center justify-center animate-pulse shadow-2xl">
+                    <div class="w-16 h-16 bg-indigo-500/20 border border-indigo-500/30 rounded-full flex items-center justify-center">
+                        <div class="w-6 h-6 bg-indigo-400 rounded-full"></div>
+                    </div>
                 </div>
                 <audio :src="mediaUrl" controls autoplay></audio>
             </div>
@@ -48,14 +55,17 @@
         <!-- Added .gltf and .glb support -->
         <input type="file" ref="fileInput" class="file-input" @change="handleFile" accept="image/*,video/*,audio/*,.gltf,.glb">
 
-        <div class="media-footer">
-            <span class="text-[9px] font-black text-zinc-800 uppercase tracking-widest">
-                {{ rawType || 'No Active Protocol' }}
+        <!-- Floating Bottom Status Bar Panel -->
+        <div class="hud-footer">
+            <span class="text-[9px] font-black text-zinc-500 font-mono uppercase tracking-widest">
+                {{ rawType || 'Ready Vector Protocol' }}
             </span>
-            <div class="flex gap-2">
-                <div class="w-1 h-1 bg-zinc-800 rounded-full"></div>
-                <div class="w-1 h-1 bg-zinc-800 rounded-full"></div>
-                <div class="w-12 h-1 bg-zinc-800 rounded-full"></div>
+            <div class="flex gap-1.5 items-center">
+                <div class="w-1 h-1 bg-zinc-700 rounded-full"></div>
+                <div class="w-1 h-1 bg-zinc-700 rounded-full"></div>
+                <div class="w-8 h-1 bg-zinc-700/50 rounded-full overflow-hidden">
+                    <div v-if="mediaUrl" class="w-full h-full bg-indigo-500 animate-pulse"></div>
+                </div>
             </div>
         </div>
     </div>

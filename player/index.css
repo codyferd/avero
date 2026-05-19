@@ -1,39 +1,138 @@
 [v-cloak] { display: none; }
-body { background: #000; color: #fff; font-family: 'Inter', sans-serif; height: 100vh; margin: 0; overflow: hidden; }
-
-.player-container { height: 100vh; display: flex; flex-direction: column; padding: 40px; box-sizing: border-box; }
-
-.viewport {
-    flex-grow: 1; width: 100%; background: #070707;
-    border: 1px solid #1a1a1a; border-radius: 32px; overflow: hidden;
-    display: flex; align-items: center; justify-content: center; position: relative;
-    box-shadow: 0 40px 100px rgba(0,0,0,0.5);
+body { 
+    background: #000; 
+    color: #fff; 
+    font-family: 'Inter', sans-serif; 
+    height: 100vh; 
+    margin: 0; 
+    overflow: hidden; 
 }
 
-/* Media Elements */
-video, img { max-width: 100%; max-height: 100%; object-fit: contain; animation: fade-in 0.5s ease; }
-audio { width: 80%; filter: invert(1); } /* Dark theme audio bars */
+/* Base Fullscreen Application Core */
+.player-container { 
+    height: 100vh; 
+    width: 100vw;
+    display: flex; 
+    flex-direction: column; 
+    position: relative;
+    box-sizing: border-box; 
+}
 
-@keyframes fade-in { from { opacity: 0; transform: scale(0.98); } to { opacity: 1; transform: scale(1); } }
+/* Maximized Video / Image Viewport Container Frame */
+.viewport {
+    position: absolute;
+    inset: 0;
+    width: 100%; 
+    height: 100%;
+    background: #020202;
+    overflow: hidden;
+    display: flex; 
+    align-items: center; 
+    justify-content: center;
+    z-index: 10;
+}
 
+/* Media Elements Expanded to Full Bleed Screens */
+video, img { 
+    width: 100%;
+    height: 100%;
+    object-fit: contain; 
+    animation: fade-in 0.4s cubic-bezier(0.16, 1, 0.3, 1); 
+}
+
+audio { 
+    width: 100%; 
+    filter: invert(0.9) hue-rotate(180deg); 
+    opacity: 0.8;
+}
+
+@keyframes fade-in { 
+    from { opacity: 0; transform: scale(0.99); } 
+    to { opacity: 1; transform: scale(1); } 
+}
+
+/* Dropzone Interface Overlay Adjustments */
 .drop-zone {
-    position: absolute; inset: 0; display: flex; flex-direction: column;
-    align-items: center; justify-content: center; cursor: pointer; z-index: 5;
+    position: absolute; 
+    inset: 0; 
+    display: flex; 
+    flex-direction: column;
+    align-items: center; 
+    justify-content: center; 
+    cursor: pointer; 
+    z-index: 20;
+    background: radial-gradient(circle at center, #0a0a0c 0%, #020202 100%);
 }
 
 .btn-main {
-    background: #fff; color: #000; font-weight: 900; padding: 14px 32px;
-    border-radius: 100px; text-transform: uppercase; font-size: 11px;
-    letter-spacing: 0.1em; cursor: pointer; border: none;
+    background: #fff; 
+    color: #000; 
+    font-weight: 900; 
+    padding: 12px 28px;
+    border-radius: 100px; 
+    text-transform: uppercase; 
+    font-size: 10px;
+    letter-spacing: 0.1em; 
+    cursor: pointer; 
+    border: none;
+    box-shadow: 0 10px 25px rgba(255,255,255,0.05);
+    transition: all 0.2s ease;
+}
+.btn-main:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 12px 30px rgba(255,255,255,0.1);
 }
 
 .file-input { display: none; }
 
-.media-footer {
-    height: 100px; display: flex; justify-content: space-between; align-items: center;
+/* Floating Glass HUD Panels */
+.hud-header {
+    position: absolute;
+    top: 24px;
+    left: 24px;
+    right: 24px;
+    z-index: 40;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 14px 20px;
+    border-radius: 16px;
+    background: rgba(10, 10, 12, 0.4);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.03);
+    pointer-events: auto;
+    transition: background 0.3s ease;
+}
+/* Subtly tint header background when media is running behind it */
+.hud-header.hud-active {
+    background: rgba(10, 10, 12, 0.7);
+    box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+}
+
+.hud-footer {
+    position: absolute;
+    bottom: 24px;
+    left: 24px;
+    right: 24px;
+    z-index: 40;
+    display: flex; 
+    justify-content: space-between; 
+    align-items: center;
+    padding: 10px 20px;
+    border-radius: 12px;
+    background: rgba(10, 10, 12, 0.6);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.03);
 }
 
 .type-tag {
-    background: rgba(255,255,255,0.05); padding: 4px 12px; border-radius: 4px;
-    font-size: 10px; font-weight: 800; color: #6366f1;
+    background: rgba(99, 102, 241, 0.15); 
+    padding: 2px 8px; 
+    border-radius: 4px;
+    font-size: 9px; 
+    font-weight: 800; 
+    color: #818cf8;
+    border: 1px solid rgba(99, 102, 241, 0.2);
 }
