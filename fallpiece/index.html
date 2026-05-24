@@ -10,10 +10,16 @@
     <div id="app" v-cloak class="min-h-screen flex flex-col justify-between md:justify-center items-center p-3 md:p-4">
 
         <!-- Top Status Row for Mobile / Hidden on Desktop -->
-        <div class="flex md:hidden w-full max-w-[340px] justify-between items-center mb-2 px-1">
-            <div class="flex gap-2">
-                <span class="text-xs font-bold text-emerald-400">Score: {{ score }}</span>
-                <span class="text-xs font-bold text-white">Lv: {{ level }}</span>
+        <div class="flex md:hidden w-full max-w-[320px] justify-between items-center mb-2 px-1">
+            <div class="flex gap-4">
+                <div class="text-left">
+                    <span class="block text-[9px] text-zinc-500 font-bold uppercase tracking-wider">Score</span>
+                    <span class="text-sm font-black font-mono text-emerald-400">{{ score }}</span>
+                </div>
+                <div class="text-left">
+                    <span class="block text-[9px] text-zinc-500 font-bold uppercase tracking-wider">Level</span>
+                    <span class="text-sm font-black font-mono text-white">{{ level }}</span>
+                </div>
             </div>
             <div class="w-10 h-10 bg-white/5 rounded-lg border border-white/10 flex items-center justify-center">
                 <canvas ref="nextCanvasMobile" width="40" height="40"></canvas>
@@ -21,7 +27,7 @@
         </div>
 
         <!-- Main Game Interface -->
-        <div class="flex flex-col md:flex-row gap-4 md:gap-8 items-center md:items-start w-full max-w-[340px] md:max-w-none justify-center flex-1 md:flex-none">
+        <div class="flex flex-col md:flex-row gap-4 md:gap-8 items-center md:items-start w-full max-w-[320px] md:max-w-none justify-center flex-1 md:flex-none">
 
             <!-- Side Panel: Stats (Desktop Only) -->
             <div class="hidden md:flex flex-col gap-4 w-32">
@@ -40,9 +46,10 @@
             </div>
 
             <!-- Main Canvas Container -->
-            <div class="relative w-full aspect-[1/2] max-h-[65vh] md:max-h-none md:w-[300px] md:h-[600px] flex-1 md:flex-none" ref="canvasWrapper">
+            <div class="relative w-full max-h-[50vh] md:max-h-none md:w-[300px] md:h-[600px] flex-1 md:flex-none" ref="canvasWrapper">
                 <div class="game-border p-1 bg-white/5 rounded-xl h-full w-full box-border">
-                    <canvas ref="gameCanvas" class="rounded-lg bg-black w-full h-full object-contain"></canvas>
+                    <!-- Object-contain removed to prevent internal rendering stretching -->
+                    <canvas ref="gameCanvas" class="rounded-lg bg-black w-full h-full"></canvas>
                 </div>
 
                 <!-- Overlays -->
@@ -65,25 +72,27 @@
                     <canvas ref="nextCanvas" width="80" height="80"></canvas>
                 </div>
 
-                <div class="text-[10px] font-mono text-slate-600 uppercase mt-4">
-                    Arrows: Move/Rotate<br>
-                    Space: Hard Drop<br>
-                    P: Pause
+                <div class="text-[10px] font-mono text-slate-500 uppercase mt-4 leading-relaxed tracking-wider">
+                    A / D: Move Left/Right<br>
+                    W / I: Rotate Piece<br>
+                    S: Soft Drop<br>
+                    Space / K: Drop<br>
+                    P: Pause Game
                 </div>
             </div>
         </div>
 
         <!-- Mobile Touch Controller Interface -->
-        <div class="flex flex-col gap-2 w-full max-w-[340px] mt-2 md:hidden mb-4 z-40">
+        <div class="flex flex-col gap-2 w-full max-w-[320px] mt-2 md:hidden mb-4 z-40">
             <div class="flex justify-between gap-2">
-                <button @mousedown="sendInput(37)" @touchstart.prevent="sendInput(37)" class="touch-btn flex-1">◀</button>
-                <button @mousedown="sendInput(38)" @touchstart.prevent="sendInput(38)" class="touch-btn flex-1">🔄</button>
-                <button @mousedown="sendInput(39)" @touchstart.prevent="sendInput(39)" class="touch-btn flex-1">▶</button>
+                <button @mousedown="sendInput('KeyA')" @touchstart.prevent="sendInput('KeyA')" class="touch-btn flex-1">◀ (A)</button>
+                <button @mousedown="sendInput('KeyW')" @touchstart.prevent="sendInput('KeyW')" class="touch-btn flex-1">🔄 (W)</button>
+                <button @mousedown="sendInput('KeyD')" @touchstart.prevent="sendInput('KeyD')" class="touch-btn flex-1">▶ (D)</button>
             </div>
             <div class="flex justify-between gap-2">
-                <button @mousedown="sendInput(40)" @touchstart.prevent="sendInput(40)" class="touch-btn flex-1 py-3 text-sm">⏬ SOFT</button>
-                <button @mousedown="sendInput(32)" @touchstart.prevent="sendInput(32)" class="touch-btn flex-1 py-3 text-sm bg-emerald-500/20 border-emerald-500/40 text-emerald-400">💥 DROP</button>
-                <button @mousedown="sendInput(80)" @touchstart.prevent="sendInput(80)" class="touch-btn w-12 text-xs">⏸</button>
+                <button @mousedown="sendInput('KeyS')" @touchstart.prevent="sendInput('KeyS')" class="touch-btn flex-1 py-3 text-xs">⏬ SOFT (S)</button>
+                <button @mousedown="sendInput('Space')" @touchstart.prevent="sendInput('Space')" class="touch-btn flex-1 py-3 text-xs bg-emerald-500/20 border-emerald-500/40 text-emerald-400">💥 DROP (Space)</button>
+                <button @mousedown="sendInput('KeyP')" @touchstart.prevent="sendInput('KeyP')" class="touch-btn w-12 text-xs">⏸</button>
             </div>
         </div>
 

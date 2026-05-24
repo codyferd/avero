@@ -1,0 +1,48 @@
+/* Custom Arcade Minimalist Styles */
+.retro-card {
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 16px;
+    padding: 16px;
+    text-align: center;
+}
+
+.retro-label {
+    display: block;
+    font-size: 9px;
+    font-weight: 900;
+    text-transform: uppercase;
+    color: #64748b;
+    letter-spacing: 0.2em;
+    margin-bottom: 4px;
+}
+
+.retro-value {
+    font-size: 2.5rem;
+    font-weight: 900;
+    font-style: italic;
+    font-family: 'Monaco', monospace;
+}
+
+.avero-btn {
+    background: #10b981;
+    color: #000;
+    font-weight: 900;
+    padding: 12px 32px;
+    border-radius: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    transition: all 0.2s ease;
+    box-shadow: 0 0 20px rgba(16, 185, 129, 0.3);
+}
+
+.avero-btn:hover {
+    transform: scale(1.05);
+    background: #34d399;
+}
+
+.game-border {
+    box-shadow: 0 0 40px rgba(0,0,0,0.6), inset 0 0 20px rgba(255,255,255,0.01);
+}
+
+[v-cloak] { display: none; }

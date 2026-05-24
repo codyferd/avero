@@ -1,15 +1,7 @@
-/* Stat Card Styling */
-        .stat-card {
-            background: rgba(255, 255, 255, 0.02);
-            border: 1px solid rgba(255, 255, 255, 0.05);
-            border-radius: 16px;
-            padding: 12px;
-            text-align: center;
-        }
-
-        .stat-label {
+/* Embedded Core Architecture Styles */
+        .retro-label {
             display: block;
-            font-size: 8px;
+            font-size: 9px;
             font-weight: 900;
             text-transform: uppercase;
             color: #64748b;
@@ -17,24 +9,25 @@
             margin-bottom: 4px;
         }
 
-        .stat-value {
-            font-size: 1.5rem;
+        .retro-value {
+            font-size: 2rem;
             font-weight: 900;
             font-style: italic;
             font-family: 'Monaco', monospace;
         }
 
-        /* UI Elements */
         .avero-btn {
             background: #10b981;
             color: #000;
             font-weight: 900;
-            padding: 12px 32px;
+            padding: 14px 36px;
             border-radius: 12px;
             text-transform: uppercase;
             letter-spacing: 0.1em;
             transition: all 0.2s ease;
             box-shadow: 0 0 20px rgba(16, 185, 129, 0.3);
+            border: none;
+            cursor: pointer;
         }
 
         .avero-btn:hover {
@@ -43,19 +36,14 @@
         }
 
         .game-border {
-            box-shadow: 0 0 40px rgba(0,0,0,0.5), inset 0 0 20px rgba(255,255,255,0.02);
+            box-shadow: 0 0 50px rgba(0,0,0,0.8), inset 0 0 20px rgba(255,255,255,0.01);
         }
 
-        canvas {
-            display: block;
-        }
-
-        /* Interactive Virtual Layout Control Modules */
         .touch-btn {
             background: rgba(255, 255, 255, 0.03);
             border: 1px solid rgba(255, 255, 255, 0.08);
             border-radius: 12px;
-            padding: 14px;
+            padding: 16px;
             color: #cbd5e1;
             font-weight: 800;
             text-align: center;
@@ -66,7 +54,7 @@
 
         .touch-btn:active {
             background: rgba(255, 255, 255, 0.12);
-            transform: scale(0.97);
+            transform: scale(0.96);
         }
 
         [v-cloak] { display: none; }

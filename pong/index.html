@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Avero Pong</title>
+    <script libs="core" src="../share/cdn.js"></script>
+</head>
+<body class="bg-[#080808] text-slate-200 font-sans overflow-hidden select-none touch-none">
+    <div id="app" v-cloak class="min-h-screen flex flex-col justify-center items-center p-4">
+
+        <!-- Scoring Interface Dashboard -->
+        <div class="flex w-full max-w-[800px] justify-between items-center mb-4 px-2">
+            <div class="text-left">
+                <span class="retro-label">Player 1 (W/S)</span>
+                <span class="retro-value text-indigo-400 font-mono">{{ scores.p1 }}</span>
+            </div>
+            <div class="text-center font-mono text-xs text-zinc-600 uppercase tracking-widest hidden md:block">
+                First to 7 wins
+            </div>
+            <div class="text-right">
+                <span class="retro-label">Player 2 (▲/▼)</span>
+                <span class="retro-value text-emerald-400 font-mono">{{ scores.p2 }}</span>
+            </div>
+        </div>
+
+        <!-- Main Viewport Arena Container -->
+        <div class="relative w-full max-w-[800px] aspect-[4/3] bg-white/5 rounded-2xl p-1 game-border" ref="arenaWrapper">
+            <canvas ref="pongCanvas" class="bg-black rounded-xl w-full h-full block"></canvas>
+
+            <!-- Game Management Layer -->
+            <div v-if="!gameState.running" class="absolute inset-0 flex items-center justify-center bg-black/85 backdrop-blur-sm rounded-2xl z-50">
+                <div class="text-center px-6">
+                    <h2 class="text-4xl md:text-5xl font-black italic tracking-tighter mb-2 uppercase text-white">
+                        {{ gameState.gameOver ? 'Match Concluded' : 'Avero Pong' }}
+                    </h2>
+                    <p v-if="gameState.gameOver" class="text-zinc-400 font-mono text-xs uppercase tracking-wider mb-6">
+                        Winner: <span :class="winner === 1 ? 'text-indigo-400' : 'text-emerald-400'">Player {{ winner }}</span>
+                    </p>
+                    <p v-else class="text-zinc-500 font-mono text-[10px] uppercase tracking-widest mb-6">
+                        P1: W/S keys | P2: Arrow keys
+                    </p>
+                    <button @click="startMatch" class="avero-btn">
+                        {{ gameState.gameOver ? 'Rematch' : 'Launch System' }}
+                    </button>
+                </div>
+            </div>
+        </div>
+
+    </div>
+    <script src="index.js"></script>
+</body>
+</html>
