@@ -20,6 +20,7 @@ const appList = [
     { title: 'Snake', icon: '🐍', path: '../snake/index.html' },
     { title: 'Stopwatch', icon: '⌚', path: '../stopwatch/index.html'},
     { title: 'Superbirdjumper3', icon: '🐦', path: '../superbirdjumper3/index.html' },
+    { title: 'Synthesizer', icon: '🎹', path: '../synthesizer/index.html' },
     { title: 'Tictactoe', icon: '🌀', path: '../tictactoe/index.html'},
     { title: 'Translate', icon: '🌐', path: '../translate/index.html' },
     { title: 'Weather', icon: '⛅', path: '../weather/index.html'},

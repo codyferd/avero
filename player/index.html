@@ -17,9 +17,6 @@
                 </h1>
                 <div class="flex items-center gap-3 mt-1">
                     <span v-if="fileCategory" class="type-tag">{{ fileCategory }}</span>
-                    <p class="text-[8px] text-zinc-400 font-bold tracking-[0.3em] uppercase font-mono">
-                        Avero OS // File Relay v3.0
-                    </p>
                 </div>
             </div>
             <button v-if="mediaUrl" @click="resetPlayer" class="btn-main !bg-red-500/10 !text-red-400 border border-red-500/20 text-[10px] hover:!bg-red-500 hover:!text-black transition-colors duration-200">Eject</button>
@@ -54,20 +51,6 @@
 
         <!-- Added .gltf and .glb support -->
         <input type="file" ref="fileInput" class="file-input" @change="handleFile" accept="image/*,video/*,audio/*,.gltf,.glb">
-
-        <!-- Floating Bottom Status Bar Panel -->
-        <div class="hud-footer">
-            <span class="text-[9px] font-black text-zinc-500 font-mono uppercase tracking-widest">
-                {{ rawType || 'Ready Vector Protocol' }}
-            </span>
-            <div class="flex gap-1.5 items-center">
-                <div class="w-1 h-1 bg-zinc-700 rounded-full"></div>
-                <div class="w-1 h-1 bg-zinc-700 rounded-full"></div>
-                <div class="w-8 h-1 bg-zinc-700/50 rounded-full overflow-hidden">
-                    <div v-if="mediaUrl" class="w-full h-full bg-indigo-500 animate-pulse"></div>
-                </div>
-            </div>
-        </div>
     </div>
 
     <!-- 3D engine script loads first, followed by application lifecycle manager -->

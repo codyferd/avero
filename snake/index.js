@@ -10,8 +10,8 @@ createApp({
         const gameState = reactive({ running: false, gameOver: false });
 
         // Expanded 30x30 High-Resolution Grid Config Matrix
-        const GRID_SIZE = 20; 
         const CELL_COUNT = 30; 
+        const BASE_RESOLUTION = 600; // Internal drawing coordinate frame matrix bound
 
         let ctx = null;
         let gameIntervalId = null;
@@ -74,38 +74,81 @@ createApp({
         const renderGrid = () => {
             if (!ctx || !snakeCanvas.value) return;
 
-            ctx.clearRect(0, 0, snakeCanvas.value.width, snakeCanvas.value.height);
+            // Compute dynamic cell size based on the single constant backing resolution
+            const currentBlockSize = BASE_RESOLUTION / CELL_COUNT;
+
+            ctx.clearRect(0, 0, BASE_RESOLUTION, BASE_RESOLUTION);
 
             // Render Target Node Vector (Food)
             ctx.fillStyle = "#f43f5e";
-            ctx.fillRect(food.x * GRID_SIZE + 1, food.y * GRID_SIZE + 1, GRID_SIZE - 2, GRID_SIZE - 2);
+            ctx.fillRect(
+                food.x * currentBlockSize + 1, 
+                food.y * currentBlockSize + 1, 
+                currentBlockSize - 2, 
+                currentBlockSize - 2
+            );
 
             // Render Array Segments (Snake Body)
             snake.forEach((segment, index) => {
                 ctx.fillStyle = index === 0 ? "#34d399" : "#10b981";
-                ctx.fillRect(segment.x * GRID_SIZE + 1, segment.y * GRID_SIZE + 1, GRID_SIZE - 2, GRID_SIZE - 2);
+                ctx.fillRect(
+                    segment.x * currentBlockSize + 1, 
+                    segment.y * currentBlockSize + 1, 
+                    currentBlockSize - 2, 
+                    currentBlockSize - 2
+                );
             });
         };
 
-        const handleInput = (keyString) => {
-            if (!gameState.running) return;
+        // Dual Axis Layout Scaling Engine
+        const handleResize = () => {
+            if (!arenaWrapper.value || !snakeCanvas.value) return;
 
-            switch (keyString) {
+            // Grab the client component workspace dimensions in realtime
+            const availableWidth = arenaWrapper.value.clientWidth;
+            const availableHeight = arenaWrapper.value.clientHeight;
+
+            // Calculate the maximum possible dimension to fit a clean 1:1 aspect ratio square box
+            let minEdgeBound = Math.min(availableWidth, availableHeight);
+
+            // Restrict bounds down safely to keep elements within clear limits
+            if (minEdgeBound < 180) minEdgeBound = 180;
+
+            // Retain absolute internal grid scale buffer to avoid blurry object rendering
+            snakeCanvas.value.width = BASE_RESOLUTION;
+            snakeCanvas.value.height = BASE_RESOLUTION;
+
+            // Update layout constraints seamlessly via CSS string styles
+            snakeCanvas.value.style.width = `${minEdgeBound - 8}px`;
+            snakeCanvas.value.style.height = `${minEdgeBound - 8}px`;
+
+            // Adjust outer decorative border frames instantly without visual shifting
+            snakeCanvas.value.parentElement.style.width = `${minEdgeBound}px`;
+            snakeCanvas.value.parentElement.style.height = `${minEdgeBound}px`;
+
+            renderGrid();
+        };
+
+        const handleInput = (keyString) => {
+            // Unify system code identifiers to process virtual inputs cleanly alongside hardware boards
+            let command = keyString;
+            if (command === 'KeyW') command = 'ArrowUp';
+            if (command === 'KeyS') command = 'ArrowDown';
+            if (command === 'KeyA') command = 'ArrowLeft';
+            if (command === 'KeyD') command = 'ArrowRight';
+
+            switch (command) {
                 case 'ArrowUp':
-                case 'KeyW':
-                    if (velocity.y !== 1) nextVelocity = { x: 0, y: -1 };
+                    if (velocity.y !== 1 && snake[1].y !== snake[0].y - 1) nextVelocity = { x: 0, y: -1 };
                     break;
                 case 'ArrowDown':
-                case 'KeyS':
-                    if (velocity.y !== -1) nextVelocity = { x: 0, y: 1 };
+                    if (velocity.y !== -1 && snake[1].y !== snake[0].y + 1) nextVelocity = { x: 0, y: 1 };
                     break;
                 case 'ArrowLeft':
-                case 'KeyA':
-                    if (velocity.x !== 1) nextVelocity = { x: -1, y: 0 };
+                    if (velocity.x !== 1 && snake[1].x !== snake[0].x - 1) nextVelocity = { x: -1, y: 0 };
                     break;
                 case 'ArrowRight':
-                case 'KeyD':
-                    if (velocity.x !== -1) nextVelocity = { x: 1, y: 0 };
+                    if (velocity.x !== -1 && snake[1].x !== snake[0].x + 1) nextVelocity = { x: 1, y: 0 };
                     break;
             }
         };
@@ -125,7 +168,6 @@ createApp({
             gameState.running = true;
             gameState.gameOver = false;
 
-            // Balance-adjusted start vectors for larger matrix
             snake = [
                 { x: 15, y: 15 },
                 { x: 14, y: 15 },
@@ -139,28 +181,24 @@ createApp({
 
             nextTick(() => {
                 if (gameIntervalId) clearInterval(gameIntervalId);
-                
-                // Establish internal 600x600 coordinate drawing space
-                snakeCanvas.value.width = GRID_SIZE * CELL_COUNT;
-                snakeCanvas.value.height = GRID_SIZE * CELL_COUNT;
-                
-                renderGrid();
-                
-                // Paced down tick timing sequence to 160ms for smooth, relaxed navigation
-                gameIntervalId = setInterval(updateGameTick, 160);
+                handleResize();
+                gameIntervalId = setInterval(updateGameTick, 140); // Optimized tempo rate
             });
         };
 
         onMounted(() => {
             ctx = snakeCanvas.value.getContext('2d');
             window.addEventListener('keydown', (e) => handleInput(e.code));
+            window.addEventListener('resize', handleResize);
             
-            snakeCanvas.value.width = GRID_SIZE * CELL_COUNT;
-            snakeCanvas.value.height = GRID_SIZE * CELL_COUNT;
+            setTimeout(() => {
+                handleResize();
+            }, 60);
         });
 
         onUnmounted(() => {
             if (gameIntervalId) clearInterval(gameIntervalId);
+            window.removeEventListener('resize', handleResize);
         });
 
         return {

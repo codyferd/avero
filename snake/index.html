@@ -6,11 +6,10 @@
     <title>Avero Snake</title>
     <script libs="core" src="../share/cdn.js"></script>
 </head>
-<body class="bg-[#050505] text-slate-200 font-sans overflow-hidden select-none touch-none">
-    <div id="app" v-cloak class="min-h-screen flex flex-col justify-between md:justify-center items-center p-4">
+<body class="bg-[#050505] text-slate-200 font-sans overflow-hidden select-none touch-none flex items-center justify-center min-h-screen">
+    <div id="app" v-cloak class="h-screen w-screen flex flex-col justify-between items-center p-3 box-border overflow-hidden">
 
-        <!-- Score Metrics Deck -->
-        <div class="flex w-full max-w-[600px] justify-between items-center mb-3 px-1">
+        <div class="flex w-full max-w-[600px] justify-between items-center px-1 py-1 flex-none">
             <div class="text-left">
                 <span class="retro-label">System Score</span>
                 <span class="retro-value text-emerald-400 font-mono">{{ score }}</span>
@@ -21,33 +20,34 @@
             </div>
         </div>
 
-        <!-- Scaled Grid Matrix Canvas -->
-        <div class="relative w-full max-w-[600px] aspect-square bg-white/5 rounded-2xl p-1 game-border" ref="arenaWrapper">
-            <canvas ref="snakeCanvas" class="bg-black rounded-xl w-full h-full block"></canvas>
+        <div class="flex-1 w-full max-w-[600px] flex items-center justify-center p-1 overflow-hidden">
+            <div class="w-full h-full flex justify-center items-center" ref="arenaWrapper">
+                <div class="relative game-border p-1 bg-white/5 rounded-2xl box-border flex items-center justify-center">
+                    <canvas ref="snakeCanvas" class="bg-black rounded-xl block shadow-inner"></canvas>
 
-            <!-- Menu Layer Screens -->
-            <div v-if="!gameState.running" class="absolute inset-0 flex items-center justify-center bg-black/90 backdrop-blur-md rounded-2xl z-50">
-                <div class="text-center px-6">
-                    <h2 class="text-4xl md:text-5xl font-black italic tracking-tighter mb-4 uppercase text-white">
-                        {{ gameState.gameOver ? 'Matrix Overload' : 'Avero Snake' }}
-                    </h2>
-                    <p class="text-zinc-500 font-mono text-xs uppercase tracking-widest mb-8 hidden md:block">
-                        Controls: WASD or Directional Keys
-                    </p>
-                    <button @click="startSimulation" class="avero-btn">
-                        {{ gameState.gameOver ? 'Re-Initialize' : 'Engage System' }}
-                    </button>
+                    <div v-if="!gameState.running" class="absolute inset-0 flex items-center justify-center bg-black/90 backdrop-blur-md rounded-2xl z-50">
+                        <div class="text-center px-6">
+                            <h2 class="text-4xl md:text-5xl font-black italic tracking-tighter mb-4 uppercase text-white">
+                                {{ gameState.gameOver ? 'Matrix Overload' : 'Avero Snake' }}
+                            </h2>
+                            <p class="text-zinc-500 font-mono text-xs uppercase tracking-widest mb-8 hidden md:block">
+                                Controls: WASD or Directional Keys
+                            </p>
+                            <button @click="startSimulation" class="avero-btn text-xs">
+                                {{ gameState.gameOver ? 'Re-Initialize' : 'Engage System' }}
+                            </button>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
 
-        <!-- Virtual Mobile Control Matrix (Hidden on Large Screen Viewports) -->
-        <div class="flex flex-col items-center gap-1.5 w-full max-w-[260px] mt-6 md:hidden mb-4 z-40">
-            <button @mousedown="sendInput('ArrowUp')" @touchstart.prevent="sendInput('ArrowUp')" class="touch-btn w-16">▲</button>
+        <div class="flex flex-col items-center gap-1.5 w-full max-w-[260px] mt-2 mb-2 z-40 flex-none md:hidden">
+            <button @mousedown="sendInput('ArrowUp')" @touchstart.prevent="sendInput('ArrowUp')" class="touch-btn w-16 py-3">▲</button>
             <div class="flex gap-1.5 w-full justify-between">
-                <button @mousedown="sendInput('ArrowLeft')" @touchstart.prevent="sendInput('ArrowLeft')" class="touch-btn w-16">◀</button>
-                <button @mousedown="sendInput('ArrowDown')" @touchstart.prevent="sendInput('ArrowDown')" class="touch-btn w-16">▼</button>
-                <button @mousedown="sendInput('ArrowRight')" @touchstart.prevent="sendInput('ArrowRight')" class="touch-btn w-16">▶</button>
+                <button @mousedown="sendInput('ArrowLeft')" @touchstart.prevent="sendInput('ArrowLeft')" class="touch-btn w-16 py-3">◀</button>
+                <button @mousedown="sendInput('ArrowDown')" @touchstart.prevent="sendInput('ArrowDown')" class="touch-btn w-16 py-3">▼</button>
+                <button @mousedown="sendInput('ArrowRight')" @touchstart.prevent="sendInput('ArrowRight')" class="touch-btn w-16 py-3">▶</button>
             </div>
         </div>
 

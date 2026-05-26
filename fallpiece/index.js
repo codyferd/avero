@@ -3,8 +3,7 @@ const { createApp, ref, onMounted, onUnmounted, reactive, nextTick } = Vue;
 createApp({
     setup() {
         const gameCanvas = ref(null);
-        const nextCanvas = ref(null);
-        const nextCanvasMobile = ref(null);
+        const nextCanvasUniversal = ref(null);
         const canvasWrapper = ref(null);
 
         const score = ref(0);
@@ -13,7 +12,7 @@ createApp({
         const gameState = reactive({ running: false, gameOver: false });
 
         const COLS = 10, ROWS = 20;
-        let blockSize = 30; 
+        let blockSize = 20; // Calculated runtime tracking parameter 
 
         const SHAPES = {
             'I': [[1, 1, 1, 1]],
@@ -26,7 +25,7 @@ createApp({
         };
         const COLORS = { 'I': '#2dd4bf', 'J': '#6366f1', 'L': '#f59e0b', 'O': '#fbbf24', 'S': '#4ade80', 'T': '#a855f7', 'Z': '#f43f5e' };
 
-        let ctx, nextCtx, nextCtxMobile, grid, piece, nextPiece, requestId, lastTime = 0, dropCounter = 0;
+        let ctx, nextCtxUniversal, grid, piece, nextPiece, requestId, lastTime = 0, dropCounter = 0;
 
         const createGrid = () => Array.from({ length: ROWS }, () => Array(COLS).fill(0));
 
@@ -95,28 +94,24 @@ createApp({
         };
 
         const drawNext = () => {
-            if (nextCtx) {
-                nextCtx.clearRect(0, 0, 80, 80);
-                nextPiece.shape.forEach((row, y) => {
-                    row.forEach((val, x) => {
-                        if (val) {
-                            nextCtx.fillStyle = COLORS[nextPiece.type];
-                            nextCtx.fillRect(x * 20 + 10, y * 20 + 10, 19, 19);
-                        }
-                    });
+            if (!nextCtxUniversal) return;
+            
+            nextCtxUniversal.clearRect(0, 0, 60, 30);
+            
+            // Auto calculate offsets to center dynamic blocks inside tiny frame window cleanly
+            const pWidth = nextPiece.shape[0].length * 10;
+            const pHeight = nextPiece.shape.length * 10;
+            const offsetX = (60 - pWidth) / 2;
+            const offsetY = (30 - pHeight) / 2;
+
+            nextPiece.shape.forEach((row, y) => {
+                row.forEach((val, x) => {
+                    if (val) {
+                        nextCtxUniversal.fillStyle = COLORS[nextPiece.type];
+                        nextCtxUniversal.fillRect(x * 10 + offsetX, y * 10 + offsetY, 9, 9);
+                    }
                 });
-            }
-            if (nextCtxMobile) {
-                nextCtxMobile.clearRect(0, 0, 40, 40);
-                nextPiece.shape.forEach((row, y) => {
-                    row.forEach((val, x) => {
-                        if (val) {
-                            nextCtxMobile.fillStyle = COLORS[nextPiece.type];
-                            nextCtxMobile.fillRect(x * 10 + 5, y * 10 + 5, 9, 9);
-                        }
-                    });
-                });
-            }
+            });
         };
 
         const draw = () => {
@@ -134,7 +129,7 @@ createApp({
                 ghost.pos.y--;
 
                 piece.shape.forEach((row, y) => row.forEach((v, x) => {
-                    if (v) drawBlock(x + ghost.pos.x, y + ghost.pos.y, '#ffffff', ctx, 0.08);
+                    if (v) drawBlock(x + ghost.pos.x, y + ghost.pos.y, '#ffffff', ctx, 0.06);
                 }));
 
                 piece.shape.forEach((row, y) => row.forEach((v, x) => {
@@ -177,29 +172,37 @@ createApp({
             draw();
         };
 
-        // Screen Adaptation Scaling Engine Fix
+        // Dual Axis Precision Scale Calculation Engine
         const resizeGameCanvas = () => {
             if (!canvasWrapper.value || !gameCanvas.value) return;
 
-            // Grab wrapper runtime CSS dimensions
-            const rect = canvasWrapper.value.getBoundingClientRect();
-            
-            // Calculate absolute clean pixel step using height or width bounds
-            const testBlockSize = rect.width / COLS;
-            if (testBlockSize * ROWS > rect.height) {
-                blockSize = rect.height / ROWS;
-            } else {
-                blockSize = testBlockSize;
-            }
+            // Extract real time parent available container footprint bounds
+            const parentWidth = canvasWrapper.value.clientWidth;
+            const parentHeight = canvasWrapper.value.clientHeight;
 
-            // Sync the true backing buffer dimensions to prevent canvas blurring/stretching
+            // Calculate scaling limiters for both axes independently
+            const sizeByWidth = parentWidth / COLS;
+            const sizeByHeight = parentHeight / ROWS;
+
+            // Pinned Core Limit: Choose whichever axis runs out of room first
+            blockSize = Math.min(sizeByWidth, sizeByHeight);
+
+            // Cap block sizes to logical UI boundaries
+            if (blockSize < 10) blockSize = 10;
+            if (blockSize > 35) blockSize = 35;
+
+            // Map precise backing resolution dimension properties to match block scale factors
             gameCanvas.value.width = blockSize * COLS;
             gameCanvas.value.height = blockSize * ROWS;
 
+            // Dynamically resize wrapping element layout nodes to eliminate visual border stretching
+            gameCanvas.value.parentElement.style.width = `${gameCanvas.value.width + 8}px`;
+            gameCanvas.value.parentElement.style.height = `${gameCanvas.value.height + 8}px`;
+
             draw();
+            drawNext();
         };
 
-        // Modern decoupled input handler using explicit event codes
         const handleKeys = (e) => {
             const code = e.code || e; 
             
@@ -215,23 +218,23 @@ createApp({
             if (!gameState.running || !piece) return;
 
             switch (code) {
-                case 'KeyA': // Left
+                case 'KeyA':
                     piece.pos.x--; 
                     if (collide(grid, piece)) piece.pos.x++;
                     break;
-                case 'KeyD': // Right
+                case 'KeyD':
                     piece.pos.x++; 
                     if (collide(grid, piece)) piece.pos.x--;
                     break;
-                case 'KeyS': // Soft Drop
+                case 'KeyS':
                     moveDown();
                     break;
-                case 'KeyW': // Rotate Alternative A
-                case 'KeyI': // Rotate Alternative B
+                case 'KeyW':
+                case 'KeyI':
                     rotate(piece);
                     break;
-                case 'Space': // Hard Drop Alternative A
-                case 'KeyK':  // Hard Drop Alternative B
+                case 'Space':
+                case 'KeyK':
                     hardDrop();
                     break;
             }
@@ -256,13 +259,15 @@ createApp({
 
         onMounted(() => {
             ctx = gameCanvas.value.getContext('2d');
-            if (nextCanvas.value) nextCtx = nextCanvas.value.getContext('2d');
-            if (nextCanvasMobile.value) nextCtxMobile = nextCanvasMobile.value.getContext('2d');
+            if (nextCanvasUniversal.value) nextCtxUniversal = nextCanvasUniversal.value.getContext('2d');
 
             window.addEventListener('keydown', handleKeys);
             window.addEventListener('resize', resizeGameCanvas);
 
-            resizeGameCanvas();
+            // Yield frame thread execution to allow DOM elements to fully settle before initialization sizing calculations
+            setTimeout(() => {
+                resizeGameCanvas();
+            }, 50);
         });
 
         onUnmounted(() => {
@@ -272,7 +277,7 @@ createApp({
         });
 
         return {
-            gameCanvas, nextCanvas, nextCanvasMobile, canvasWrapper,
+            gameCanvas, nextCanvasUniversal, canvasWrapper,
             score, level, lines, gameState,
             startGame, sendInput
         };

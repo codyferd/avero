@@ -1,60 +1,60 @@
 /* Embedded Core Architecture Styles */
-        .retro-label {
-            display: block;
-            font-size: 9px;
-            font-weight: 900;
-            text-transform: uppercase;
-            color: #64748b;
-            letter-spacing: 0.2em;
-            margin-bottom: 4px;
-        }
+.retro-label {
+    display: block;
+    font-size: 9px;
+    font-weight: 900;
+    text-transform: uppercase;
+    color: #64748b;
+    letter-spacing: 0.2em;
+    margin-bottom: 4px;
+}
 
-        .retro-value {
-            font-size: 2rem;
-            font-weight: 900;
-            font-style: italic;
-            font-family: 'Monaco', monospace;
-        }
+.retro-value {
+    font-size: 2rem;
+    font-weight: 900;
+    font-style: italic;
+    font-family: 'Monaco', monospace;
+}
 
-        .avero-btn {
-            background: #10b981;
-            color: #000;
-            font-weight: 900;
-            padding: 14px 36px;
-            border-radius: 12px;
-            text-transform: uppercase;
-            letter-spacing: 0.1em;
-            transition: all 0.2s ease;
-            box-shadow: 0 0 20px rgba(16, 185, 129, 0.3);
-            border: none;
-            cursor: pointer;
-        }
+.avero-btn {
+    background: #10b981;
+    color: #000;
+    font-weight: 900;
+    padding: 14px 36px;
+    border-radius: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    transition: all 0.2s ease;
+    box-shadow: 0 0 20px rgba(16, 185, 129, 0.3);
+    border: none;
+    cursor: pointer;
+}
 
-        .avero-btn:hover {
-            transform: scale(1.05);
-            background: #34d399;
-        }
+.avero-btn:hover {
+    transform: scale(1.05);
+    background: #34d399;
+}
 
-        .game-border {
-            box-shadow: 0 0 50px rgba(0,0,0,0.8), inset 0 0 20px rgba(255,255,255,0.01);
-        }
+.game-border {
+    box-shadow: 0 0 50px rgba(0,0,0,0.8), inset 0 0 20px rgba(255,255,255,0.01);
+}
 
-        .touch-btn {
-            background: rgba(255, 255, 255, 0.03);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            border-radius: 12px;
-            padding: 16px;
-            color: #cbd5e1;
-            font-weight: 800;
-            text-align: center;
-            transition: background 0.1s ease, transform 0.05s ease;
-            user-select: none;
-            -webkit-user-select: none;
-        }
+.touch-btn {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 12px;
+    padding: 16px;
+    color: #cbd5e1;
+    font-weight: 800;
+    text-align: center;
+    transition: background 0.1s ease, transform 0.05s ease;
+    user-select: none;
+    -webkit-user-select: none;
+}
 
-        .touch-btn:active {
-            background: rgba(255, 255, 255, 0.12);
-            transform: scale(0.96);
-        }
+.touch-btn:active {
+    background: rgba(255, 255, 255, 0.12);
+    transform: scale(0.96);
+}
 
-        [v-cloak] { display: none; }
+[v-cloak] { display: none; }

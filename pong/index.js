@@ -9,11 +9,11 @@ createApp({
         const gameState = reactive({ running: false, gameOver: false });
         const winner = ref(null);
 
-        // Core Backing Resolution Constants
+        // Core Backing Coordinate Frame Constants
         const BASE_WIDTH = 800;
         const BASE_HEIGHT = 600;
+        const ASPECT_RATIO = BASE_WIDTH / BASE_HEIGHT; // 4:3 Aspect
 
-        // Runtime Entities (Mapped dynamically on runtime resolution scale)
         let ctx = null;
         let requestId = null;
 
@@ -25,7 +25,6 @@ createApp({
         const p2 = reactive({ x: 768, y: 250, score: 0 });
         const ball = reactive({ x: 400, y: 300, vx: 0, vy: 0, speed: 7 });
 
-        // Controller input state mapping matrix
         const keysPressed = {};
 
         const initBall = (direction) => {
@@ -33,25 +32,24 @@ createApp({
             ball.y = BASE_HEIGHT / 2;
             ball.speed = 7;
             
-            // Fire ball towards scoring point side
-            let angle = (Math.random() * 60 - 30) * (Math.PI / 180); // Radian clamping
+            let angle = (Math.random() * 60 - 30) * (Math.PI / 180); 
             ball.vx = direction * ball.speed * Math.cos(angle);
             ball.vy = ball.speed * Math.sin(angle);
         };
 
         const updatePhysics = () => {
-            // 1. Move Paddles with basic window boundaries
+            // Paddle Movement Metrics
             if (keysPressed['KeyW'] || keysPressed['w']) p1.y = Math.max(10, p1.y - 8);
             if (keysPressed['KeyS'] || keysPressed['s']) p1.y = Math.min(BASE_HEIGHT - paddleHeight - 10, p1.y + 8);
             
             if (keysPressed['ArrowUp']) p2.y = Math.max(10, p2.y - 8);
             if (keysPressed['ArrowDown']) p2.y = Math.min(BASE_HEIGHT - paddleHeight - 10, p2.y + 8);
 
-            // 2. Translate Ball Coordinates
+            // Ball Translation Vectors
             ball.x += ball.vx;
             ball.y += ball.vy;
 
-            // 3. Ceiling and Floor bounce
+            // Boundary Wall Collision (Ceiling/Floor reflection)
             if (ball.y - ballRadius <= 0) {
                 ball.y = ballRadius;
                 ball.vy = -ball.vy;
@@ -60,15 +58,15 @@ createApp({
                 ball.vy = -ball.vy;
             }
 
-            // 4. Paddle Collision Tracing Matrices
-            // Left Paddle (Player 1)
+            // Paddle Interception Calculators
+            // Left Paddle (P1)
             if (ball.vx < 0 && ball.x - ballRadius <= p1.x + paddleWidth && ball.x + ballRadius >= p1.x) {
                 if (ball.y >= p1.y && ball.y <= p1.y + paddleHeight) {
                     ball.x = p1.x + paddleWidth + ballRadius;
                     bounceBall(p1.y);
                 }
             }
-            // Right Paddle (Player 2)
+            // Right Paddle (P2)
             if (ball.vx > 0 && ball.x + ballRadius >= p2.x && ball.x - ballRadius <= p2.x + paddleWidth) {
                 if (ball.y >= p2.y && ball.y <= p2.y + paddleHeight) {
                     ball.x = p2.x - ballRadius;
@@ -76,7 +74,7 @@ createApp({
                 }
             }
 
-            // 5. Score Boundaries Check
+            // Score Registers
             if (ball.x < 0) {
                 scores.p2++;
                 checkMatchLimit(1);
@@ -87,13 +85,11 @@ createApp({
         };
 
         const bounceBall = (paddleY) => {
-            // Increase speed slightly on hit to build intensity
             ball.speed = Math.min(16, ball.speed + 0.6);
             
-            // Calculate normalize relative intercept factor to spin velocity vectors
             let relativeIntersectY = (paddleY + (paddleHeight / 2)) - ball.y;
             let normalizedIntersectY = relativeIntersectY / (paddleHeight / 2);
-            let bounceAngle = normalizedIntersectY * (Math.PI / 3); // Max 60 degree vector tilt
+            let bounceAngle = normalizedIntersectY * (Math.PI / 3); 
 
             let direction = ball.vx > 0 ? -1 : 1;
             ball.vx = direction * ball.speed * Math.cos(bounceAngle);
@@ -117,10 +113,9 @@ createApp({
         const renderFrame = () => {
             if (!ctx || !pongCanvas.value) return;
 
-            // Clear frame buffer
             ctx.clearRect(0, 0, BASE_WIDTH, BASE_HEIGHT);
 
-            // Center Netting Guide Rule Line
+            // Center Net Court Guidelines
             ctx.strokeStyle = "rgba(255, 255, 255, 0.05)";
             ctx.lineWidth = 4;
             ctx.setLineDash([15, 15]);
@@ -128,17 +123,17 @@ createApp({
             ctx.moveTo(BASE_WIDTH / 2, 0);
             ctx.lineTo(BASE_WIDTH / 2, BASE_HEIGHT);
             ctx.stroke();
-            ctx.setLineDash([]); // Reset line formatting
+            ctx.setLineDash([]); 
 
-            // Render Player 1
+            // Left Unit
             ctx.fillStyle = "#818cf8";
             ctx.fillRect(p1.x, p1.y, paddleWidth, paddleHeight);
 
-            // Render Player 2
+            // Right Unit
             ctx.fillStyle = "#34d399";
             ctx.fillRect(p2.x, p2.y, paddleWidth, paddleHeight);
 
-            // Render Ball Node
+            // Floating Ball
             ctx.fillStyle = "#ffffff";
             ctx.beginPath();
             ctx.arc(ball.x, ball.y, ballRadius, 0, Math.PI * 2);
@@ -152,13 +147,35 @@ createApp({
             requestId = requestAnimationFrame(gameLoop);
         };
 
+        // Complete Horizontal and Vertical Auto Scaling Vector Module
         const handleResize = () => {
             if (!arenaWrapper.value || !pongCanvas.value) return;
 
-            // Keep clean isolated backing resolution independent from flexible responsive scale bounds
+            // Read the runtime layout constraints of the parent element box container
+            const availableWidth = arenaWrapper.value.clientWidth;
+            const availableHeight = arenaWrapper.value.clientHeight;
+
+            let finalWidth = availableWidth;
+            let finalHeight = availableWidth / ASPECT_RATIO;
+
+            // If horizontal conversion overflows vertical threshold boundaries, switch scaling constraints to Y axis
+            if (finalHeight > availableHeight) {
+                finalHeight = availableHeight;
+                finalWidth = availableHeight * ASPECT_RATIO;
+            }
+
+            // Retain absolute 800x600 precision internal buffer mappings while applying the structural container updates
             pongCanvas.value.width = BASE_WIDTH;
             pongCanvas.value.height = BASE_HEIGHT;
+
+            // Apply explicit styles to prevent canvas stretching pixel blurring
+            pongCanvas.value.style.width = `${finalWidth - 10}px`;
+            pongCanvas.value.style.height = `${finalHeight - 10}px`;
             
+            // Adjust overlay window frame dimensions cleanly
+            pongCanvas.value.parentElement.style.width = `${finalWidth}px`;
+            pongCanvas.value.parentElement.style.height = `${finalHeight}px`;
+
             renderFrame();
         };
 
@@ -182,7 +199,7 @@ createApp({
 
         const handleKeyDown = (e) => {
             keysPressed[e.key] = true;
-            keysPressed[e.code] = true; // Support alternative input matrix mappings
+            keysPressed[e.code] = true; 
         };
 
         const handleKeyUp = (e) => {
@@ -197,7 +214,9 @@ createApp({
             window.addEventListener('keyup', handleKeyUp);
             window.addEventListener('resize', handleResize);
 
-            handleResize();
+            setTimeout(() => {
+                handleResize();
+            }, 60);
         });
 
         onUnmounted(() => {

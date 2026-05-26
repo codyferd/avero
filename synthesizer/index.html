@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Avero Synthesizer Pro</title>
+    <script libs="core" src="../share/cdn.js"></script>
+</head>
+<body class="bg-[#050507] text-slate-200 font-sans min-h-screen flex items-center justify-center p-4">
+    <div id="app" v-cloak class="w-full max-w-2xl">
+
+        <div class="synth-panel rounded-2xl p-6 md:p-8 space-y-6">
+            
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-zinc-800/60 pb-5">
+                <div>
+                    <h1 class="text-xl font-black tracking-tight text-white uppercase font-mono">Avero Synthesizer Pro</h1>
+                    <p class="text-xs text-zinc-500 font-mono mt-0.5">Macro Token Language String Compiler // v3.0</p>
+                </div>
+                <div class="flex items-center gap-2">
+                    <span class="w-2 h-2 rounded-full" :class="isPlaying ? 'bg-sky-400 animate-pulse' : 'bg-zinc-700'"></span>
+                    <span class="text-[10px] font-mono tracking-wider uppercase text-zinc-400 font-bold">
+                        {{ isPlaying ? 'Sequencer Active' : 'System Standby' }}
+                    </span>
+                </div>
+            </div>
+
+            <div class="w-full h-32 bg-[#09090b] border border-zinc-800/80 rounded-xl overflow-hidden relative">
+                <canvas ref="scopeCanvas" class="w-full h-full block scope-glow"></canvas>
+            </div>
+
+            <div class="space-y-2">
+                <div class="flex justify-between items-end">
+                    <label class="param-label">String Expression Command Input</label>
+                    <span class="text-[10px] text-zinc-500 font-mono">Syntax Guide: <b class="text-sky-400">~</b> slide | <b class="text-amber-400">v</b> vol (1-9) | <b class="text-emerald-400">d</b> len multiplier | <b class="text-purple-400">_</b> rest</span>
+                </div>
+                <div class="flex flex-col sm:flex-row gap-3">
+                    <input 
+                        type="text" 
+                        v-model="sequenceString" 
+                        placeholder="e.g. 5v8.8.12~0._.7d2"
+                        class="matrix-input px-4 py-3 rounded-xl flex-grow text-sm"
+                        :disabled="isPlaying"
+                    />
+                    <div class="flex gap-2">
+                        <button @click="togglePlayback" class="action-btn px-6 py-3 rounded-xl flex-grow sm:flex-none">
+                            <span>{{ isPlaying ? 'Stop Engine' : 'Compile & Play' }}</span>
+                        </button>
+                        <button @click="loadDefaultSequence" class="border border-zinc-800 hover:bg-zinc-900 text-zinc-400 px-4 py-3 rounded-xl text-xs font-mono uppercase" :disabled="isPlaying">
+                            Reset
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-6 pt-2">
+                <div class="space-y-2">
+                    <label class="param-label">Base Tempo ({{ tempo }} BPM)</label>
+                    <input type="range" v-model.number="tempo" min="60" max="300" step="5" class="w-full h-1 bg-zinc-800 rounded-lg appearance-none accent-sky-500" />
+                </div>
+                <div class="space-y-2">
+                    <label class="param-label">Base Gate Length ({{ Math.floor(gate * 100) }}%)</label>
+                    <input type="range" v-model.number="gate" min="0.1" max="1.0" step="0.05" class="w-full h-1 bg-zinc-800 rounded-lg appearance-none accent-sky-500" />
+                </div>
+                <div class="space-y-2">
+                    <label class="param-label">Wave Engine Form</label>
+                    <div class="grid grid-cols-2 gap-2">
+                        <button v-for="type in ['sine', 'triangle', 'sawtooth', 'square']" :key="type" @click="waveType = type" class="border border-zinc-800 bg-zinc-950/40 text-zinc-500 rounded-lg py-1.5 text-center text-xs font-mono font-bold" :class="{ 'text-sky-400 border-sky-500/30 bg-sky-500/5': waveType === type }">
+                            {{ type }}
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="space-y-2 pt-2 border-t border-zinc-800/40">
+                <label class="param-label">Compiled Realtime Parameter Node Timeline</label>
+                <div class="flex flex-wrap gap-2 p-3 bg-zinc-950/60 border border-zinc-900 rounded-xl min-h-[60px] items-center">
+                    <div 
+                        v-for="(note, index) in parsedNotes" 
+                        :key="index"
+                        class="node-chip bg-zinc-900 border border-zinc-800 text-zinc-400 px-3 py-1.5 rounded-md flex flex-col justify-center min-w-[55px]"
+                        :class="{ 'active': isPlaying && currentNoteIndex === index, 'opacity-40': note.isRest }"
+                    >
+                        <span class="text-[8px] text-zinc-600 text-center font-bold">#{{ index + 1 }}</span>
+                        <div class="font-bold text-center text-sm" :class="note.isRest ? 'text-purple-400' : 'text-white'">
+                            {{ note.isRest ? 'RST' : note.name }}
+                        </div>
+                        <div class="text-[8px] font-mono text-center text-zinc-500 mt-0.5 space-y-px">
+                            <span v-if="!note.isRest" class="block text-sky-400 font-bold" v-html="note.flagDisplay"></span>
+                            <span v-if="note.volMultiplier !== 1" class="block text-amber-500">V:{{ Math.round(note.volMultiplier * 10) }}</span>
+                            <span v-if="note.durMultiplier !== 1" class="block text-emerald-500">D:x{{ note.durMultiplier }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+    <script src="index.js"></script>
+</body>
+</html>

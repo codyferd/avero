@@ -1,9 +1,9 @@
-/* Stat Card Styling */
+/* Base Layout Engine */
         .stat-card {
             background: rgba(255, 255, 255, 0.02);
             border: 1px solid rgba(255, 255, 255, 0.05);
-            border-radius: 16px;
-            padding: 12px;
+            border-radius: 12px;
+            padding: 10px;
             text-align: center;
         }
 
@@ -13,28 +13,29 @@
             font-weight: 900;
             text-transform: uppercase;
             color: #64748b;
-            letter-spacing: 0.2em;
-            margin-bottom: 4px;
+            letter-spacing: 0.15em;
+            margin-bottom: 2px;
         }
 
         .stat-value {
-            font-size: 1.5rem;
+            font-size: 1.25rem;
             font-weight: 900;
             font-style: italic;
             font-family: 'Monaco', monospace;
         }
 
-        /* UI Elements */
         .avero-btn {
             background: #10b981;
             color: #000;
             font-weight: 900;
-            padding: 12px 32px;
+            padding: 12px 28px;
             border-radius: 12px;
             text-transform: uppercase;
             letter-spacing: 0.1em;
             transition: all 0.2s ease;
             box-shadow: 0 0 20px rgba(16, 185, 129, 0.3);
+            border: none;
+            cursor: pointer;
         }
 
         .avero-btn:hover {
@@ -46,16 +47,22 @@
             box-shadow: 0 0 40px rgba(0,0,0,0.5), inset 0 0 20px rgba(255,255,255,0.02);
         }
 
-        canvas {
-            display: block;
+        /* Two-Axis Dynamic Scaling Mechanics */
+        .arena-container {
+            /* Restrict calculations to viewport constraints instead of raw content expansion */
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
         }
 
-        /* Interactive Virtual Layout Control Modules */
+        /* Input Controls Layout Deck */
         .touch-btn {
             background: rgba(255, 255, 255, 0.03);
             border: 1px solid rgba(255, 255, 255, 0.08);
-            border-radius: 12px;
-            padding: 14px;
+            border-radius: 10px;
+            padding: 12px;
             color: #cbd5e1;
             font-weight: 800;
             text-align: center;

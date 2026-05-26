@@ -1,0 +1,58 @@
+.synth-panel {
+            background: rgba(15, 15, 20, 0.75);
+            border: 1px solid rgba(255, 255, 255, 0.04);
+            backdrop-filter: blur(20px);
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+        }
+        .param-label {
+            display: block;
+            font-size: 9px;
+            font-weight: 900;
+            text-transform: uppercase;
+            color: #64748b;
+            letter-spacing: 0.15em;
+            margin-bottom: 6px;
+        }
+        .matrix-input {
+            font-family: 'Monaco', 'Courier New', monospace;
+            background: #09090b;
+            border: 1px solid #27272a;
+            color: #38bdf8;
+            letter-spacing: 0.05em;
+            transition: all 0.2s ease;
+        }
+        .matrix-input:focus {
+            outline: none;
+            border-color: #0284c7;
+            box-shadow: 0 0 15px rgba(56, 189, 248, 0.15);
+        }
+        .action-btn {
+            background: #0284c7;
+            color: #ffffff;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            font-size: 11px;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 12px rgba(2, 132, 199, 0.3);
+            cursor: pointer;
+        }
+        .action-btn:hover:not(:disabled) {
+            background: #0369a1;
+            transform: translateY(-1px);
+        }
+        .node-chip {
+            font-family: monospace;
+            font-size: 11px;
+            transition: all 0.15s ease;
+        }
+        .node-chip.active {
+            background: rgba(56, 189, 248, 0.2);
+            border-color: #38bdf8;
+            color: #ffffff;
+            transform: scale(1.05);
+        }
+        .scope-glow {
+            filter: drop-shadow(0 0 8px rgba(56, 189, 248, 0.4));
+        }
+        [v-cloak] { display: none; }
