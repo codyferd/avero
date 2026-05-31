@@ -9,30 +9,121 @@
 
 <div id="app" v-cloak class="app-container">
     
-    <div class="text-[10px] font-black text-indigo-500 uppercase tracking-[0.5em]">System Chronometer</div>
-
-    <div class="timer-display" :class="{ pulse: isRunning }">
-        <span>{{ formattedTime.main }}</span>
-        <span class="ms">{{ formattedTime.ms }}</span>
+    <div class="nav-tabs">
+        <button @click="currentTab = 'stopwatch'" class="tab-btn" :class="{ active: currentTab === 'stopwatch' }">Stopwatch</button>
+        <button @click="currentTab = 'timer'" class="tab-btn" :class="{ active: currentTab === 'timer' }">Timer</button>
+        <button @click="currentTab = 'worldtime'" class="tab-btn" :class="{ active: currentTab === 'worldtime' }">World Time</button>
     </div>
 
-    <div class="controls">
-        <button @click="toggle" class="avero-btn !w-32 !h-12" :class="isRunning ? '!text-rose-500' : '!text-emerald-500'">
-            {{ isRunning ? 'STOP' : 'START' }}
-        </button>
-        <button @click="lap" :disabled="!isRunning" class="avero-btn !w-24">LAP</button>
-        <button @click="reset" class="avero-btn !w-24">RESET</button>
-    </div>
+    <template v-if="currentTab === 'stopwatch'">
+        <div class="text-[10px] font-black text-indigo-500 uppercase tracking-[0.5em]">System Chronometer</div>
 
-    <div class="lap-container">
-        <div v-if="laps.length === 0" class="flex items-center justify-center h-full opacity-20 text-[9px] font-bold uppercase tracking-widest">
-            No Laps Recorded
+        <div class="timer-display" :class="{ pulse: stopwatch.isRunning }">
+            <span>{{ formattedStopwatch.main }}</span>
+            <span class="ms">{{ formattedStopwatch.ms }}</span>
         </div>
-        <div v-for="(time, index) in laps.slice().reverse()" :key="index" class="lap-row">
-            <span class="lap-num">LAP {{ laps.length - index }}</span>
-            <span class="lap-time">{{ time }}</span>
+
+        <div class="controls">
+            <button @click="toggleStopwatch" class="avero-btn !w-32 !h-12" :class="stopwatch.isRunning ? '!text-rose-500' : '!text-emerald-500'">
+                {{ stopwatch.isRunning ? 'STOP' : 'START' }}
+            </button>
+            <button @click="recordLap" :disabled="!stopwatch.isRunning" class="avero-btn !w-24">LAP</button>
+            <button @click="resetStopwatch" class="avero-btn !w-24">RESET</button>
         </div>
-    </div>
+
+        <div class="utility-container">
+            <div class="container-body">
+                <div v-if="stopwatch.laps.length === 0" class="flex items-center justify-center h-full opacity-20 text-[9px] font-bold uppercase tracking-widest">
+                    No Laps Recorded
+                </div>
+                <div v-for="(time, index) in stopwatch.laps.slice().reverse()" :key="index" class="lap-row">
+                    <span class="lap-num">LAP {{ stopwatch.laps.length - index }}</span>
+                    <span class="lap-time">{{ time }}</span>
+                </div>
+            </div>
+        </div>
+    </template>
+
+    <template v-if="currentTab === 'timer'">
+        <div class="text-[10px] font-black text-emerald-500 uppercase tracking-[0.5em]">Countdown Engine</div>
+
+        <div v-if="timer.isConfigMode" class="timer-display timer-setup-inputs">
+            <div class="setup-field">
+                <input type="number" v-model.number="timerInput.hours" min="0" max="23" class="setup-input">
+                <span class="text-[8px] text-zinc-500 mt-1 uppercase font-bold tracking-wider">HRS</span>
+            </div>
+            <span class="text-3xl text-zinc-600 mb-4">:</span>
+            <div class="setup-field">
+                <input type="number" v-model.number="timerInput.minutes" min="0" max="59" class="setup-input">
+                <span class="text-[8px] text-zinc-500 mt-1 uppercase font-bold tracking-wider">MIN</span>
+            </div>
+            <span class="text-3xl text-zinc-600 mb-4">:</span>
+            <div class="setup-field">
+                <input type="number" v-model.number="timerInput.seconds" min="0" max="59" class="setup-input">
+                <span class="text-[8px] text-zinc-500 mt-1 uppercase font-bold tracking-wider">SEC</span>
+            </div>
+        </div>
+
+        <div class="timer-display" :class="{ 'pulse': timer.isRunning, 'pulse-alert': timer.isExpired }" v-else>
+            <span>{{ formattedTimer.main }}</span>
+            <span class="ms">{{ formattedTimer.ms }}</span>
+        </div>
+
+        <div class="controls">
+            <button v-if="timer.isConfigMode" @click="lockAndStartTimer" class="avero-btn !w-32 !h-12 !text-emerald-500">
+                SET & START
+            </button>
+            <button v-else @click="toggleTimer" class="avero-btn !w-32 !h-12" :class="timer.isRunning ? '!text-rose-500' : '!text-emerald-500'">
+                {{ timer.isRunning ? 'STOP' : 'START' }}
+            </button>
+            <button @click="resetTimer" :disabled="timer.isConfigMode" class="avero-btn !w-24">CLEAR</button>
+        </div>
+
+        <div class="flex gap-2 w-[320px] justify-center">
+            <button @click="setPresetTimer(1)" class="avero-btn !py-2 !px-3 text-[9px] !h-auto flex-1">1 MIN</button>
+            <button @click="setPresetTimer(5)" class="avero-btn !py-2 !px-3 text-[9px] !h-auto flex-1">5 MIN</button>
+            <button @click="setPresetTimer(10)" class="avero-btn !py-2 !px-3 text-[9px] !h-auto flex-1">10 MIN</button>
+        </div>
+    </template>
+
+    <template v-if="currentTab === 'worldtime'">
+        <div class="text-[10px] font-black text-purple-500 uppercase tracking-[0.5em]">Global Matrix Finder</div>
+
+        <div class="timer-display text-zinc-100 !text-5xl font-bold font-mono tracking-tight flex flex-col justify-center items-center">
+            <span class="text-xs text-purple-400 font-bold uppercase tracking-[0.3em] mb-1">Local Terminal Frame</span>
+            <div>{{ localClockDisplay }}</div>
+        </div>
+
+        <div class="utility-container !h-[280px]">
+            <form @submit.prevent="queryGlobalLocation" class="search-header">
+                <input type="text" v-model="searchQuery" :placeholder="apiState.loading ? 'Querying Satellite...' : 'Add anywhere (e.g. Iceland, Cairo)...'" :disabled="apiState.loading" class="search-input">
+                <button type="submit" :disabled="apiState.loading || !searchQuery.trim()" class="search-btn">
+                    {{ apiState.loading ? '...' : 'Add' }}
+                </button>
+            </form>
+            
+            <div class="container-body">
+                <div v-if="apiState.error" class="text-center text-[9px] text-rose-400 font-bold uppercase p-2 tracking-wider">
+                    ✕ {{ apiState.error }}
+                </div>
+
+                <div v-if="trackedZones.length === 0" class="flex items-center justify-center h-full opacity-20 text-[9px] font-bold uppercase tracking-widest">
+                    No Tracked Nodes
+                </div>
+                
+                <div v-for="zone in computedZoneTimes" :key="zone.id" class="zone-row group">
+                    <div class="flex flex-col">
+                        <span class="zone-name text-zinc-200">{{ zone.label }}</span>
+                        <span class="text-[7px] text-zinc-500 font-mono tracking-normal lowercase mt-0.5">{{ zone.tzName }}</span>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <span class="zone-time">{{ zone.time }}</span>
+                        <button @click="removeZone(zone.id)" class="text-zinc-600 hover:text-rose-400 font-sans text-xs transition-colors border-none bg-transparent cursor-pointer">×</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </template>
 
 </div>
 

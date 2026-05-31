@@ -25,6 +25,11 @@ const gamesList = [
     image: "https://block-blast.io/data/image/options/block-blast-banner.jpg",
 },
 {
+    name: "Bloxd",
+    url: "https://bloxd.io/",
+    image: "https://geometry-games.io/data/image/game/bloxd-io/bloxd-io.png",
+},
+{
     name: "Cookie Clicker",
     url: "https://cookieclickers.io/the-game/",
     image: "https://assets.nintendo.com/image/upload/q_auto/f_auto/store/software/switch/70010000066299/432bf350e866b2544f9a5cd80de83e0c24f4efddfd7811016c4aa33e48c5df7c",
@@ -95,6 +100,16 @@ const gamesList = [
     image: "https://geodashlite.io/data/image/geometry-vibes.jpg",
 },
 {
+    name: "GSwitch",
+    url: "https://szhong.4399.com/4399swf//upload_swf/ftp41/liuxinyu/20221123/5/index.html",
+    image: "https://play-lh.googleusercontent.com/rgn2FDx3yp1MlzSsScWdDh4t3_y3DthiKbGtAWx7vsg2jT21Opj_h-EkMrrIoTJ3ieQ",
+},
+{
+    name: "Gulper",
+    url: "https://gulper.io",
+    image: "https://gulper.io/images/cover1.png",
+},
+{
     name: "Infinite Craft",
     url: "https://infinite-craft.net/",
     image: "https://neal.fun/share-cards/infinite-craft.png",
@@ -104,6 +119,12 @@ const gamesList = [
     url: "https://moto-x3m.bitbucket.io/file/",
     image: "https://img.cdn.famobi.com/portal/html5games/images/tmp/MotoX3mTeaser.jpg?v=0.2-6b1f34f6",
 },
+{
+    name: "MXOMB",
+    url: "https://files.twoplayergames.org/files/games/o1/MX_OffRoad_Mountain_Bike/index.html",
+    image: "https://i.ytimg.com/vi/V7U0qMyCqcw/maxresdefault.jpg",
+},
+
 {
     name: "OpenGuessr",
     url: "https://openguessr.com/",
