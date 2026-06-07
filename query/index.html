@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Avero Query</title>
+    <script libs="core" src="../share/cdn.js"></script>
+</head>
+<body class="avero-app">
+
+<div id="app" v-cloak class="app-container">
+    
+    <header class="query-header">
+        <div class="brand-zone">
+            <span class="engine-tag">Avero Query Router</span>
+            <h1>Matrix Search Engine</h1>
+        </div>
+        <div class="header-actions">
+            <label class="upload-btn">
+                Load .js Sources
+                <input type="file" accept=".js" @change="handleFileImport" class="hidden-input">
+            </label>
+            <button @click="showHelp = true" class="help-trigger-btn" title="Syntax Guide">?</button>
+        </div>
+    </header>
+
+    <section v-if="sources.length === 0" class="empty-state-container">
+        <div class="empty-graphic">⚡</div>
+        <h2>No Source Matrix Loaded</h2>
+        <p>Avero requires a local target routing JavaScript configuration file to activate index mapping pipelines.</p>
+        <button @click="showHelp = true" class="action-btn execution-btn !w-48 mt-2">See How to Build One</button>
+    </section>
+
+    <template v-else>
+        <section class="master-search-section">
+            <div class="search-input-wrapper">
+                <input 
+                    type="text" 
+                    v-model="globalQuery" 
+                    placeholder="Enter search term string..." 
+                    @keyup.enter="fireAllFilteredEngines"
+                    class="master-input"
+                >
+                <button 
+                    @click="fireAllFilteredEngines" 
+                    :disabled="!globalQuery.trim()" 
+                    class="fire-all-btn"
+                >
+                    Launch Filtered ↗
+                </button>
+            </div>
+        </section>
+
+        <nav class="filter-bar">
+            <button 
+                @click="activeFilter = 'ALL'" 
+                class="filter-chip" 
+                :class="{ active: activeFilter === 'ALL' }"
+            >
+                All Nodes ({{ sources.length }})
+            </button>
+            <button 
+                v-for="type in uniqueTypes" 
+                :key="type"
+                @click="activeFilter = type" 
+                class="filter-chip" 
+                :class="{ active: activeFilter === type }"
+            >
+                {{ type }}
+            </button>
+        </nav>
+
+        <main class="engine-grid">
+            <div 
+                v-for="engine in filteredSources" 
+                :key="engine.name" 
+                class="engine-card"
+                :class="'border-' + (engine.type ? engine.type.toLowerCase() : 'default')"
+            >
+                <div class="card-meta">
+                    <span class="type-tag">{{ engine.type || 'GENERIC' }}</span>
+                    <h3>{{ engine.name }}</h3>
+                    <p>{{ engine.description }}</p>
+                </div>
+                
+                <div class="card-actions">
+                    <button 
+                        @click="launchSingleEngine(engine)" 
+                        :disabled="!globalQuery.trim()" 
+                        class="action-btn execution-btn"
+                    >
+                        Query
+                    </button>
+                    <button 
+                        @click="testStaticEngine(engine.url)" 
+                        class="action-btn pivot-btn"
+                    >
+                        Visit
+                    </button>
+                </div>
+            </div>
+        </main>
+    </template>
+
+    <div v-if="fileStatus.message" class="system-status-log" :class="{ 'status-err': fileStatus.isError }">
+        {{ fileStatus.message }}
+    </div>
+
+    <div v-if="showHelp" class="modal-overlay" @click.self="showHelp = false">
+        <div class="modal-surface">
+            <div class="modal-header">
+                <h2>Routing Instruction Engine</h2>
+                <button @click="showHelp = false" class="close-modal-btn">×</button>
+            </div>
+            <div class="modal-body">
+                <p>Create a local text document named <code>sources.js</code>. Paste the precise code footprint structure shown below into it, customize your data variables, and upload it via the top navigation dashboard header.</p>
+                
+                <h3>Expected JS File Template Structure:</h3>
+                <pre class="code-block">
+const customSources = [
+  {
+    name: "Google Search",
+    description: "Global web master index routing parameter.",
+    url: "https://google.com/search?q=%s",
+    type: "SEARCH"
+  },
+  {
+    name: "GitHub",
+    description: "Code context repo parsing frame.",
+    url: "https://github.com/search?q=%s",
+    type: "DEV"
+  }
+];</pre>
+
+                <div class="syntax-box">
+                    <strong>Rule Check:</strong> Make sure your configuration block uses an array variable name matching <code>customSources</code> exactly. Ensure you embed the <code>%s</code> token where you want your live inputs injected.
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<script src="index.js"></script>
+</body>
+</html>

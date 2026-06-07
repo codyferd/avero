@@ -1,7 +1,7 @@
 const LIB_MAP = {
     core: [
         "index.css",
-        "../share/logo.avif",
+        "../share/logo.png",
         "../share/theme.css",
         "https://cdn.tailwindcss.com",
         "https://cdn.jsdelivr.net/npm/vue@3.5.34/dist/vue.global.prod.js",
@@ -41,8 +41,8 @@ if (requested) {
         const urls = Array.isArray(entry) ? entry : [entry];
 
         urls.forEach(url => {
-            if (url.endsWith('.avif')) {
-                document.write(`<link rel="icon" type="image/avif" href="${url}">`);
+            if (url.endsWith('.png')) {
+                document.write(`<link rel="icon" type="image/png" href="${url}">`);
             } else if (url.endsWith('.css')) {
                 document.write(`<link rel="stylesheet" href="${url}">`);
             } else if (url.endsWith('.js') || url.includes('cdn.tailwindcss.com')) {

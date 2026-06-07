@@ -1,0 +1,188 @@
+/* Core Structural Tokens for Avero Application Ecosystems */
+:root {
+    --bg-main: #0a0a0c;
+    --bg-surface: #121216;
+    --bg-input: #181822;
+    --border-color: #242432;
+    
+    --text-primary: #f4f4f6;
+    --text-secondary: #9090a2;
+    --text-dim: #545468;
+
+    --accent-indigo: #6366f1;
+    --accent-emerald: #10b981;
+    --accent-amber: #f59e0b;
+}
+
+[v-cloak] { display: none !important; }
+
+body.avero-app {
+    margin: 0;
+    padding: 0;
+    background-color: var(--bg-main);
+    color: var(--text-primary);
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+}
+
+.app-container {
+    width: 100%;
+    max-width: 760px;
+    padding: 2rem 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+/* Header Frame Components */
+.converter-header {
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 1rem;
+}
+.brand-zone .engine-tag {
+    font-size: 0.65rem;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: 0.4em;
+    color: var(--accent-indigo);
+    display: block;
+    margin-bottom: 0.25rem;
+}
+.brand-zone h1 {
+    margin: 0;
+    font-size: 1.5rem;
+    font-weight: 700;
+    letter-spacing: -0.03em;
+}
+
+/* Tab Switching Control Interfaces */
+.nav-tabs {
+    display: flex;
+    gap: 0.5rem;
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 0.5rem;
+    overflow-x: auto;
+}
+.tab-btn {
+    background: transparent;
+    border: 1px solid transparent;
+    color: var(--text-secondary);
+    padding: 0.5rem 1rem;
+    font-family: inherit;
+    font-size: 0.8rem;
+    font-weight: bold;
+    cursor: pointer;
+    border-radius: 4px;
+    text-transform: uppercase;
+    white-space: nowrap;
+    transition: all 0.2s;
+}
+.tab-btn:hover {
+    color: var(--text-primary);
+    background: var(--bg-surface);
+}
+.tab-btn.active {
+    background: var(--bg-surface);
+    border-color: var(--border-color);
+    color: var(--accent-indigo);
+}
+
+/* Core Interface Conversion Module Card Surface */
+.converter-surface {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    padding: 2rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.conversion-row {
+    display: flex;
+    gap: 1.5rem;
+}
+@media (max-width: 560px) {
+    .conversion-row { flex-direction: column; gap: 1rem; }
+}
+
+.field-block {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+.field-block label {
+    font-size: 0.7rem;
+    font-weight: bold;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+    letter-spacing: 0.1em;
+}
+
+.matrix-input, .matrix-select {
+    background: var(--bg-input);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    padding: 0.75rem;
+    color: var(--text-primary);
+    font-family: inherit;
+    font-size: 1.1rem;
+    outline: none;
+    box-sizing: border-box;
+    width: 100%;
+}
+.matrix-input:focus, .matrix-select:focus {
+    border-color: var(--accent-indigo);
+}
+.matrix-input.output-accent {
+    border-color: rgba(99, 102, 241, 0.3);
+    color: var(--accent-emerald);
+}
+
+/* Transformation Separator Line Elements */
+.transform-divider {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-top: 1px dashed var(--border-color);
+    border-bottom: 1px dashed var(--border-color);
+    padding: 0.5rem 0;
+    color: var(--text-dim);
+}
+.divider-icon {
+    font-size: 1.2rem;
+    color: var(--accent-indigo);
+}
+.rate-indicator {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+}
+
+/* Footer Status Modules */
+.system-status-pane {
+    margin-top: -0.5rem;
+}
+.status-msg {
+    font-size: 0.75rem;
+    padding: 0.5rem 0.75rem;
+    border-radius: 4px;
+    border: 1px solid transparent;
+}
+.status-msg.loading {
+    background: rgba(245, 158, 11, 0.05);
+    border-color: rgba(245, 158, 11, 0.2);
+    color: var(--accent-amber);
+}
+.status-msg.error {
+    background: rgba(244, 63, 94, 0.05);
+    border-color: rgba(244, 63, 94, 0.2);
+    color: #f43f5e;
+}
+.status-msg.success {
+    background: rgba(16, 185, 129, 0.05);
+    border-color: rgba(16, 185, 129, 0.2);
+    color: var(--accent-emerald);
+}

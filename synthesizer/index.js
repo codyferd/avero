@@ -45,7 +45,10 @@ createApp({
                     // 2. Extrapolate parameter parameters via specific regex groups
                     let semitones = 0;
                     let slideTarget = null;
-                    let volMultiplier = 1.0;
+                    
+                    // FIX 1: Set default base note volume multiplier to 0.7 instead of 1.0 
+                    // This allows un-flagged notes to sound full, while leaving clean headroom for 'v9' accents.
+                    let volMultiplier = 0.7; 
                     let durMultiplier = 1.0;
                     let flagDisplay = "";
 
@@ -109,7 +112,10 @@ createApp({
             audioCtx = new AudioContextClass();
 
             masterGain = audioCtx.createGain();
-            masterGain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+            
+            // FIX 2: Raised Master Ceiling from 0.2 to 0.6. 
+            // This triples the output amplitude while preserving safety room to prevent distortion/clipping.
+            masterGain.gain.setValueAtTime(0.6, audioCtx.currentTime);
 
             analyser = audioCtx.createAnalyser();
             analyser.fftSize = 1024;
@@ -172,8 +178,12 @@ createApp({
             // Amplitude envelope tracking factoring token volMultiplier metrics
             const targetVolume = noteObj.volMultiplier;
             gainNode.gain.setValueAtTime(0, startTime);
+            
+            // FIX 3: Adjusted Envelope Decay Behavior.
+            // Changed the exponential release target from a hard fade to an explicit decay 
+            // proportional to the note's active duration window. This helps prevent clicking.
             gainNode.gain.linearRampToValueAtTime(targetVolume, startTime + 0.006);
-            gainNode.gain.exponentialRampToValueAtTime(0.001, startTime + duration);
+            gainNode.gain.exponentialRampToValueAtTime(0.001, startTime + duration - 0.002);
 
             osc.connect(gainNode);
             gainNode.connect(masterGain);

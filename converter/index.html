@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Avero Converter</title>
+    <script libs="core" src="../share/cdn.js"></script>
+</head>
+<body class="avero-app">
+
+<div id="app" v-cloak class="app-container">
+    
+    <header class="converter-header">
+        <div class="brand-zone">
+            <span class="engine-tag">Avero Matrix Engine v2.5</span>
+            <h1>High-Precision Unit & Currency Converter</h1>
+        </div>
+    </header>
+
+    <nav class="nav-tabs">
+        <button 
+            v-for="(config, catKey) in conversionMatrix" 
+            :key="catKey"
+            @click="switchCategory(catKey)" 
+            class="tab-btn" 
+            :class="{ active: currentCategory === catKey }"
+        >
+            {{ config.label }}
+        </button>
+    </nav>
+
+    <main class="converter-surface">
+        
+        <div class="conversion-row">
+            <div class="field-block">
+                <label>Source Value</label>
+                <input 
+                    type="number" 
+                    v-model.number="sourceValue" 
+                    @input="calculateTransformation(true)"
+                    class="matrix-input"
+                    placeholder="0.00"
+                    step="any"
+                >
+            </div>
+            <div class="field-block">
+                <label>From Unit</label>
+                <select v-model="sourceUnit" @change="calculateTransformation(true)" class="matrix-select">
+                    <option v-for="(unitConf, unitKey) in currentUnits" :key="unitKey" :value="unitKey">
+                        {{ unitConf.name }} {{ unitConf.symbol ? `(${unitConf.symbol})` : '' }}
+                    </option>
+                </select>
+            </div>
+        </div>
+
+        <div class="transform-divider">
+            <span class="divider-icon">⇌</span>
+            <span v-if="currentCategory === 'currency'" class="rate-indicator">
+                1 {{ sourceUnit }} ≈ {{ currentExchangeRate.toFixed(4) }} {{ targetUnit }}
+            </span>
+            <span v-else class="rate-indicator">Normalized SI Baseline Tracking</span>
+        </div>
+
+        <div class="conversion-row">
+            <div class="field-block">
+                <label>Target Result</label>
+                <input 
+                    type="number" 
+                    v-model.number="targetValue" 
+                    @input="calculateTransformation(false)"
+                    class="matrix-input output-accent"
+                    placeholder="0.00"
+                    step="any"
+                >
+            </div>
+            <div class="field-block">
+                <label>To Unit</label>
+                <select v-model="targetUnit" @change="calculateTransformation(true)" class="matrix-select">
+                    <option v-for="(unitConf, unitKey) in currentUnits" :key="unitKey" :value="unitKey">
+                        {{ unitConf.name }} {{ unitConf.symbol ? `(${unitConf.symbol})` : '' }}
+                    </option>
+                </select>
+            </div>
+        </div>
+
+    </main>
+
+    <footer v-if="currentCategory === 'currency'" class="system-status-pane">
+        <div v-if="currencyApiState.loading" class="status-msg loading">
+            Connecting real-time international exchange banking telemetry arrays...
+        </div>
+        <div v-else-if="currencyApiState.error" class="status-msg error">
+            ⚠️ Live Matrix Sync Failed: {{ currencyApiState.error }}. Loaded verified 2026 anchor seeds.
+        </div>
+        <div v-else class="status-msg success">
+            Realtime data synchronized successfully via European Central Bank open ticker index.
+        </div>
+    </footer>
+
+</div>
+
+<script src="index.js"></script>
+</body>
+</html>
