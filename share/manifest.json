@@ -6,7 +6,7 @@
       "src": "logo-mini.png",
       "type": "image/png",
       "sizes": "192x192",
-      "purpose": "any"
+      "purpose": "maskable"
     },
     {
       "src": "logo.png",
@@ -15,6 +15,7 @@
       "purpose": "maskable"
     }
   ],
+  "scope": "../",
   "start_url": "../index.html",
   "background_color": "#000000",
   "theme_color": "#000000",
