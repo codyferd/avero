@@ -1,3 +1,90 @@
+const appsList = [
+{
+    name: "Amazon",
+    url: "https://amazon.com",
+    image: "https://m.media-amazon.com/images/I/31epF-8N9LL.png",
+},
+{
+    name: "Chesscom",
+    url: "https://chess.com",
+    image: "https://play-lh.googleusercontent.com/PMZjdJevtibcTxD1nIRbDvdsy6a-dJ1oUwODVaufNnjxzKhd4dDFiL67u2jldXtGBwvB",
+},
+{
+    name: "Discord",
+    url: "https://discord.com/app",
+    image: "https://images-eds-ssl.xboxlive.com/image?url=4rt9.lXDC4H_93laV1_eHM0OYfiFeMI2p9MWie0CvL99U4GA1gf6_kayTt_kBblFwHwo8BW8JXlqfnYxKPmmBevsdZpJiIhrXJKvOSYipsYbqdUBBn6r6Hb.keWYwuyu5QJ84NCtr5ij3JMrlPglnBeeDch3kJBTCQneZnfl9dA-&format=source",
+},
+{
+    name: "Facebook",
+    url: "https://facebook.com",
+    image: "https://upload.wikimedia.org/wikipedia/en/thumb/0/04/Facebook_f_logo_%282021%29.svg/3840px-Facebook_f_logo_%282021%29.svg.png",
+},
+{
+    name: "Gemini",
+    url: "https://gemini.google.com/",
+    image: "https://community.pepperdine.edu/it/images/google-gemini-logo-2025-1440x430.png",
+},
+{
+    name: "Github",
+    url: "https://github.com",
+    image: "https://cdn.prod.website-files.com/67cac9d84c7c5d94b6a4253b/68beb241260777a3c3310243_644252792e5573b1d71cddec_GitHub-logo.png",
+},
+{
+    name: "Google",
+    url: "https://google.com/",
+    image: "https://upload.wikimedia.org/wikipedia/commons/thumb/2/2f/Google_2015_logo.svg/3840px-Google_2015_logo.svg.png",
+},
+{
+    name: "Instagram",
+    url: "https://instagram.com",
+    image: "https://img.magnific.com/premium-vector/instagram-logo-vector_768467-330.jpg?semt=ais_hybrid&w=740&q=80",
+},
+{
+    name: "Lichess",
+    url: "https://lichess.org",
+    image: "https://lichess1.org/assets/logo/lichess-tile-wide.png",
+},
+{
+    name: "Mastodon",
+    url: "https://mastodon.social",
+    image: "https://www.cnet.com/a/img/resize/f9e39cfe1a7795c000580b4e10ce1ebb8e29d161/hub/2022/11/09/c10eb2aa-320a-481a-8cd1-61304494e48f/mastodon-logo-16x9.jpg?auto=webp&fit=crop&height=675&width=1200",
+},
+{
+    name: "Roblox",
+    url: "https://roblox.com",
+    image: "https://photos5.appleinsider.com/gallery/40883-79111-B3840B94-33C9-4304-96D9-2BEBF83ECBAD-xl.jpg",
+},
+{
+    name: "Snapchat",
+    url: "https://web.snapchat.com",
+    image: "https://play-lh.googleusercontent.com/KxeSAjPTKliCErbivNiXrd6cTwfbqUJcbSRPe_IBVK_YmwckfMRS1VIHz-5cgT09yMo",
+},
+{
+    name: "Temu",
+    url: "https://temu.com",
+    image: "https://m.media-amazon.com/images/I/31ijebr0sWL.png",
+},
+{
+    name: "Youtube",
+    url: "https://youtube.com/",
+    image: "https://m.media-amazon.com/images/I/4195dyf+rFL.png",
+},
+{
+    name: "Youtube Music",
+    url: "https://music.youtube.com/",
+    image: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQ83BbCZaSWOejQ07OAsW6zLPbnZidHCU-rZA&s",
+},
+{
+    name: "Threads",
+    url: "https://threads.com",
+    image: "https://imgproxy.divecdn.com/zPhYMe8yDOkX6kLXCJrkeEh_dxs3jaQT0yZHjtAQZVM/g:ce/rs:fit:1600:0/Z3M6Ly9kaXZlc2l0ZS1zdG9yYWdlL2RpdmVpbWFnZS90aHJlYWRzX25ld19sb2dvLnBuZw==.webp",
+},
+{
+    name: "Wikimedia",
+    url: "https://wikimedia.org",
+    image: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQ2j1QRuH657dP3ERHfrKeEUquEuu0ra_4XaA&s",
+},
+];
 const gamesList = [
 {
     name: "Among Us",
