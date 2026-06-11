@@ -52,7 +52,11 @@
                 </div>
             </div>
 
-            <div class="grid grid-cols-1 sm:grid-cols-3 gap-6 pt-2">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 pt-2">
+                <div class="space-y-2">
+                    <label class="param-label">Master Volume ({{ Math.round(masterVolume * 20) }}%)</label>
+                    <input type="range" v-model.number="masterVolume" min="0.0" max="5.0" step="0.1" class="w-full h-1 bg-zinc-800 rounded-lg appearance-none accent-sky-500" />
+                </div>
                 <div class="space-y-2">
                     <label class="param-label">Base Tempo ({{ tempo }} BPM)</label>
                     <input type="range" v-model.number="tempo" min="60" max="300" step="5" class="w-full h-1 bg-zinc-800 rounded-lg appearance-none accent-sky-500" />

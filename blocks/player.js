@@ -1,40 +1,28 @@
-// --- PLAYER STATE ---
 let playerVelocity = new THREE.Vector3(0, 0, 0);
 let canJump = false;
 const keys = {};
 
-// Block Picker State
-let selectedBlock = BLOCKS.GRASS; // Default selection
+let selectedBlock = BLOCKS.GRASS; 
 
-// Raycaster for block interaction
 const raycaster = new THREE.Raycaster();
-const mouse = new THREE.Vector2(0, 0); // Center of screen
+const mouse = new THREE.Vector2(0, 0); 
 
-/**
- * Sets up Keyboard and Mouse Listeners
- */
-/**
- * Sets up Keyboard and Mouse Listeners
- */
 function initPlayerInputs() {
     window.addEventListener('keydown', (e) => {
         keys[e.code] = true;
 
-        // --- NEW: Q/E Inventory Swapping ---
         const blockKeys = Object.keys(BLOCKS);
         let currentIndex = blockKeys.indexOf(
             Object.keys(BLOCKS).find(key => BLOCKS[key] === selectedBlock)
         );
 
         if (e.code === 'KeyQ') {
-            // Move backward: (index - 1 + length) % length handles the wrap-around
             currentIndex = (currentIndex - 1 + blockKeys.length) % blockKeys.length;
             selectedBlock = BLOCKS[blockKeys[currentIndex]];
             updatePickerUI();
         }
 
         if (e.code === 'KeyE') {
-            // Move forward
             currentIndex = (currentIndex + 1) % blockKeys.length;
             selectedBlock = BLOCKS[blockKeys[currentIndex]];
             updatePickerUI();
@@ -44,7 +32,7 @@ function initPlayerInputs() {
     window.addEventListener('keyup', (e) => keys[e.code] = false);
 
     document.addEventListener('mousedown', (e) => {
-        if (e.target.closest('#hotbar')) return;
+        if (e.target.closest('#hotbar') || e.target.closest('#mobile-overlay')) return;
 
         if (document.pointerLockElement !== document.body) {
             document.body.requestPointerLock();
@@ -67,10 +55,6 @@ function initPlayerInputs() {
     });
 }
 
-
-/**
- * Initializes the Visual Block Picker Hotbar
- */
 function initBlockPicker() {
     const hotbar = document.getElementById('hotbar');
     if (!hotbar) return;
@@ -84,26 +68,27 @@ function initBlockPicker() {
 
         if (type === selectedBlock) slot.classList.add('active');
 
-        slot.addEventListener('mousedown', (e) => {
+        // Added touchstart listener alongside mousedown for seamless hotbar tapping on mobile
+        const selectHandler = (e) => {
             e.stopPropagation();
+            e.preventDefault();
             selectedBlock = type;
             updatePickerUI();
-        });
+        };
+
+        slot.addEventListener('mousedown', selectHandler);
+        slot.addEventListener('touchstart', selectHandler, { passive: false });
 
         hotbar.appendChild(slot);
     });
 }
 
-/** Updates the border highlight on the hotbar */
 function updatePickerUI() {
     document.querySelectorAll('.slot').forEach(slot => {
         slot.classList.toggle('active', BLOCKS[slot.dataset.block] === selectedBlock);
     });
 }
 
-/**
- * Core Block Interaction Logic
- */
 function handleBlockInteraction(mode) {
     raycaster.setFromCamera(mouse, camera);
     raycaster.far = 8;
@@ -118,7 +103,7 @@ function handleBlockInteraction(mode) {
 
         if (mode === 'destroy') {
             const matrix = new THREE.Matrix4();
-            matrix.makeScale(0, 0, 0); // Shrink to hide
+            matrix.makeScale(0, 0, 0); 
             mesh.setMatrixAt(instanceId, matrix);
             mesh.instanceMatrix.needsUpdate = true;
         }
@@ -133,9 +118,7 @@ function handleBlockInteraction(mode) {
             const pz = Math.round(pos.z + normal.z);
 
             if (mesh.count < mesh.instanceMatrix.count) {
-                // Use the updated placeBlock function from block.js
                 placeBlock(mesh.count, px, py, pz, selectedBlock, mesh);
-
                 mesh.count++;
                 mesh.instanceMatrix.needsUpdate = true;
                 mesh.instanceColor.needsUpdate = true;
@@ -144,8 +127,12 @@ function handleBlockInteraction(mode) {
     }
 }
 
-/** Physics update remains as previously defined */
 function updatePlayer(camera) {
+    // 1. Process Mobile Pulse Inputs for action triggers
+    if (window.mobileControlsState.actionBreak) handleBlockInteraction('destroy');
+    if (window.mobileControlsState.actionPlace) handleBlockInteraction('place');
+
+    // 2. Physics & Gravity
     playerVelocity.y += GRAVITY;
     camera.position.y += playerVelocity.y;
 
@@ -160,25 +147,40 @@ function updatePlayer(camera) {
         canJump = false;
     }
 
-    if (keys['Space'] && canJump) {
+    // 3. Jump Action Handler (Keyboard + Mobile)
+    const jumpRequested = keys['Space'] || window.mobileControlsState.jump;
+    if (jumpRequested && canJump) {
         playerVelocity.y = JUMP_FORCE;
         canJump = false;
     }
 
+    // 4. Direction Vectors Blending Calculation
     const moveDir = new THREE.Vector3();
+    
+    // Read keyboard values
     if (keys['KeyW']) moveDir.z -= 1;
     if (keys['KeyS']) moveDir.z += 1;
     if (keys['KeyA']) moveDir.x -= 1;
     if (keys['KeyD']) moveDir.x += 1;
 
+    // Blend joystick normalization variables if keyboard is idle
+    if (moveDir.lengthSq() === 0) {
+        moveDir.z += window.mobileControlsState.moveBackward;
+        moveDir.z -= window.mobileControlsState.moveForward;
+        moveDir.x += window.mobileControlsState.moveRight;
+        moveDir.x -= window.mobileControlsState.moveLeft;
+    }
+
     if (moveDir.lengthSq() > 0) {
+        // Normalize directional vectors without flattening analog magnitude variations
+        const magnitude = Math.min(moveDir.length(), 1);
         moveDir.normalize();
+        
         const forward = new THREE.Vector3(0, 0, -1).applyAxisAngle(new THREE.Vector3(0, 1, 0), camera.rotation.y);
         const right = new THREE.Vector3(1, 0, 0).applyAxisAngle(new THREE.Vector3(0, 1, 0), camera.rotation.y);
         const finalMove = forward.multiplyScalar(-moveDir.z).add(right.multiplyScalar(moveDir.x));
 
-        camera.position.x += finalMove.x * SPEED;
-        camera.position.z += finalMove.z * SPEED;
+        camera.position.x += finalMove.x * SPEED * magnitude;
+        camera.position.z += finalMove.z * SPEED * magnitude;
     }
 }
-

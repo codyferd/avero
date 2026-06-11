@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Avero Office</title>
+    <script libs="core" src="../share/cdn.js"></script>
+</head>
+<body class="bg-[#050507] text-slate-200 font-sans min-h-screen antialiased selection:bg-indigo-500/30" :class="{'presentation-view': isPresentationMode}">
+
+<div id="app" v-cloak class="flex flex-col lg:flex-row h-screen w-screen overflow-hidden">
+
+    <aside v-if="!isPresentationMode" class="w-full lg:w-80 bg-[#0b0b0f] border-b lg:border-b-0 lg:border-r border-zinc-800/80 flex flex-col p-5 space-y-6 shrink-0 z-30">
+        <div>
+            <div class="flex items-center gap-2">
+                <span class="text-indigo-500 font-black text-xl font-mono">🌐</span>
+                <h1 class="text-base font-black tracking-tight text-white uppercase font-mono">Avero Web Studio</h1>
+            </div>
+            <p class="text-[10px] text-zinc-500 font-mono mt-1 uppercase tracking-widest">Site Builder Architecture v4.0</p>
+        </div>
+
+        <div class="space-y-2 bg-black/40 p-3 rounded-xl border border-zinc-800/60">
+            <label class="sidebar-label">Disk Storage Gateway</label>
+            <div class="grid grid-cols-2 gap-2">
+                <button @click="triggerFileImport" class="px-3 py-2.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 font-bold text-[10px] uppercase tracking-wider rounded-lg transition border border-zinc-700/50 flex items-center justify-center gap-1.5">
+                    📥 Load .js File
+                </button>
+                <button @click="exportToJsFile" class="px-3 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-[10px] uppercase tracking-wider rounded-lg transition flex items-center justify-center gap-1.5">
+                    📤 Save .js File
+                </button>
+            </div>
+            <input type="file" ref="fileInputBridge" class="hidden" accept=".js" @change="handleFileChange">
+        </div>
+
+        <div class="space-y-2 flex-1 overflow-y-auto custom-scrollbar pr-1">
+            <label class="sidebar-label">Append Layout Sections</label>
+            <div class="grid grid-cols-1 gap-1.5">
+                <button @click="addBlock('document')" class="add-btn border border-indigo-500/30 bg-indigo-500/5 text-indigo-400 hover:bg-indigo-500/10">
+                    <span>📝</span> Rich Editorial Content
+                </button>
+                <button @click="addBlock('sheet')" class="add-btn border border-emerald-500/30 bg-emerald-500/5 text-emerald-400 hover:bg-emerald-500/10">
+                    <span>📊</span> Functional Data Table
+                </button>
+                <button @click="addBlock('presentation')" class="add-btn border border-amber-500/30 bg-amber-500/5 text-amber-400 hover:bg-amber-500/10">
+                    <span>📽️</span> Full-Width Slider Stage
+                </button>
+            </div>
+        </div>
+
+        <div class="pt-4 border-t border-zinc-900">
+            <button @click="togglePresentationMode" class="w-full py-3 bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 text-white font-black text-xs uppercase tracking-widest rounded-xl transition shadow-lg">
+                ⚡ Go Live (Presentation View)
+            </button>
+        </div>
+    </aside>
+
+    <main class="flex-1 overflow-y-auto p-4 md:p-8 space-y-6 h-full custom-scrollbar transition-all duration-300" :class="isPresentationMode ? 'bg-zinc-950 max-w-full' : 'bg-[#020204]'">
+        
+        <div v-if="isPresentationMode" class="fixed bottom-4 right-4 z-50 bg-black/80 border border-zinc-800 px-4 py-2.5 rounded-full shadow-2xl flex items-center gap-3 backdrop-blur-md">
+            <div class="text-[10px] font-mono font-bold uppercase text-zinc-400 tracking-wider">🖥️ Canvas Presentation Execution Mode Active</div>
+            <button @click="togglePresentationMode" class="px-3 py-1 bg-red-950/80 text-red-400 border border-red-900/50 rounded-full text-[10px] font-mono uppercase font-black hover:bg-red-900/40 transition">
+                Exit Mode [ESC] ✕
+            </button>
+        </div>
+
+        <div v-if="!isPresentationMode" class="max-w-4xl mx-auto flex justify-between items-center bg-[#0b0b0f] border border-zinc-800/50 px-6 py-3 rounded-xl shadow-2xl">
+            <div class="flex-1 pr-4">
+                <span class="text-[8px] font-mono font-black text-indigo-500 uppercase tracking-widest">Global Page Scope Document Title</span>
+                <input v-model="documentTitle" class="bg-transparent font-black text-sm uppercase tracking-wider text-white border-none outline-none focus:border-b focus:border-zinc-700 w-full" placeholder="Untitled Site Sandbox Node">
+            </div>
+            <div class="text-[10px] font-mono text-zinc-500 uppercase tracking-widest bg-zinc-900/50 px-3 py-1 rounded-md border border-zinc-800 h-7 flex items-center">
+                DOM Sections: <span class="text-indigo-400 font-bold ml-1">{{ streamBlocks.length }}</span>
+            </div>
+        </div>
+
+        <div v-if="isPresentationMode" class="max-w-5xl mx-auto border-b border-zinc-800/60 pb-4 mb-4">
+            <h1 class="text-xl md:text-3xl font-black uppercase tracking-tight text-white font-mono">{{ documentTitle || "Published Dynamic Interface Instance" }}</h1>
+            <p class="text-[10px] font-mono uppercase tracking-widest text-zinc-500 mt-1">Rendered via Avero Web Compilation Core</p>
+        </div>
+
+        <div v-if="streamBlocks.length === 0" class="max-w-4xl mx-auto border border-dashed border-zinc-800 rounded-2xl h-80 flex flex-col items-center justify-center text-zinc-500 p-6 text-center">
+            <span class="text-3xl mb-3">📭</span>
+            <p class="text-xs font-mono uppercase tracking-wider text-zinc-400">Empty Page Canvas Layout</p>
+            <p class="text-[10px] text-zinc-600 mt-1 max-w-sm">
+                Insert architectural components from the sidebar control layout pane to map a web module framework.
+            </p>
+        </div>
+
+        <div class="space-y-8" :class="isPresentationMode ? 'max-w-5xl mx-auto' : 'max-w-4xl mx-auto'">
+            <div v-for="(block, bIndex) in streamBlocks" :key="block.id" class="stream-block group" :class="{'is-live-presentation-card': isPresentationMode}">
+                
+                <div v-if="!isPresentationMode" class="block-header">
+                    <div class="flex items-center gap-2">
+                        <span class="text-xs">{{ getBlockIcon(block.type) }}</span>
+                        <span class="text-[9px] font-black tracking-widest font-mono uppercase text-zinc-400">DOM Component Module #{{ bIndex + 1 }} // Style Layer: {{ block.type }}</span>
+                    </div>
+                    <div class="flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition duration-150">
+                        <button @click="moveBlock(bIndex, -1)" :disabled="bIndex === 0" class="nav-arrow">▲</button>
+                        <button @click="moveBlock(bIndex, 1)" :disabled="bIndex === streamBlocks.length - 1" class="nav-arrow">▼</button>
+                        <button @click="deleteBlock(bIndex)" class="nav-arrow hover:!text-red-400 hover:!border-red-500/20">✕</button>
+                    </div>
+                </div>
+
+                <div v-if="block.type === 'document'" class="p-6 space-y-5">
+                    <div v-for="(node, nIndex) in block.content" :key="nIndex" class="relative group/node flex gap-3 items-start rounded-lg transition" :class="isPresentationMode ? 'p-0 bg-transparent' : 'bg-zinc-900/10 p-2 hover:bg-zinc-900/30'">
+                        
+                        <div class="flex-grow space-y-2">
+                            <div v-if="node.type === 'heading'">
+                                <input v-if="!isPresentationMode" v-model="node.text" placeholder="Section Heading Token" class="w-full bg-transparent font-extrabold text-2xl text-white tracking-tight outline-none border-b border-transparent focus:border-zinc-800 py-0.5" />
+                                <h2 v-else class="text-2xl font-extrabold text-white tracking-tight">{{ node.text || "Untitled Structural Section" }}</h2>
+                            </div>
+                            
+                            <div v-if="node.type === 'paragraph'">
+                                <textarea v-if="!isPresentationMode" v-model="node.text" placeholder="Type text block context segment frames here..." rows="1" class="w-full bg-transparent text-sm text-zinc-300 leading-relaxed outline-none border-b border-transparent focus:border-zinc-800 py-0.5 resize-none h-auto custom-scrollbar" @input="autoGrowTextarea($event)"></textarea>
+                                <p v-else class="text-sm text-zinc-300 leading-relaxed whitespace-pre-wrap">{{ node.text || "Empty paragraph string field context." }}</p>
+                            </div>
+                            
+                            <div v-if="node.type === 'checklist'" class="flex items-center gap-3 w-full py-0.5">
+                                <input type="checkbox" v-model="node.checked" :disabled="isPresentationMode" class="w-4 h-4 rounded accent-indigo-500 bg-zinc-900 border-zinc-800 cursor-pointer">
+                                <input v-if="!isPresentationMode" v-model="node.text" placeholder="Action item block token statement..." class="w-full bg-transparent text-sm outline-none text-zinc-300 border-b border-transparent focus:border-zinc-800" :class="{'line-through !text-zinc-600': node.checked}" />
+                                <span v-else class="text-sm text-zinc-300" :class="{'line-through !text-zinc-600': node.checked}">{{ node.text }}</span>
+                            </div>
+
+                            <div v-if="node.type === 'code'" class="w-full bg-black/60 border border-zinc-800/80 rounded-lg p-2.5 font-mono text-xs flex items-start gap-2">
+                                <span class="text-zinc-600 select-none pt-1">&lt;/&gt;</span>
+                                <textarea v-if="!isPresentationMode" v-model="node.text" placeholder="// Insert source routine engineering parameters here..." rows="2" class="w-full bg-transparent text-emerald-400 outline-none resize-none h-auto" @input="autoGrowTextarea($event)"></textarea>
+                                <pre v-else class="w-full text-emerald-400 overflow-x-auto whitespace-pre-wrap font-mono">{{ node.text || "// No codebase routine allocated." }}</pre>
+                            </div>
+
+                            <div v-if="node.type === 'image'" class="space-y-2">
+                                <div v-if="!isPresentationMode" class="flex gap-2 bg-black/40 p-2 rounded-lg border border-zinc-900">
+                                    <input v-model="node.url" placeholder="Direct absolute graphics asset layout web URL..." class="flex-1 bg-black border border-zinc-800 rounded-lg px-3 py-1.5 text-xs font-mono text-zinc-300 outline-none" />
+                                    <input v-model="node.caption" placeholder="Alternative caption mapping labels..." class="w-1/3 bg-black border border-zinc-800 rounded-lg px-3 py-1.5 text-xs text-zinc-400 outline-none" />
+                                </div>
+                                <div v-if="node.url" class="relative max-w-2xl mx-auto bg-black rounded-xl overflow-hidden border border-zinc-800/60 group/img shadow-2xl">
+                                    <img :src="node.url" :alt="node.caption" class="w-full h-auto object-cover max-h-[500px]">
+                                    <div v-if="node.caption" class="absolute bottom-0 inset-x-0 bg-black/80 backdrop-blur-sm p-2 text-xs font-mono text-zinc-400 text-center border-t border-zinc-900">{{ node.caption }}</div>
+                                </div>
+                            </div>
+
+                            <div v-if="node.type === 'embed'" class="space-y-2">
+                                <div v-if="!isPresentationMode" class="flex items-center gap-2 bg-black/40 p-2 rounded-lg border border-zinc-900">
+                                    <span class="text-[10px] font-mono text-zinc-500 uppercase font-black">IFRAME CAPTURE SRC:</span>
+                                    <input v-model="node.url" @input="cleanEmbedUrl(node)" placeholder="Paste inline frame container resource pathways..." class="flex-grow bg-black border border-zinc-800 rounded-lg px-3 py-1.5 text-xs font-mono text-indigo-400 outline-none" />
+                                </div>
+                                <div v-if="node.url" class="w-full aspect-video rounded-xl overflow-hidden border border-zinc-800 bg-zinc-950 shadow-2xl">
+                                    <iframe :src="node.url" class="w-full h-full" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+                                </div>
+                            </div>
+
+                            <div v-if="node.type === 'callout'" class="flex gap-3 p-4 rounded-xl border border-zinc-800 bg-zinc-900/40 shadow-inner">
+                                <select v-if="!isPresentationMode" v-model="node.icon" class="bg-zinc-800 border border-zinc-700 rounded text-sm px-1.5 py-0.5 outline-none cursor-pointer h-7">
+                                    <option value="💡">💡 Alert Tip</option>
+                                    <option value="⚠️">⚠️ Warning Block</option>
+                                    <option value="ℹ️">ℹ️ Index Document</option>
+                                    <option value="🔥">🔥 Critical Track</option>
+                                </select>
+                                <span v-else class="text-lg select-none">{{ node.icon }}</span>
+                                
+                                <textarea v-if="!isPresentationMode" v-model="node.text" placeholder="Type core emphasis summaries here..." rows="1" class="flex-grow bg-transparent text-sm text-zinc-200 italic outline-none border-none resize-none pt-0.5" @input="autoGrowTextarea($event)"></textarea>
+                                <p v-else class="flex-grow text-sm text-zinc-200 italic whitespace-pre-wrap pt-0.5">{{ node.text || "Callout record array empty." }}</p>
+                            </div>
+                        </div>
+
+                        <button v-if="!isPresentationMode" @click="block.content.splice(nIndex, 1)" class="text-[10px] text-zinc-600 hover:text-red-400 opacity-0 group-hover/node:opacity-100 transition p-1 self-center">✕</button>
+                    </div>
+
+                    <div v-if="!isPresentationMode" class="flex flex-wrap gap-2 border-t border-zinc-900/60 pt-4 text-[10px] font-mono text-zinc-500 font-bold uppercase tracking-wider items-center">
+                        <button @click="addTextNode(block, 'heading')" class="hover:text-indigo-400">+ Add Heading</button>
+                        <span>•</span>
+                        <button @click="addTextNode(block, 'paragraph')" class="hover:text-indigo-400">+ Add Paragraph</button>
+                        <span>•</span>
+                        <button @click="addTextNode(block, 'checklist')" class="hover:text-indigo-400">+ Add Checklist</button>
+                        <span>•</span>
+                        <button @click="addTextNode(block, 'code')" class="hover:text-indigo-400">+ Add Code Array</button>
+                        <span>•</span>
+                        <button @click="addTextNode(block, 'image')" class="hover:text-emerald-400 text-emerald-500/80">+ Add Image Frame</button>
+                        <span>•</span>
+                        <button @click="addTextNode(block, 'embed')" class="hover:text-sky-400 text-sky-500/80">+ Add Web Embed</button>
+                        <span>•</span>
+                        <button @click="addTextNode(block, 'callout')" class="hover:text-amber-400 text-amber-500/80">+ Add Callout Box</button>
+                    </div>
+                </div>
+
+                <div v-if="block.type === 'sheet'" class="p-4 overflow-x-auto custom-scrollbar">
+                    <table class="w-full border-collapse text-xs font-mono min-w-[550px] rounded-lg overflow-hidden border border-zinc-900">
+                        <thead>
+                            <tr>
+                                <th class="matrix-cell bg-zinc-950 text-zinc-600 font-bold w-10 text-center">#</th>
+                                <th v-for="c in block.cols" :key="c" class="matrix-cell bg-zinc-950 text-zinc-500 font-bold text-center uppercase">
+                                    {{ getColumnLetter(c) }}
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr v-for="r in block.rows" :key="r">
+                                <td class="matrix-cell bg-zinc-950 text-zinc-600 font-bold text-center">{{ r }}</td>
+                                <td v-for="c in block.cols" :key="c" class="matrix-cell p-0 relative">
+                                    <input 
+                                        type="text"
+                                        v-model="block.cells[getCellCoords(c, r)].value"
+                                        :disabled="isPresentationMode"
+                                        @focus="block.cells[getCellCoords(c, r)].isEditing = true"
+                                        @blur="block.cells[getCellCoords(c, r)].isEditing = false"
+                                        class="w-full h-8 px-2 bg-transparent outline-none border-2 border-transparent text-zinc-200"
+                                        :class="!isPresentationMode ? 'focus:border-emerald-500 cursor-text' : 'cursor-default'"
+                                    />
+                                    <span v-if="block.cells[getCellCoords(c, r)].value?.toUpperCase().startsWith('=') && !block.cells[getCellCoords(c, r)].isEditing" class="absolute inset-0 bg-[#0e0e12] px-2 flex items-center pointer-events-none text-emerald-400 font-bold border border-transparent">
+                                        {{ evaluateFormula(block.cells[getCellCoords(c, r)].value, block.cells) }}
+                                    </span>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <div v-if="!isPresentationMode" class="flex gap-3 mt-3 text-[10px] font-mono text-zinc-500">
+                        <button @click="alterMatrixSize(block, 'row', 1)" class="hover:text-emerald-400 font-bold uppercase">+ Append Matrix Row</button>
+                        <span>|</span>
+                        <button @click="alterMatrixSize(block, 'col', 1)" class="hover:text-emerald-400 font-bold uppercase">+ Append Matrix Column</button>
+                    </div>
+                </div>
+
+                <div v-if="block.type === 'presentation'" class="p-5 space-y-4">
+                    
+                    <div v-if="block.slides.length > 0" 
+                         class="w-full aspect-[16/9] rounded-2xl flex flex-col justify-between p-6 md:p-8 transition-all duration-300 relative overflow-hidden border border-zinc-900 shadow-2xl" 
+                         :style="{ backgroundColor: block.slides[block.activeSlideIndex]?.bg || '#0f172a', color: block.slides[block.activeSlideIndex]?.textColor || '#ffffff' }">
+                        
+                        <div v-if="!isPresentationMode" class="flex flex-wrap items-center justify-between gap-2 z-10 bg-black/40 backdrop-blur-md px-3 py-2 rounded-xl border border-white/5 text-white">
+                            <div class="flex items-center gap-2">
+                                <span class="text-[9px] font-mono tracking-widest uppercase bg-zinc-900 px-2 py-0.5 rounded text-zinc-400">Slide Canvas {{ block.activeSlideIndex + 1 }} / {{ block.slides.length }}</span>
+                                
+                                <select v-model="block.slides[block.activeSlideIndex].format" class="bg-zinc-800 border border-zinc-700 text-[9px] uppercase font-bold tracking-wider px-2 py-0.5 rounded outline-none cursor-pointer">
+                                    <option value="spotlight">Layout: Unified Spotlight</option>
+                                    <option value="split">Layout: Two-Column Split</option>
+                                    <option value="metrics">Layout: Analytics Core</option>
+                                    <option value="media-right">Layout: Media Framework</option>
+                                </select>
+                            </div>
+
+                            <div class="flex items-center gap-3 text-[10px] font-mono">
+                                <div class="flex items-center gap-1">
+                                    <span>BG Hex:</span>
+                                    <input type="color" v-model="block.slides[block.activeSlideIndex].bg" class="w-4 h-4 rounded bg-transparent border-none cursor-pointer outline-none">
+                                </div>
+                                <div class="flex items-center gap-1">
+                                    <span>Text Hex:</span>
+                                    <input type="color" v-model="block.slides[block.activeSlideIndex].textColor" class="w-4 h-4 rounded bg-transparent border-none cursor-pointer outline-none">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div v-else class="absolute top-4 left-6 text-[9px] tracking-wider uppercase opacity-40 font-mono pointer-events-none">
+                            Slide Platform {{ block.activeSlideIndex + 1 }} of {{ block.slides.length }}
+                        </div>
+                        
+                        <div class="flex-grow flex flex-col justify-center px-4 md:px-8 z-10 mt-2 mb-2 overflow-hidden">
+                            
+                            <div v-if="block.slides[block.activeSlideIndex].format === 'spotlight'" class="text-center space-y-3">
+                                <input v-if="!isPresentationMode" v-model="block.slides[block.activeSlideIndex].title" :style="{ color: block.slides[block.activeSlideIndex].textColor }" placeholder="Main Structural Element Caption" class="w-full bg-transparent font-black text-2xl md:text-4xl text-center tracking-tight outline-none border-b border-transparent focus:border-white/10 pb-1" />
+                                <h2 v-else class="font-black text-3xl md:text-5xl text-center tracking-tight leading-none" :style="{ color: block.slides[block.activeSlideIndex].textColor }">{{ block.slides[block.activeSlideIndex].title || "Core Header Frame" }}</h2>
+
+                                <input v-if="!isPresentationMode" v-model="block.slides[block.activeSlideIndex].body" :style="{ color: block.slides[block.activeSlideIndex].textColor, opacity: 0.7 }" placeholder="Supporting content definitions summary string..." class="w-full bg-transparent text-sm text-center outline-none border-b border-transparent focus:border-white/10" />
+                                <p v-else class="text-sm md:text-base text-center max-w-2xl mx-auto" :style="{ color: block.slides[block.activeSlideIndex].textColor, opacity: 0.8 }">{{ block.slides[block.activeSlideIndex].body }}</p>
+                            </div>
+
+                            <div v-if="block.slides[block.activeSlideIndex].format === 'split'" class="grid grid-cols-2 gap-6 items-stretch h-full py-2 text-left">
+                                <div class="space-y-2 border-r border-white/10 pr-4 flex flex-col justify-center">
+                                    <input v-if="!isPresentationMode" v-model="block.slides[block.activeSlideIndex].title" :style="{ color: block.slides[block.activeSlideIndex].textColor }" placeholder="Left Container Heading" class="w-full bg-transparent font-bold text-base md:text-xl outline-none" />
+                                    <h3 v-else class="font-bold text-base md:text-xl" :style="{ color: block.slides[block.activeSlideIndex].textColor }">{{ block.slides[block.activeSlideIndex].title || "Left Flex Row" }}</h3>
+                                    
+                                    <textarea v-if="!isPresentationMode" v-model="block.slides[block.activeSlideIndex].body" :style="{ color: block.slides[block.activeSlideIndex].textColor, opacity: 0.65 }" placeholder="Column body paragraphs content..." rows="3" class="w-full bg-transparent text-xs outline-none resize-none custom-scrollbar"></textarea>
+                                    <p v-else class="text-xs leading-relaxed" :style="{ color: block.slides[block.activeSlideIndex].textColor, opacity: 0.75 }">{{ block.slides[block.activeSlideIndex].body }}</p>
+                                </div>
+                                <div class="space-y-2 pl-2 flex flex-col justify-center">
+                                    <input v-if="!isPresentationMode" v-model="block.slides[block.activeSlideIndex].splitTitleRight" :style="{ color: block.slides[block.activeSlideIndex].textColor }" placeholder="Right Container Heading" class="w-full bg-transparent font-bold text-base md:text-xl outline-none" />
+                                    <h3 v-else class="font-bold text-base md:text-xl" :style="{ color: block.slides[block.activeSlideIndex].textColor }">{{ block.slides[block.activeSlideIndex].splitTitleRight || "Right Flex Row" }}</h3>
+                                    
+                                    <textarea v-if="!isPresentationMode" v-model="block.slides[block.activeSlideIndex].splitBodyRight" :style="{ color: block.slides[block.activeSlideIndex].textColor, opacity: 0.65 }" placeholder="Alternative section data breakdown elements..." rows="3" class="w-full bg-transparent text-xs outline-none resize-none custom-scrollbar"></textarea>
+                                    <p v-else class="text-xs leading-relaxed" :style="{ color: block.slides[block.activeSlideIndex].textColor, opacity: 0.75 }">{{ block.slides[block.activeSlideIndex].splitBodyRight }}</p>
+                                </div>
+                            </div>
+
+                            <div v-if="block.slides[block.activeSlideIndex].format === 'metrics'" class="flex items-center gap-6 justify-center">
+                                <div class="w-1/3 text-right">
+                                    <input v-if="!isPresentationMode" v-model="block.slides[block.activeSlideIndex].metricValue" class="w-full bg-transparent text-4xl md:text-6xl font-black tracking-tight text-right outline-none text-indigo-400" placeholder="94.2%" />
+                                    <div v-else class="text-4xl md:text-6xl font-black tracking-tight text-indigo-400">{{ block.slides[block.activeSlideIndex].metricValue || "0.0%" }}</div>
+
+                                    <input v-if="!isPresentationMode" v-model="block.slides[block.activeSlideIndex].title" :style="{ color: block.slides[block.activeSlideIndex].textColor, opacity: 0.5 }" placeholder="Metric Description Tracker" class="w-full bg-transparent text-[10px] uppercase tracking-widest text-right outline-none font-bold" />
+                                    <div v-else class="text-[10px] uppercase tracking-widest font-bold font-mono opacity-60" :style="{ color: block.slides[block.activeSlideIndex].textColor }">{{ block.slides[block.activeSlideIndex].title || "Data Index Category" }}</div>
+                                </div>
+                                <div class="w-2/3 border-l border-white/10 pl-6 text-left">
+                                    <textarea v-if="!isPresentationMode" v-model="block.slides[block.activeSlideIndex].body" :style="{ color: block.slides[block.activeSlideIndex].textColor, opacity: 0.75 }" placeholder="Elaborate on calculation analytics profiles here..." rows="3" class="w-full bg-transparent text-xs outline-none resize-none custom-scrollbar"></textarea>
+                                    <p v-else class="text-xs md:text-sm leading-relaxed" :style="{ color: block.slides[block.activeSlideIndex].textColor, opacity: 0.85 }">{{ block.slides[block.activeSlideIndex].body }}</p>
+                                </div>
+                            </div>
+
+                            <div v-if="block.slides[block.activeSlideIndex].format === 'media-right'" class="grid grid-cols-5 gap-4 items-center h-full text-left">
+                                <div class="col-span-3 space-y-2">
+                                    <input v-if="!isPresentationMode" v-model="block.slides[block.activeSlideIndex].title" :style="{ color: block.slides[block.activeSlideIndex].textColor }" placeholder="Media Frame Context Header Title" class="w-full bg-transparent font-extrabold text-lg md:text-2xl outline-none" />
+                                    <h3 v-else class="font-extrabold text-lg md:text-2xl" :style="{ color: block.slides[block.activeSlideIndex].textColor }">{{ block.slides[block.activeSlideIndex].title || "Media Structural Block" }}</h3>
+
+                                    <textarea v-if="!isPresentationMode" v-model="block.slides[block.activeSlideIndex].body" :style="{ color: block.slides[block.activeSlideIndex].textColor, opacity: 0.7 }" placeholder="Analyze visual assets contextually directly within the presentation layer plane grid panel..." rows="3" class="w-full bg-transparent text-xs outline-none resize-none custom-scrollbar"></textarea>
+                                    <p v-else class="text-xs leading-relaxed" :style="{ color: block.slides[block.activeSlideIndex].textColor, opacity: 0.8 }">{{ block.slides[block.activeSlideIndex].body }}</p>
+                                </div>
+                                <div class="col-span-2 space-y-1.5 flex flex-col justify-center h-full" :class="!isPresentationMode ? 'bg-black/30 p-2 rounded-xl border border-white/5' : ''">
+                                    <input v-if="!isPresentationMode" v-model="block.slides[block.activeSlideIndex].mediaUrl" placeholder="Image web URL resource tracking link..." class="w-full bg-zinc-900 text-[9px] font-mono p-1 rounded text-zinc-300 outline-none border border-zinc-800" />
+                                    <div class="w-full flex-1 min-h-[80px] bg-zinc-950 rounded-xl border border-zinc-800/80 flex items-center justify-center overflow-hidden shadow-2xl">
+                                        <img v-if="block.slides[block.activeSlideIndex].mediaUrl" :src="block.slides[block.activeSlideIndex].mediaUrl" class="w-full h-full object-cover">
+                                        <span v-else class="text-[9px] font-mono text-zinc-600 uppercase">Image Layout Target Node Null</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                        </div>
+
+                        <div class="flex justify-between items-center z-10 bg-black/20 backdrop-blur-xs p-1 rounded-lg">
+                            <button @click="block.activeSlideIndex = Math.max(0, block.activeSlideIndex - 1)" :disabled="block.activeSlideIndex === 0" class="slide-nav-btn text-white">◀ Back</button>
+                            <button @click="block.activeSlideIndex = Math.min(block.slides.length - 1, block.activeSlideIndex + 1)" :disabled="block.activeSlideIndex === block.slides.length - 1" class="slide-nav-btn text-white">Next ▶</button>
+                        </div>
+                    </div>
+
+                    <div v-if="!isPresentationMode" class="flex flex-wrap gap-2 items-center border-t border-zinc-900/60 pt-3">
+                        <div v-for="(slide, sIdx) in block.slides" :key="sIdx" @click="block.activeSlideIndex = sIdx" class="w-16 aspect-[16/9] rounded border bg-zinc-900/60 flex flex-col justify-between p-1 cursor-pointer transition" :class="block.activeSlideIndex === sIdx ? 'border-amber-500 text-amber-400 bg-amber-500/5 font-bold scale-105' : 'border-zinc-800 text-zinc-600 hover:border-zinc-700'">
+                            <span class="text-[7px] font-mono leading-none">#{{ sIdx + 1 }}</span>
+                            <span class="text-[6px] font-mono uppercase tracking-tighter truncate opacity-60 block">{{ slide.format }}</span>
+                        </div>
+                        <button @click="appendBlankSlide(block)" class="px-2.5 h-7 rounded border border-dashed border-zinc-800 text-zinc-500 text-[10px] font-mono uppercase tracking-wider hover:border-amber-500/40 hover:text-amber-400 transition ml-1">+ New Slide View</button>
+                        <button v-if="block.slides.length > 0" @click="removeActiveSlide(block)" class="px-2 h-7 text-zinc-600 text-[10px] font-mono uppercase hover:text-red-400 ml-auto">Delete Selected Slide</button>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+    </main>
+
+</div>
+
+<script src="index.js"></script>
+</body>
+</html>

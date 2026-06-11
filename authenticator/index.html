@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Avero Authenticator</title>
+    <script libs="core,auth" src="../share/cdn.js"></script>
+</head>
+<body class="bg-[#030303] text-zinc-300 font-mono min-h-screen antialiased selection:bg-emerald-500/20 selection:text-emerald-300">
+
+<div id="app" v-cloak class="flex flex-col md:flex-row h-screen w-screen overflow-hidden">
+
+    <aside v-if="!isPresentationMode" class="w-full md:w-80 bg-[#070708] border-b md:border-b-0 md:border-r border-zinc-900 flex flex-col p-6 space-y-6 shrink-0 z-30 overflow-y-auto custom-scroll">
+        
+        <div class="space-y-1">
+            <div class="flex items-center gap-2">
+                <div class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
+                <h1 class="text-xs font-black tracking-widest text-zinc-100 uppercase">AUTH_VAULT_NODE</h1>
+            </div>
+            <p class="text-[10px] text-zinc-600 uppercase tracking-wider">Secure Time-Step Protocol</p>
+        </div>
+
+        <hr class="border-zinc-900" />
+
+        <div class="space-y-4">
+            <div class="text-[10px] font-bold tracking-widest text-zinc-500 uppercase">Provision New Token</div>
+            
+            <div class="space-y-1.5">
+                <label class="text-[10px] text-zinc-400 uppercase tracking-wide">Service / Issuer</label>
+                <input type="text" v-model="newKeyForm.issuer" placeholder="e.g. GitHub, Discord" class="w-full bg-[#0b0b0d] border border-zinc-800 rounded px-3 py-2 text-xs text-zinc-200 placeholder-zinc-700 focus:border-zinc-700 focus:ring-1 focus:ring-zinc-700 outline-none transition">
+            </div>
+
+            <div class="space-y-1.5">
+                <label class="text-[10px] text-zinc-400 uppercase tracking-wide">Base32 Secret Key</label>
+                <input type="text" v-model="newKeyForm.secret" placeholder="PBRW E23T..." class="w-full bg-[#0b0b0d] border border-zinc-800 rounded px-3 py-2 text-xs text-emerald-400 placeholder-zinc-700 focus:border-zinc-700 focus:ring-1 focus:ring-zinc-700 outline-none transition uppercase tracking-wider">
+            </div>
+
+            <button @click="registerAuthenticatorToken" class="w-full py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-100 font-bold text-[10px] uppercase tracking-widest rounded transition-all active:scale-[0.98]">
+                [ + Commit Key ]
+            </button>
+        </div>
+
+        <div class="space-y-3 bg-[#0c0c0e]/60 p-4 rounded border border-zinc-900 mt-auto">
+            <div class="text-[10px] font-bold tracking-widest text-zinc-500 uppercase">State Backup</div>
+            <div class="grid grid-cols-1 gap-2">
+                <button @click="triggerImportBridge" class="w-full py-2 bg-[#121214] hover:bg-zinc-800 text-zinc-400 hover:text-zinc-200 text-[10px] uppercase tracking-wider rounded border border-zinc-800/80 transition flex items-center justify-center gap-1.5">
+                    Import Matrix (.js)
+                </button>
+                <button @click="exportToDiskAsset" class="w-full py-2 bg-emerald-950/20 hover:bg-emerald-950/40 text-emerald-400 text-[10px] uppercase tracking-wider rounded border border-emerald-900/30 transition flex items-center justify-center gap-1.5">
+                    Export Crypt (.js)
+                </button>
+            </div>
+            <input type="file" ref="fileInputBridge" class="hidden" accept=".js" @change="handleImportPayload">
+        </div>
+
+        <button @click="togglePresentationMode" class="w-full py-2.5 bg-transparent hover:bg-zinc-900 border border-dashed border-zinc-800 text-zinc-500 hover:text-zinc-400 text-[10px] uppercase tracking-widest rounded transition">
+            Enable Terminal View
+        </button>
+    </aside>
+
+    <main class="flex-1 overflow-y-auto p-6 md:p-10 space-y-8 h-full custom-scroll transition-colors duration-300 bg-[#020202]">
+        
+        <div v-if="isPresentationMode" class="fixed top-6 right-6 z-50 bg-zinc-900/90 border border-zinc-800 px-4 py-2 rounded shadow-2xl flex items-center gap-4 backdrop-blur-sm">
+            <div class="text-[10px] tracking-widest uppercase text-emerald-400 flex items-center gap-2">
+                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping"></span>
+                TERMINAL_ONLY_OUTPUT
+            </div>
+            <button @click="togglePresentationMode" class="px-2.5 py-1 bg-zinc-800 text-zinc-400 text-[9px] uppercase hover:bg-zinc-700 transition rounded">
+                Unlock [ESC]
+            </button>
+        </div>
+
+        <div class="max-w-5xl mx-auto flex flex-col sm:flex-row justify-between items-start sm:items-center bg-[#070708] border border-zinc-900 p-6 rounded gap-4">
+            <div>
+                <div class="text-[10px] text-zinc-600 uppercase tracking-widest font-bold">Workspace Monitor</div>
+                <h2 class="text-sm font-black uppercase text-zinc-200 tracking-wider mt-1">
+                    {{ isPresentationMode ? "System Token Feed (Read-Only)" : "Cryptographic Vector Deck" }}
+                </h2>
+            </div>
+            
+            <div class="flex items-center gap-4 bg-[#0c0c0e] border border-zinc-900 px-4 py-2.5 rounded w-full sm:w-auto justify-between sm:justify-start">
+                <div class="relative w-6 h-6">
+                    <svg class="w-full h-full transform -rotate-90" viewBox="0 0 32 32">
+                        <circle cx="16" cy="16" r="13" stroke="rgba(255,255,255,0.01)" stroke-width="2" fill="transparent"/>
+                        <circle cx="16" cy="16" r="13" :stroke="globalCountdownTime < 6 ? '#f43f5e' : '#10b981'" stroke-width="2.5" fill="transparent"
+                                :stroke-dasharray="81.68" :stroke-dashoffset="81.68 - (81.68 * globalCountdownTime) / 30" stroke-linecap="square" class="transition-all duration-100 linear"/>
+                    </svg>
+                </div>
+                <div class="font-mono">
+                    <div class="text-[9px] text-zinc-600 uppercase tracking-widest font-bold">Epoch Expiry</div>
+                    <div class="text-xs font-bold transition-colors" :class="globalCountdownTime < 6 ? 'text-rose-500 animate-pulse' : 'text-zinc-400'">
+                        {{ globalCountdownTime }}s remaining
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div v-if="authenticatorVault.length === 0" class="max-w-5xl mx-auto border border-dashed border-zinc-900 rounded h-72 flex flex-col items-center justify-center text-zinc-600 p-8 text-center bg-[#050506]/30">
+            <div class="text-xl opacity-40 mb-3">⊘</div>
+            <div class="text-xs uppercase tracking-widest text-zinc-500">No Authentication Strings Linked</div>
+            <p class="text-[10px] text-zinc-700 mt-2 max-w-sm leading-relaxed">
+                Inject target account records through the provisioning core or drop an encrypted storage configuration mapping directly onto your local workspace context.
+            </p>
+        </div>
+
+        <div class="max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div v-for="(token, index) in authenticatorVault" :key="token.id" class="relative bg-[#070708] border border-zinc-900 rounded p-5 group hover:border-zinc-800 transition-all duration-150">
+                
+                <div class="flex justify-between items-center gap-2 mb-4">
+                    <div class="overflow-hidden">
+                        <div class="text-[9px] text-zinc-600 uppercase tracking-wider font-bold">Issuer System</div>
+                        <span class="text-xs font-bold text-zinc-300 uppercase tracking-wide block truncate mt-0.5">{{ token.issuer || 'Unknown Node' }}</span>
+                    </div>
+                    
+                    <button v-if="!isPresentationMode" @click="purgeTokenVector(index)" class="text-zinc-700 hover:text-rose-400 text-[10px] transition px-1.5 py-0.5 rounded border border-transparent hover:border-rose-950/40 bg-transparent" title="Purge Vector">
+                        [✕]
+                    </button>
+                </div>
+
+                <div class="flex items-end justify-between bg-[#0c0c0e] border border-zinc-900/60 p-3 rounded">
+                    <div class="space-y-1 w-full">
+                        <div class="text-[9px] text-zinc-600 uppercase tracking-widest font-bold">Verification Seed</div>
+                        <div @click="copyTokenToClipboard(token.liveCode, $event)" class="text-2xl font-black tracking-wider text-emerald-400 hover:text-emerald-300 cursor-pointer select-all transition active:opacity-70 flex items-center justify-between group/code" title="Click to pipeline code value">
+                            <span>{{ formatTokenDigits(token.liveCode) }}</span>
+                            <span class="text-[9px] font-normal tracking-normal text-zinc-700 group-hover/code:text-zinc-500 transition-colors uppercase pr-1 select-none font-mono">[Copy]</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="text-[8px] text-zinc-700 uppercase tracking-widest mt-2 flex justify-between items-center px-1">
+                    <span>Status: Dynamic_Valid</span>
+                    <span :class="{'text-rose-500': globalCountdownTime < 6}">T-{{ globalCountdownTime }}s</span>
+                </div>
+
+            </div>
+        </div>
+
+    </main>
+
+</div>
+
+<script src="index.js"></script>
+</body>
+</html>

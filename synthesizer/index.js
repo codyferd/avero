@@ -1,13 +1,14 @@
-const { createApp, ref, computed, onMounted, onUnmounted, nextTick } = Vue;
+const { createApp, ref, computed, watch, onMounted, onUnmounted, nextTick } = Vue;
 
 createApp({
     setup() {
-        // Initial setup showcasing multi-feature string parsing structures:
-        // '12~0' = glide down | '7v3' = soft volume accent | '12d2' = double length note | '_' = rest element
         const sequenceString = ref("5.8v3.12~0.11.7._.8d2.10v9.8._.7.0~12.5.7.5.8.5.7.8.4.5");
         const tempo = ref(140);
         const gate = ref(0.7);
         const waveType = ref("triangle");
+        
+        // Master gain multiplier tracking reference (Baseline value = 1.0, maximum ceiling = 5.0)
+        const masterVolume = ref(1.0);
         
         const isPlaying = ref(false);
         const currentNoteIndex = ref(-1);
@@ -29,7 +30,6 @@ createApp({
         const NOTE_NAMES = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
         const MIDDLE_C_FREQ = 261.63; 
 
-        // Computed Property: Advanced parameter extraction parser engine
         const parsedNotes = computed(() => {
             if (!sequenceString.value) return [];
             return sequenceString.value.split('.')
@@ -37,22 +37,17 @@ createApp({
                 .map(token => {
                     const raw = token.trim();
                     
-                    // 1. Process Rest Flag
                     if (raw === '_') {
                         return { isRest: true, semitones: 0, name: "-", frequency: 0, volMultiplier: 0, durMultiplier: 1, isSlide: false };
                     }
 
-                    // 2. Extrapolate parameter parameters via specific regex groups
                     let semitones = 0;
                     let slideTarget = null;
                     
-                    // FIX 1: Set default base note volume multiplier to 0.7 instead of 1.0 
-                    // This allows un-flagged notes to sound full, while leaving clean headroom for 'v9' accents.
                     let volMultiplier = 0.7; 
                     let durMultiplier = 1.0;
                     let flagDisplay = "";
 
-                    // Extract base tone or slide group
                     if (raw.includes('~')) {
                         const slideParts = raw.split('~');
                         semitones = parseInt(slideParts[0], 10) || 0;
@@ -62,19 +57,16 @@ createApp({
                         semitones = parseInt(raw, 10) || 0;
                     }
 
-                    // Extract velocity factor flag (e.g., v4 means 40% gain block level)
                     const volMatch = raw.match(/v([1-9])/);
                     if (volMatch) {
                         volMultiplier = parseInt(volMatch[1], 10) / 10;
                     }
 
-                    // Extract step scale duration length factor flag (e.g., d2 means hold length x2)
                     const durMatch = raw.match(/d([1-4])/);
                     if (durMatch) {
                         durMultiplier = parseInt(durMatch[1], 10);
                     }
 
-                    // Build metadata naming labels
                     const noteIndex = (4 + Math.floor(semitones / 12) * 12 + (semitones % 12) + 12) % 12;
                     const octaveOffset = Math.floor((4 * 12 + semitones) / 12);
                     const name = `${NOTE_NAMES[noteIndex]}${octaveOffset}`;
@@ -104,6 +96,7 @@ createApp({
             tempo.value = 140;
             gate.value = 0.7;
             waveType.value = "triangle";
+            masterVolume.value = 1.0;
         };
 
         const initAudioEngine = () => {
@@ -113,9 +106,8 @@ createApp({
 
             masterGain = audioCtx.createGain();
             
-            // FIX 2: Raised Master Ceiling from 0.2 to 0.6. 
-            // This triples the output amplitude while preserving safety room to prevent distortion/clipping.
-            masterGain.gain.setValueAtTime(0.6, audioCtx.currentTime);
+            // Map the layout amplitude directly to the active configuration baseline reference (0.6 * user setting)
+            masterGain.gain.setValueAtTime(0.6 * masterVolume.value, audioCtx.currentTime);
 
             analyser = audioCtx.createAnalyser();
             analyser.fftSize = 1024;
@@ -124,6 +116,14 @@ createApp({
             analyser.connect(audioCtx.destination);
             startOscilloscope();
         };
+
+        // Realtime Volume Multiplier Watcher Matrix tracking parameters
+        watch(masterVolume, (newVol) => {
+            if (masterGain && audioCtx) {
+                // Scale the core gain node cleanly using an absolute ceiling metric
+                masterGain.gain.linearRampToValueAtTime(0.6 * newVol, audioCtx.currentTime + 0.02);
+            }
+        });
 
         const startOscilloscope = () => {
             if (!scopeCanvas.value) return;
@@ -158,7 +158,6 @@ createApp({
             draw();
         };
 
-        // Enhanced tone voice scheduler with support for velocity values & pitch slides
         const playDynamicTone = (noteObj, startTime, duration) => {
             if (!audioCtx || noteObj.isRest) return;
 
@@ -166,22 +165,15 @@ createApp({
             const gainNode = audioCtx.createGain();
 
             osc.type = waveType.value;
-            
-            // Set base frequency parameter
             osc.frequency.setValueAtTime(noteObj.frequency, startTime);
             
-            // Pitch glide engine automation sweep implementation
             if (noteObj.isSlide) {
                 osc.frequency.exponentialRampToValueAtTime(noteObj.slideTargetFreq, startTime + duration);
             }
 
-            // Amplitude envelope tracking factoring token volMultiplier metrics
             const targetVolume = noteObj.volMultiplier;
             gainNode.gain.setValueAtTime(0, startTime);
             
-            // FIX 3: Adjusted Envelope Decay Behavior.
-            // Changed the exponential release target from a hard fade to an explicit decay 
-            // proportional to the note's active duration window. This helps prevent clicking.
             gainNode.gain.linearRampToValueAtTime(targetVolume, startTime + 0.006);
             gainNode.gain.exponentialRampToValueAtTime(0.001, startTime + duration - 0.002);
 
@@ -207,7 +199,6 @@ createApp({
             const currentNote = list[targetIndex];
             
             const baseStepDuration = 60.0 / tempo.value;
-            // Scale step timing runtime boundaries if a duration multiplier exists
             const customStepDuration = baseStepDuration * currentNote.durMultiplier;
             const activePlayDuration = customStepDuration * gate.value;
 
@@ -222,7 +213,6 @@ createApp({
                 }
             }, delayTimeMs);
 
-            // Dynamically increment sequencer timeline tracking clocks by variable duration lengths
             nextNoteTime += customStepDuration;
             notePointer++;
         };
@@ -253,7 +243,7 @@ createApp({
         });
 
         return {
-            sequenceString, tempo, gate, waveType,
+            sequenceString, tempo, gate, waveType, masterVolume,
             isPlaying, currentNoteIndex, parsedNotes,
             scopeCanvas, togglePlayback, loadDefaultSequence
         };

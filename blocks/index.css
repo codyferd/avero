@@ -1,74 +1,181 @@
-        /* Base Reset */
-        body { margin: 0; overflow: hidden; background: #020205; font-family: 'Inter', sans-serif; }
+/* Base Reset */
+body { 
+    margin: 0; 
+    overflow: hidden; 
+    background: #020205; 
+    font-family: 'Inter', sans-serif; 
+    user-select: none;
+    -webkit-user-select: none;
+    touch-action: none;
+}
 
-        /* Brand UI */
-        #ui { position: absolute; top: 20px; left: 20px; z-index: 10; pointer-events: none; }
+/* Brand UI */
+#ui { position: absolute; top: 20px; left: 20px; z-index: 10; pointer-events: none; }
 
-        /* Crosshair */
-        #crosshair {
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        width: 8px;
-        height: 8px;
-        background-color: white;
-        border-radius: 50%;
-        border: 1px solid rgba(0,0,0,0.5);
-        transform: translate(-50%, -50%);
-        pointer-events: none;
-        z-index: 100;
-        }
+/* Crosshair */
+#crosshair {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 8px;
+    height: 8px;
+    background-color: white;
+    border-radius: 50%;
+    border: 1px solid rgba(0,0,0,0.5);
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+    z-index: 100;
+}
 
-        /* HUD (FPS Counter) */
-        #hud {
-        position: absolute;
-        top: 70px; /* Positioned below the Avero Blocks title */
-        left: 20px;
-        padding: 10px;
-        background: rgba(0, 0, 0, 0.8);
-        color: #ffffff;
-        font-family: 'Courier New', Courier, monospace;
-        font-size: 14px;
-        border-radius: 4px;
-        pointer-events: none;
-        z-index: 100;
-        min-width: 80px;
-        border-left: 3px solid #6366f1; /* Indigo accent to match brand */
-        }
+/* HUD (FPS Counter) */
+#hud {
+    position: absolute;
+    top: 70px; 
+    left: 20px;
+    padding: 10px;
+    background: rgba(0, 0, 0, 0.8);
+    color: #ffffff;
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 14px;
+    border-radius: 4px;
+    pointer-events: none;
+    z-index: 100;
+    min-width: 80px;
+    border-left: 3px solid #6366f1; 
+}
 
-        /* Block Picker Hotbar */
-        #hotbar {
-        position: absolute;
-        bottom: 30px;
-        left: 50%;
-        transform: translateX(-50%);
-        display: flex;
-        gap: 8px;
-        background: rgba(0, 0, 0, 0.85);
-        padding: 8px;
-        border-radius: 8px;
-        border: 1px solid #333;
-        pointer-events: all; /* Allows clicking to select blocks */
-        z-index: 101;
-        }
+/* Block Picker Hotbar */
+#hotbar {
+    position: absolute;
+    bottom: 30px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 8px;
+    background: rgba(0, 0, 0, 0.85);
+    padding: 8px;
+    border-radius: 8px;
+    border: 1px solid #333;
+    pointer-events: all; 
+    z-index: 101;
+    max-width: 90vw;
+    overflow-x: auto;
+}
 
-        .slot {
-            width: 44px;
-            height: 44px;
-            border: 2px solid #444;
-            border-radius: 6px;
-            cursor: pointer;
-            transition: all 0.15s ease;
-            position: relative;
-        }
+.slot {
+    width: 44px;
+    height: 44px;
+    border: 2px solid #444;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    position: relative;
+    flex-shrink: 0;
+}
 
-        .slot:hover {
-            border-color: #fff;
-            transform: translateY(-5px);
-        }
+.slot:hover {
+    border-color: #fff;
+    transform: translateY(-5px);
+}
 
-        .slot.active {
-            border-color: #6366f1;
-            box-shadow: 0 0 15px rgba(99, 102, 241, 0.4);
-            transform: scale(1.1) translateY(-5px);
-        }
+.slot.active {
+    border-color: #6366f1;
+    box-shadow: 0 0 15px rgba(99, 102, 241, 0.4);
+    transform: scale(1.1) translateY(-5px);
+}
+
+/* --- Mobile Controls HUD System --- */
+#mobile-overlay {
+    position: absolute;
+    inset: 0;
+    z-index: 90;
+    pointer-events: none;
+    display: none;
+}
+
+@media (pointer: coarse) {
+    #mobile-overlay { display: block; }
+    #crosshair { display: block; }
+    #hotbar { bottom: 120px; }
+}
+
+/* Joystick Layer Positioning */
+#joystick-zone {
+    position: absolute;
+    bottom: 30px;
+    left: 30px;
+    width: 150px;
+    height: 150px;
+    pointer-events: auto;
+}
+
+#joystick-base {
+    position: relative;
+    width: 120px;
+    height: 120px;
+    margin: 15px;
+    background: rgba(255, 255, 255, 0.1);
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    border-radius: 50%;
+    backdrop-filter: blur(4px);
+}
+
+#joystick-thumb {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 50px;
+    height: 50px;
+    background: rgba(99, 102, 241, 0.6);
+    border: 2px solid #6366f1;
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+}
+
+/* Actions Trigger Buttons Group */
+#action-zone {
+    position: absolute;
+    bottom: 25px;
+    right: 25px;
+    display: grid;
+    grid-template-columns: repeat(2, 75px);
+    gap: 12px;
+    pointer-events: auto;
+}
+
+.action-btn {
+    width: 75px;
+    height: 75px;
+    background: rgba(0, 0, 0, 0.75);
+    border: 2px solid rgba(255, 255, 255, 0.15);
+    border-radius: 50%;
+    color: white;
+    font-weight: 900;
+    font-size: 18px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    line-height: 1.1;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+}
+
+.action-btn:active {
+    background: rgba(99, 102, 241, 0.4);
+    border-color: #6366f1;
+    transform: scale(0.92);
+}
+
+.action-btn .label {
+    font-size: 8px;
+    letter-spacing: 0.05em;
+    opacity: 0.7;
+    font-family: system-ui, sans-serif;
+}
+
+#btn-jump {
+    grid-column: span 2;
+    width: 162px;
+    height: 55px;
+    border-radius: 30px;
+}

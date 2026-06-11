@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Avero Merge</title>
+    <script libs="core" src="../share/cdn.js"></script>
+</head>
+<body class="bg-[#020205] text-white font-sans overflow-hidden min-h-screen flex flex-col justify-between p-4 box-border select-none touch-none">
+
+    <header class="w-full max-w-md mx-auto flex flex-col gap-3">
+        <div class="flex justify-between items-center">
+            <h1 class="text-3xl font-black italic tracking-tighter uppercase">
+                Avero <span class="text-indigo-500">Merge</span>
+            </h1>
+            <div class="bg-black/40 border border-neutral-800 rounded-lg p-2 text-right min-w-[80px]">
+                <div class="text-[10px] text-neutral-400 font-bold uppercase tracking-wider">Score</div>
+                <div id="score" class="text-xl font-black text-indigo-400">0</div>
+            </div>
+        </div>
+
+        <div class="flex justify-between items-center gap-2 bg-neutral-900/60 p-2 rounded-xl border border-neutral-800/80 backdrop-blur-sm">
+            <div class="flex items-center gap-2">
+                <label for="grid-select" class="text-xs font-bold uppercase text-neutral-400 tracking-wide">Grid:</label>
+                <select id="grid-select" class="bg-neutral-800 border border-neutral-700 rounded-lg px-2 py-1 text-sm font-bold text-white focus:outline-none focus:border-indigo-500 cursor-pointer">
+                    <option value="3">3 x 3</option>
+                    <option value="4" selected>4 x 4</option>
+                    <option value="5">5 x 5</option>
+                    <option value="6">6 x 6</option>
+                </select>
+            </div>
+            <button id="restart-btn" class="bg-indigo-600 hover:bg-indigo-500 text-white font-extrabold uppercase text-xs px-4 py-2 rounded-lg tracking-wider transition-all active:scale-95 shadow-lg shadow-indigo-600/20">
+                Restart
+            </button>
+        </div>
+    </header>
+
+    <main class="w-full flex-grow flex items-center justify-center py-4">
+        <div id="game-container" class="relative w-full max-w-[400px] aspect-square bg-neutral-950 border-2 border-neutral-800 rounded-2xl p-2 box-border shadow-2xl shadow-black/80">
+            </div>
+    </main>
+
+    <div id="status-overlay" class="hidden fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex-col items-center justify-center gap-4 text-center">
+        <h2 id="status-title" class="text-4xl font-black italic tracking-tighter uppercase">GAME OVER</h2>
+        <p id="status-desc" class="text-neutral-400 max-w-xs text-sm px-4">The board filled up completely with no valid merges remaining.</p>
+        <button id="modal-restart-btn" class="bg-indigo-500 hover:bg-indigo-400 text-white font-black uppercase text-sm px-6 py-3 rounded-xl tracking-widest transition-all active:scale-95">
+            Try Again
+        </button>
+    </div>
+
+    <footer class="w-full max-w-md mx-auto text-center text-[10px] tracking-wide text-neutral-500 uppercase font-medium pb-2">
+        Swipe or use Arrow Keys / WASD to merge blocks
+    </footer>
+
+    <script src="index.js"></script>
+</body>
+</html>

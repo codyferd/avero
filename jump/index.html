@@ -3,7 +3,7 @@
     <head>
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
-        <title>Avero Superbirdjumper3</title>
+        <title>Avero Jump</title>
         <script libs="core,phaser" src="../share/cdn.js"></script>
         <script src="constants.js"></script>
         <script src="game.js"></script>
@@ -13,12 +13,12 @@
         <div id="app" :style="{ backgroundColor: settings.colors.bg }">
             <div id="ui" class="absolute inset-0 z-10 pointer-events-none text-white p-6 flex flex-col justify-between select-none">
                 <div class="absolute bottom-4 left-6 opacity-30 text-[10px] font-bold uppercase tracking-widest">
-                    Version 1.1
+                    Version 1.2
                 </div>
 
                 <div v-if="gameState !== 'playing'" class="pointer-events-auto absolute inset-0 flex flex-col items-center justify-center bg-black/60 backdrop-blur-sm">
                     <div class="menu-card flex flex-col items-center w-full max-w-xs gap-4 p-6 rounded-[2rem] shadow-2xl mx-4">
-                        <h1 class="text-3xl font-black italic uppercase tracking-tighter">Superbirdjumper3</h1>
+                        <h1 class="text-3xl font-black italic uppercase tracking-tighter">Avero Jump</h1>
 
                         <div v-if="gameState !== 'start'" class="text-center bg-white/5 w-full py-2 rounded-xl border border-white/10">
                             <p class="text-2xl font-black italic leading-none">Score: {{ score }}</p>
@@ -88,4 +88,3 @@
         </div>
     </body>
 </html>
-

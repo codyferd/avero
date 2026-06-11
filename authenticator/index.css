@@ -1,0 +1,30 @@
+[v-cloak] { display: none; }
+
+.custom-scrollbar::-webkit-scrollbar { 
+    width: 5px; 
+    height: 5px; 
+}
+.custom-scrollbar::-webkit-scrollbar-track { 
+    background: #020203; 
+}
+.custom-scrollbar::-webkit-scrollbar-thumb { 
+    background: #13131a; 
+    border-radius: 4px; 
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover { 
+    background: #1c1c26; 
+}
+
+.sidebar-label { 
+    display: block; 
+    font-size: 9px; 
+    font-weight: 900; 
+    text-transform: uppercase; 
+    color: #3f3f46; 
+    letter-spacing: 0.15em; 
+    margin-bottom: 6px; 
+}
+
+.linear { 
+    transition-timing-function: linear !important; 
+}

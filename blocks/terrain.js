@@ -1,7 +1,29 @@
+const STRUCTURES = {
+    TREE: (gx, height, gz, randomVal) => {
+        const trunkHeight = 3 + Math.floor(randomVal * 3);
+        const parts = [];
+        for (let ty = 0; ty < trunkHeight; ty++) {
+            parts.push({ x: gx, y: height + ty, z: gz, type: BLOCKS.WOOD });
+        }
+        for (let lx = -1; lx <= 1; lx++) {
+            for (let lz = -1; lz <= 1; lz++) {
+                for (let ly = 0; ly < 2; ly++) {
+                    parts.push({ x: gx + lx, y: height + trunkHeight + ly, z: gz + lz, type: BLOCKS.LEAF });
+                }
+            }
+        }
+        return parts;
+    },
+
+    isCave: (x, y, z) => {
+        const noise = Math.sin(x * 0.2) * Math.cos(y * 0.2) * Math.sin(z * 0.2);
+        return y < (TERRAIN_BASE_HEIGHT - 2) && noise > 0.7;
+    }
+};
+
 const chunks = new Map();
 const _tempColor = new THREE.Color(), _tempMatrix = new THREE.Matrix4();
 
-/** Procedural height math */
 const getTerrainHeight = (x, z) => {
     const nx = x + WORLD_SEED, nz = z + WORLD_SEED;
     let h = (Math.sin(nx * TERRAIN_ROUGHNESS) * Math.cos(nz * TERRAIN_ROUGHNESS)) * TERRAIN_AMPLITUDE;
@@ -25,7 +47,6 @@ function generateChunk(cx, cz, scene, geometry, material) {
             const gx = cx * CHUNK_SIZE + x, gz = cz * CHUNK_SIZE + z;
             const h = getTerrainHeight(gx, gz);
 
-            // 1. Terrain & Caves
             for (let y = h - 1; y >= h - VISIBLE_LAYERS; y--) {
                 if (y < 0 || STRUCTURES.isCave(gx, y, gz)) continue;
 
@@ -36,12 +57,10 @@ function generateChunk(cx, cz, scene, geometry, material) {
                 i = placeBlock(i, gx, y, gz, type, mesh);
             }
 
-            // 2. Water
             if (h < WATER_LEVEL) {
                 for (let y = h; y < WATER_LEVEL; y++) i = placeBlock(i, gx, y, gz, BLOCKS.WATER, mesh);
             }
 
-            // 3. Decorations (Trees & Flowers)
             if (h >= WATER_LEVEL) {
                 const rng = pseudoRandom(gx, gz);
                 if (rng < TREE_CHANCE) {
@@ -49,8 +68,6 @@ function generateChunk(cx, cz, scene, geometry, material) {
                         if (i < max) i = placeBlock(i, p.x, p.y, p.z, p.type, mesh);
                     });
                 } else if (rng < FLOWER_CHANCE) {
-                    // Small flower hack: use placeBlock but adjust scale slightly if needed
-                    // or just place a standard block for speed
                     i = placeBlock(i, gx, h, gz, BLOCKS.FLOWER, mesh);
                 }
             }

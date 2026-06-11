@@ -1,0 +1,20 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+[v-cloak] { display: none !important; }
+
+.custom-scroll::-webkit-scrollbar {
+    width: 4px;
+    height: 4px;
+}
+.custom-scroll::-webkit-scrollbar-track {
+    background: transparent;
+}
+.custom-scroll::-webkit-scrollbar-thumb {
+    background: #1f1f23;
+    border-radius: 2px;
+}
+.custom-scroll::-webkit-scrollbar-thumb:hover {
+    background: #2d2d34;
+}

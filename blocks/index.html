@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Avero Blocks</title>
     <script libs="core,three" src="../share/cdn.js"></script>
 </head>
@@ -19,14 +19,26 @@
         <div id="fps-counter">FPS: 0</div>
     </div>
 
-    <div id="hotbar">
+    <div id="mobile-overlay">
+        <div id="joystick-zone">
+            <div id="joystick-base">
+                <div id="joystick-thumb"></div>
+            </div>
         </div>
+
+        <div id="action-zone">
+            <button id="btn-break" class="action-btn text-red-500">💥<br><span class="label">BREAK</span></button>
+            <button id="btn-place" class="action-btn text-green-500">🧱<br><span class="label">PLACE</span></button>
+            <button id="btn-jump" class="action-btn text-indigo-400">🦘<br><span class="label">JUMP</span></button>
+        </div>
+    </div>
+
+    <div id="hotbar"></div>
 
     <script src="config.js"></script>
     <script src="block.js"></script>
     <script src="terrain.js"></script>
     <script src="player.js"></script>
     <script src="index.js"></script>
-
 </body>
 </html>
