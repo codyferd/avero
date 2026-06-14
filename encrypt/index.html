@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Avero Encrypt</title>
+    <script libs="core" src="../share/cdn.js"></script>
+</head>
+<body class="bg-[#000000] text-white font-sans min-h-screen select-none overflow-x-hidden md:overflow-hidden">
+
+    <div id="app" v-cloak class="min-h-screen md:h-screen w-screen flex flex-col relative">
+        
+        <header class="h-14 border-b border-zinc-900 flex items-center justify-between px-4 bg-[#000000] z-10 flex-shrink-0">
+            <div class="flex items-center space-x-2 cursor-pointer" @click="resetWorkspace">
+                <span class="text-xl">🔐</span>
+                <h1 class="text-lg font-bold tracking-tight">Avero <span class="text-emerald-500">Encrypt</span></h1>
+            </div>
+            <div class="flex items-center space-x-2 text-[10px] sm:text-xs bg-zinc-900 px-3 py-1 rounded-full border border-zinc-800 font-mono text-zinc-400">
+                <span>Engine:</span>
+                <span class="text-emerald-400 font-bold">Web Crypto API</span>
+            </div>
+        </header>
+
+        <main class="flex-1 flex flex-col md:flex-row overflow-y-auto md:overflow-hidden relative">
+            
+            <div class="w-full md:w-5/12 p-4 sm:p-6 border-b md:border-b-0 md:border-r border-zinc-900 bg-[#000000] flex flex-col justify-between order-1">
+                <div class="space-y-6">
+                    <div>
+                        <label class="text-[11px] font-mono font-bold tracking-widest text-zinc-500 uppercase block mb-2">Operation Pipeline Mode</label>
+                        <div class="grid grid-cols-2 bg-zinc-950 rounded-xl p-1 border border-zinc-900">
+                            <button @click="setOperationMode('encrypt')" 
+                                    :class="['py-2.5 rounded-lg text-xs font-semibold transition font-mono tracking-tight', operationMode === 'encrypt' ? 'bg-emerald-600 text-white shadow-md' : 'text-zinc-500 hover:text-zinc-300']">
+                                🔒 ENCRYPT
+                            </button>
+                            <button @click="setOperationMode('decrypt')" 
+                                    :class="['py-2.5 rounded-lg text-xs font-semibold transition font-mono tracking-tight', operationMode === 'decrypt' ? 'bg-zinc-800 text-white shadow-md' : 'text-zinc-500 hover:text-zinc-300']">
+                                🔓 DECRYPT
+                            </button>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="text-[11px] font-mono font-bold tracking-widest text-zinc-500 uppercase block mb-2">Data Payload Target</label>
+                        <div class="grid grid-cols-2 bg-zinc-950 rounded-xl p-1 border border-zinc-900">
+                            <button @click="setPayloadType('text')" 
+                                    :class="['py-2 rounded-lg text-xs font-medium transition', payloadType === 'text' ? 'bg-zinc-900 text-white border border-zinc-800' : 'text-zinc-600 hover:text-zinc-400']">
+                                📝 Plain Text
+                            </button>
+                            <button @click="setPayloadType('file')" 
+                                    :class="['py-2 rounded-lg text-xs font-medium transition', payloadType === 'file' ? 'bg-zinc-900 text-white border border-zinc-800' : 'text-zinc-600 hover:text-zinc-400']">
+                                📁 File Node
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="space-y-1.5">
+                        <div class="flex items-center justify-between">
+                            <label class="text-[11px] font-mono font-bold tracking-widest text-zinc-500 uppercase">Secret Passphrase Key</label>
+                            <button @click="togglePasswordVisibility" class="text-[10px] text-zinc-500 hover:text-zinc-300 font-mono">
+                                {{ showPassword ? 'Hide Key' : 'Reveal Key' }}
+                            </button>
+                        </div>
+                        <div class="relative w-full">
+                            <input :type="showPassword ? 'text' : 'password'" 
+                                   v-model="passphrase"
+                                   placeholder="Enter cryptographic secret string..." 
+                                   class="w-full bg-zinc-950 border border-zinc-900 rounded-xl py-2.5 pl-4 pr-10 text-sm focus:outline-none focus:border-zinc-700 placeholder-zinc-700 text-white font-mono" />
+                            <span class="absolute right-3.5 top-3 text-xs opacity-30">🔑</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-8 pt-4 border-t border-zinc-950">
+                    <button @click="processCryptographicPayload"
+                            :disabled="isProcessing || !passphrase"
+                            :class="['w-full py-3 rounded-xl font-mono text-xs font-bold tracking-wider uppercase transition duration-200 shadow-lg flex items-center justify-center space-x-2',
+                                     !passphrase ? 'bg-zinc-900 text-zinc-600 border border-zinc-950 cursor-not-allowed' : 
+                                     operationMode === 'encrypt' ? 'bg-emerald-600 hover:bg-emerald-500 text-white' : 'bg-blue-600 hover:bg-blue-500 text-white']">
+                        <span v-if="isProcessing" class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+                        <span v-else>{{ operationMode === 'encrypt' ? '🔒 Run Encryption Array' : '🔓 Run Decryption Array' }}</span>
+                    </button>
+                </div>
+            </div>
+
+            <div class="w-full md:w-7/12 h-auto md:h-full p-4 sm:p-6 flex flex-col bg-zinc-950 order-2 overflow-y-auto custom-scrollbar">
+                
+                <div class="flex-1 flex flex-col min-h-0 space-y-4">
+                    <div class="flex items-center justify-between flex-shrink-0">
+                        <h2 class="text-xs font-bold font-mono tracking-widest text-zinc-600 uppercase">
+                            Input Target Pipeline Data Source
+                        </h2>
+                        <button v-if="hasInputContent" @click="clearInputSource" class="text-[10px] text-zinc-500 hover:text-red-400 font-mono transition">
+                            ✕ Clear Input
+                        </button>
+                    </div>
+
+                    <div v-if="payloadType === 'text'" class="flex-1 flex flex-col min-h-[200px] md:min-h-0">
+                        <textarea v-model="textInput"
+                                  :placeholder="operationMode === 'encrypt' ? 'Enter raw text strings to encode into unreadable secure text arrays...' : 'Paste Base64 encoded cypher block output text array here to decode...'"
+                                  class="w-full flex-1 min-h-[180px] md:min-h-0 bg-black border border-zinc-900 rounded-xl p-4 text-xs font-mono placeholder-zinc-700 focus:outline-none focus:border-zinc-800 leading-relaxed select-text text-zinc-300 resize-none custom-scrollbar"></textarea>
+                    </div>
+
+                    <div v-else class="flex-1 flex flex-col min-h-[200px] md:min-h-0">
+                        <div @dragover.prevent="onDragOver"
+                             @dragleave="onDragLeave"
+                             @drop.prevent="onFileDrop"
+                             @click="triggerFileSelect"
+                             :class="['flex-1 border-2 border-dashed rounded-xl p-6 flex flex-col items-center justify-center text-center cursor-pointer transition min-h-[180px] md:min-h-0 bg-black', 
+                                      isDragging ? 'border-emerald-500 bg-emerald-950/10' : 'border-zinc-900 hover:border-zinc-800']">
+                            
+                            <input type="file" id="native-file-picker-node" class="hidden" @change="onFileSelected" />
+                            
+                            <div v-if="!fileInput" class="space-y-2 pointer-events-none opacity-40 group-hover:opacity-100 transition">
+                                <span class="text-3xl block">📦</span>
+                                <p class="text-xs font-mono font-medium text-zinc-400">Drag & drop raw local data object node here</p>
+                                <p class="text-[10px] text-zinc-600">or click to manually map system directory path index</p>
+                            </div>
+                            <div v-else class="space-y-3 p-4 bg-zinc-950 border border-zinc-900 rounded-lg max-w-sm shadow-md">
+                                <span class="text-2xl block">📄</span>
+                                <div class="text-left font-mono">
+                                    <p class="text-xs font-bold text-zinc-300 truncate max-w-[240px]">{{ fileInput.name }}</p>
+                                    <p class="text-[10px] text-zinc-500 mt-0.5">Payload Size: {{ formatBytes(fileInput.size) }}</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div v-if="textOutput || statusMessage" class="mt-6 pt-6 border-t border-zinc-900 flex flex-col space-y-3 flex-shrink-0">
+                    <div class="flex items-center justify-between">
+                        <h3 class="text-xs font-mono font-bold tracking-widest text-zinc-600 uppercase">
+                            Operational Output Node Stream
+                        </h3>
+                        <div class="flex items-center space-x-2">
+                            <span v-if="statusMessage" class="text-[10px] font-mono text-zinc-500">{{ statusMessage }}</span>
+                            <button v-if="textOutput" @click="copyOutputToClipboard" class="px-2 py-1 bg-zinc-900 border border-zinc-800 rounded text-[10px] font-mono hover:text-white hover:border-zinc-700 transition">
+                                📋 Copy Text Data
+                            </button>
+                        </div>
+                    </div>
+
+                    <div v-if="textOutput" class="w-full bg-black border border-zinc-900 rounded-xl p-4 max-h-[150px] overflow-y-auto custom-scrollbar">
+                        <p class="text-xs font-mono text-zinc-400 leading-relaxed break-all select-text">{{ textOutput }}</p>
+                    </div>
+                </div>
+
+            </div>
+        </main>
+    </div>
+
+    <script src="index.js"></script>
+</body>
+</html>

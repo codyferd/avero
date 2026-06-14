@@ -3,8 +3,8 @@ const LIB_MAP = {
         "index.css",
         "../share/logo.avif",
         "../share/theme.css",
-        "https://cdn.tailwindcss.com",
-        "https://cdn.jsdelivr.net/npm/vue@3.5.34/dist/vue.global.prod.js",
+        "https://cdn.jsdelivr.net/npm/@tailwindcss/browser/dist/index.global.js",
+        "https://cdn.jsdelivr.net/npm/vue@3.5.38/dist/vue.global.prod.js",
     ],
     leaflet: [
         "https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.min.css",
@@ -46,7 +46,7 @@ if (requested) {
                 document.write(`<link rel="icon" type="image/avif" href="${url}">`);
             } else if (url.endsWith('.css')) {
                 document.write(`<link rel="stylesheet" href="${url}">`);
-            } else if (url.endsWith('.js') || url.includes('cdn.tailwindcss.com')) {
+            } else if (url.endsWith('.js')) {
                 document.write(`<script src="${url}"></script>`);
             }
         });

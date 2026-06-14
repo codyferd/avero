@@ -1,23 +1,17 @@
-window.addEventListener('DOMContentLoaded', () => {
-    if (typeof initBlockPicker === 'function') {
-        initBlockPicker();
-    }
-});
-
-// --- GLOBAL ENGINE VARIABLES ---
 let scene, camera, renderer;
 let blockGeometry, blockMaterial;
+
 let lastTime = performance.now();
+let fpsLastTime = performance.now();
 let frames = 0;
 const fpsDisplay = document.getElementById('fps-counter');
+const coordsDisplay = document.getElementById('coords-display'); // Cached lookup target element
 
-// Touch View Tracking States
 let touchLookId = null;
 let lastTouchX = 0;
 let lastTouchY = 0;
-const touchSensitivity = 0.005;
+const touchSensitivity = 0.004;
 
-// Global inputs structural proxy hook
 window.mobileControlsState = {
     moveForward: 0,
     moveBackward: 0,
@@ -28,21 +22,18 @@ window.mobileControlsState = {
     actionPlace: false
 };
 
-/**
- * INITIALIZE THE ENGINE
- */
 function initEngine() {
-    // 1. Create Scene & Sky
     scene = new THREE.Scene();
+    
     scene.background = new THREE.Color().setHex(SKY_COLOR, THREE.SRGBColorSpace);
+    
+    // Fallback initialize fog bound mappings to global configuration limits
     scene.fog = new THREE.Fog(scene.background, FOG_NEAR, FOG_FAR);
 
-    // 2. Setup Camera
-    camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+    camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.1, 2000);
     camera.rotation.order = 'YXZ';
-    camera.position.set(50, 25, 50);
+    camera.position.set(16, 25, 16); 
 
-    // 3. Setup Renderer
     renderer = new THREE.WebGLRenderer({
         antialias: false, 
         powerPreference: "high-performance"
@@ -50,47 +41,69 @@ function initEngine() {
 
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.colorManagement = true;
-
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5)); 
     renderer.setSize(window.innerWidth, window.innerHeight);
     document.body.appendChild(renderer.domElement);
 
-    // 4. LIGHTING - Optimized for Voxel Definition
-    const skyColor = 0xffffff; 
-    const groundColor = 0x444444; 
-    const hemiLight = new THREE.HemisphereLight(skyColor, groundColor, 0.6);
+    const hemiLight = new THREE.HemisphereLight(0xffffff, 0x444444, 0.7);
     scene.add(hemiLight);
 
-    const sun = new THREE.DirectionalLight(0xffffff, 1.0);
-    sun.position.set(10, 20, 10); 
+    const sun = new THREE.DirectionalLight(0xffffff, 0.85);
+    sun.position.set(30, 80, 40); 
     scene.add(sun);
 
-    const fillLight = new THREE.DirectionalLight(0xffffff, 0.2);
-    fillLight.position.set(-10, 10, -10);
-    scene.add(fillLight);
-
-    // 5. Shared Assets
     blockGeometry = new THREE.BoxGeometry(BLOCK_SIZE, BLOCK_SIZE, BLOCK_SIZE);
+    blockMaterial = new THREE.MeshLambertMaterial({ color: 0xffffff });
 
-    blockMaterial = new THREE.MeshLambertMaterial({
-        color: 0xffffff,
-        transparent: false,
-        opacity: 1.0
-    });
-
-    // 6. Init Player Inputs & Dynamic Touch Mechanics
     initPlayerInputs();
     setupMobileInteraction();
+    setupHexColorPickerInterface();
+    setupRenderDistanceInterface(); 
 
-    // 7. Handle Window Resizing
     window.addEventListener('resize', onWindowResize);
 }
 
-/**
- * MOBILE INTERACTION SYSTEMS LOGIC
- */
+function setupRenderDistanceInterface() {
+    const slider = document.getElementById('render-dist-slider');
+    const label = document.getElementById('dist-lbl');
+    
+    if (slider) {
+        slider.value = RENDER_DISTANCE;
+        
+        const updateRenderDistance = (value) => {
+            const valInt = parseInt(value, 10);
+            RENDER_DISTANCE = valInt;
+            label.innerText = `${valInt} Chunks`;
+            
+            const maxViewRadius = valInt * CHUNK_SIZE * BLOCK_SIZE;
+            if (scene && scene.fog) {
+                scene.fog.near = maxViewRadius * 0.4;
+                scene.fog.far = maxViewRadius * 0.95;
+            }
+        };
+
+        slider.addEventListener('input', (e) => updateRenderDistance(e.target.value));
+        updateRenderDistance(slider.value);
+    }
+}
+
+function setupHexColorPickerInterface() {
+    const picker = document.getElementById('block-color-picker');
+    const label = document.getElementById('hex-lbl');
+    
+    if (picker) {
+        const updateHexBlock = (hexValue) => {
+            const cleanHex = hexValue.toUpperCase();
+            label.innerText = cleanHex;
+            BLOCKS.CUSTOM.color = parseInt(cleanHex.replace('#', '0x'), 16);
+        };
+
+        picker.addEventListener('input', (e) => updateHexBlock(e.target.value));
+        updateHexBlock(picker.value);
+    }
+}
+
 function setupMobileInteraction() {
-    // Auto flag device mode configurations on runtime contact
     window.addEventListener('touchstart', function onFirstTouch() {
         document.getElementById('mobile-overlay').style.display = 'block';
         window.removeEventListener('touchstart', onFirstTouch);
@@ -102,7 +115,6 @@ function setupMobileInteraction() {
     let baseCenter = { x: 0, y: 0 };
     const maxRadius = 45;
 
-    // Joystick Math Calculations
     joystickBase.addEventListener('touchstart', (e) => {
         if (joystickTouchId !== null) return;
         const touch = e.changedTouches[0];
@@ -167,9 +179,8 @@ function setupMobileInteraction() {
     window.addEventListener('touchend', resetJoystick);
     window.addEventListener('touchcancel', resetJoystick);
 
-    // Touch look setup (Swipe tracking everywhere outside UI elements)
     window.addEventListener('touchstart', (e) => {
-        if (e.target.closest('#joystick-zone') || e.target.closest('#action-zone') || e.target.closest('#hotbar')) return;
+        if (e.target.closest('#joystick-zone') || e.target.closest('#action-zone') || e.target.closest('#hud')) return;
         if (touchLookId !== null) return;
 
         const touch = e.changedTouches[0];
@@ -213,7 +224,6 @@ function setupMobileInteraction() {
     window.addEventListener('touchend', resetTouchLook);
     window.addEventListener('touchcancel', resetTouchLook);
 
-    // Action button bindings
     const btnBreak = document.getElementById('btn-break');
     const btnPlace = document.getElementById('btn-place');
     const btnJump = document.getElementById('btn-jump');
@@ -225,42 +235,46 @@ function setupMobileInteraction() {
     btnJump.addEventListener('touchcancel', () => { window.mobileControlsState.jump = false; });
 }
 
-/**
- * THE MAIN GAME LOOP
- */
 function animate() {
     requestAnimationFrame(animate);
 
-    frames++;
     const currentTime = performance.now();
-    if (currentTime >= lastTime + 1000) {
-        fpsDisplay.innerText = `FPS: ${frames}`;
+    frames++;
+    
+    let dt = (currentTime - lastTime) / 16.666; 
+    lastTime = currentTime;
+
+    if (dt > 3.0 || isNaN(dt)) dt = 1.0;
+
+    if (currentTime >= fpsLastTime + 1000) {
+        if (fpsDisplay) fpsDisplay.innerText = `FPS: ${frames}`;
         frames = 0;
-        lastTime = currentTime;
+        fpsLastTime = currentTime;
     }
     
-    // Update Logic
-    updatePlayer(camera);
+    updatePlayer(camera, dt);
     updateWorldChunks(camera, scene, blockGeometry, blockMaterial);
 
-    // Reset single-pulse flags immediately after the update tick evaluation
+    // REAL-TIME COORDINATES TICKER: Convert matrix coordinates to game units
+    if (coordsDisplay && camera) {
+        const cx = Math.floor(camera.position.x);
+        const cy = Math.floor(camera.position.y - PLAYER_HEIGHT); // Measures surface block position beneath feet
+        const cz = Math.floor(camera.position.z);
+        coordsDisplay.innerHTML = `X: <span class="text-indigo-400">${cx}</span> Y: <span class="text-indigo-400">${cy}</span> Z: <span class="text-indigo-400">${cz}</span>`;
+    }
+
     window.mobileControlsState.actionBreak = false;
     window.mobileControlsState.actionPlace = false;
 
-    // Render
     renderer.render(scene, camera);
 }
 
-/**
- * UTILS
- */
 function onWindowResize() {
     camera.aspect = window.innerWidth / window.innerHeight;
     camera.updateProjectionMatrix();
     renderer.setSize(window.innerWidth, window.innerHeight);
 }
 
-// START THE GAME
 window.addEventListener('DOMContentLoaded', () => {
     initEngine();
     animate();

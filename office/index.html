@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Avero Office</title>
     <script libs="core" src="../share/cdn.js"></script>
 </head>
@@ -10,7 +10,7 @@
 
 <div id="app" v-cloak class="flex flex-col lg:flex-row h-screen w-screen overflow-hidden">
 
-    <aside v-if="!isPresentationMode" class="w-full lg:w-80 bg-[#0b0b0f] border-b lg:border-b-0 lg:border-r border-zinc-800/80 flex flex-col p-5 space-y-6 shrink-0 z-30">
+    <aside v-if="!isPresentationMode" class="w-full lg:w-80 bg-[#0b0b0f] border-b lg:border-b-0 lg:border-r border-zinc-800/80 flex flex-col p-5 space-y-6 shrink-0 z-30 overflow-y-auto custom-scrollbar">
         <div>
             <div class="flex items-center gap-2">
                 <span class="text-indigo-500 font-black text-xl font-mono">🌐</span>
@@ -32,7 +32,7 @@
             <input type="file" ref="fileInputBridge" class="hidden" accept=".js" @change="handleFileChange">
         </div>
 
-        <div class="space-y-2 flex-1 overflow-y-auto custom-scrollbar pr-1">
+        <div class="space-y-2 flex-1 pr-1">
             <label class="sidebar-label">Append Layout Sections</label>
             <div class="grid grid-cols-1 gap-1.5">
                 <button @click="addBlock('document')" class="add-btn border border-indigo-500/30 bg-indigo-500/5 text-indigo-400 hover:bg-indigo-500/10">
@@ -47,7 +47,7 @@
             </div>
         </div>
 
-        <div class="pt-4 border-t border-zinc-900">
+        <div class="pt-4 border-t border-zinc-900 shrink-0">
             <button @click="togglePresentationMode" class="w-full py-3 bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 text-white font-black text-xs uppercase tracking-widest rounded-xl transition shadow-lg">
                 ⚡ Go Live (Presentation View)
             </button>
@@ -227,111 +227,100 @@
                         
                         <div v-if="!isPresentationMode" class="flex flex-wrap items-center justify-between gap-2 z-10 bg-black/40 backdrop-blur-md px-3 py-2 rounded-xl border border-white/5 text-white">
                             <div class="flex items-center gap-2">
-                                <span class="text-[9px] font-mono tracking-widest uppercase bg-zinc-900 px-2 py-0.5 rounded text-zinc-400">Slide Canvas {{ block.activeSlideIndex + 1 }} / {{ block.slides.length }}</span>
-                                
-                                <select v-model="block.slides[block.activeSlideIndex].format" class="bg-zinc-800 border border-zinc-700 text-[9px] uppercase font-bold tracking-wider px-2 py-0.5 rounded outline-none cursor-pointer">
-                                    <option value="spotlight">Layout: Unified Spotlight</option>
-                                    <option value="split">Layout: Two-Column Split</option>
-                                    <option value="metrics">Layout: Analytics Core</option>
-                                    <option value="media-right">Layout: Media Framework</option>
+                                <span class="text-[9px] font-mono tracking-widest uppercase bg-zinc-900 px-2 py-0.5 rounded text-zinc-400">Slide Setup Controls</span>
+                            </div>
+                            <div class="flex items-center gap-3 text-xs">
+                                <select v-model="block.slides[block.activeSlideIndex].format" class="bg-zinc-900 border border-zinc-700 rounded text-[10px] px-2 py-1 font-mono outline-none text-amber-400">
+                                    <option value="spotlight">🔦 Spotlight Center</option>
+                                    <option value="split">🌗 Split Panel layout</option>
+                                    <option value="metric">📊 Big Data Metric</option>
                                 </select>
-                            </div>
-
-                            <div class="flex items-center gap-3 text-[10px] font-mono">
-                                <div class="flex items-center gap-1">
-                                    <span>BG Hex:</span>
-                                    <input type="color" v-model="block.slides[block.activeSlideIndex].bg" class="w-4 h-4 rounded bg-transparent border-none cursor-pointer outline-none">
+                                <div class="flex items-center gap-1.5 font-mono text-[10px]">
+                                    <span>BG:</span>
+                                    <input type="color" v-model="block.slides[block.activeSlideIndex].bg" class="w-5 h-5 rounded bg-transparent border-0 cursor-pointer">
                                 </div>
-                                <div class="flex items-center gap-1">
-                                    <span>Text Hex:</span>
-                                    <input type="color" v-model="block.slides[block.activeSlideIndex].textColor" class="w-4 h-4 rounded bg-transparent border-none cursor-pointer outline-none">
+                                <div class="flex items-center gap-1.5 font-mono text-[10px]">
+                                    <span>Text:</span>
+                                    <input type="color" v-model="block.slides[block.activeSlideIndex].textColor" class="w-5 h-5 rounded bg-transparent border-0 cursor-pointer">
                                 </div>
+                                <button @click="removeActiveSlide(block)" class="text-red-400 text-[10px] font-mono font-bold uppercase hover:underline ml-2">Delete Slide ✕</button>
                             </div>
                         </div>
 
-                        <div v-else class="absolute top-4 left-6 text-[9px] tracking-wider uppercase opacity-40 font-mono pointer-events-none">
-                            Slide Platform {{ block.activeSlideIndex + 1 }} of {{ block.slides.length }}
-                        </div>
-                        
-                        <div class="flex-grow flex flex-col justify-center px-4 md:px-8 z-10 mt-2 mb-2 overflow-hidden">
+                        <div class="flex-1 flex items-center justify-center w-full py-4 overflow-hidden relative">
                             
-                            <div v-if="block.slides[block.activeSlideIndex].format === 'spotlight'" class="text-center space-y-3">
-                                <input v-if="!isPresentationMode" v-model="block.slides[block.activeSlideIndex].title" :style="{ color: block.slides[block.activeSlideIndex].textColor }" placeholder="Main Structural Element Caption" class="w-full bg-transparent font-black text-2xl md:text-4xl text-center tracking-tight outline-none border-b border-transparent focus:border-white/10 pb-1" />
-                                <h2 v-else class="font-black text-3xl md:text-5xl text-center tracking-tight leading-none" :style="{ color: block.slides[block.activeSlideIndex].textColor }">{{ block.slides[block.activeSlideIndex].title || "Core Header Frame" }}</h2>
-
-                                <input v-if="!isPresentationMode" v-model="block.slides[block.activeSlideIndex].body" :style="{ color: block.slides[block.activeSlideIndex].textColor, opacity: 0.7 }" placeholder="Supporting content definitions summary string..." class="w-full bg-transparent text-sm text-center outline-none border-b border-transparent focus:border-white/10" />
-                                <p v-else class="text-sm md:text-base text-center max-w-2xl mx-auto" :style="{ color: block.slides[block.activeSlideIndex].textColor, opacity: 0.8 }">{{ block.slides[block.activeSlideIndex].body }}</p>
+                            <div v-if="block.slides[block.activeSlideIndex].format === 'spotlight'" class="text-center max-w-2xl mx-auto space-y-3">
+                                <input v-if="!isPresentationMode" v-model="block.slides[block.activeSlideIndex].title" placeholder="Slide Hero Header Title Text..." class="w-full bg-transparent text-center font-black text-2xl md:text-4xl uppercase tracking-tight border-b border-transparent focus:border-white/20 outline-none" :style="{ color: block.slides[block.activeSlideIndex].textColor }">
+                                <h3 v-else class="text-2xl md:text-4xl font-black uppercase tracking-tight leading-none">{{ block.slides[block.activeSlideIndex].title || "Core Focus Node" }}</h3>
+                                
+                                <textarea v-if="!isPresentationMode" v-model="block.slides[block.activeSlideIndex].body" placeholder="Provide body supporting descriptions or copy variables here..." rows="2" class="w-full bg-transparent text-center text-sm opacity-80 border-b border-transparent focus:border-white/20 outline-none resize-none" :style="{ color: block.slides[block.activeSlideIndex].textColor }"></textarea>
+                                <p v-else class="text-xs md:text-sm opacity-80 leading-relaxed max-w-xl mx-auto whitespace-pre-wrap">{{ block.slides[block.activeSlideIndex].body }}</p>
                             </div>
 
-                            <div v-if="block.slides[block.activeSlideIndex].format === 'split'" class="grid grid-cols-2 gap-6 items-stretch h-full py-2 text-left">
-                                <div class="space-y-2 border-r border-white/10 pr-4 flex flex-col justify-center">
-                                    <input v-if="!isPresentationMode" v-model="block.slides[block.activeSlideIndex].title" :style="{ color: block.slides[block.activeSlideIndex].textColor }" placeholder="Left Container Heading" class="w-full bg-transparent font-bold text-base md:text-xl outline-none" />
-                                    <h3 v-else class="font-bold text-base md:text-xl" :style="{ color: block.slides[block.activeSlideIndex].textColor }">{{ block.slides[block.activeSlideIndex].title || "Left Flex Row" }}</h3>
+                            <div v-if="block.slides[block.activeSlideIndex].format === 'split'" class="grid grid-cols-2 w-full h-full gap-6 items-center">
+                                <div class="space-y-2 border-r border-white/10 pr-4">
+                                    <input v-if="!isPresentationMode" v-model="block.slides[block.activeSlideIndex].title" placeholder="Left Header" class="w-full bg-transparent font-black text-lg md:text-2xl uppercase outline-none" :style="{ color: block.slides[block.activeSlideIndex].textColor }">
+                                    <h3 v-else class="text-lg md:text-2xl font-black uppercase">{{ block.slides[block.activeSlideIndex].title || "Left Panel Header" }}</h3>
                                     
-                                    <textarea v-if="!isPresentationMode" v-model="block.slides[block.activeSlideIndex].body" :style="{ color: block.slides[block.activeSlideIndex].textColor, opacity: 0.65 }" placeholder="Column body paragraphs content..." rows="3" class="w-full bg-transparent text-xs outline-none resize-none custom-scrollbar"></textarea>
-                                    <p v-else class="text-xs leading-relaxed" :style="{ color: block.slides[block.activeSlideIndex].textColor, opacity: 0.75 }">{{ block.slides[block.activeSlideIndex].body }}</p>
+                                    <textarea v-if="!isPresentationMode" v-model="block.slides[block.activeSlideIndex].body" placeholder="Left paragraph data..." rows="2" class="w-full bg-transparent text-xs opacity-70 outline-none resize-none" :style="{ color: block.slides[block.activeSlideIndex].textColor }"></textarea>
+                                    <p v-else class="text-xs opacity-70 whitespace-pre-wrap leading-relaxed">{{ block.slides[block.activeSlideIndex].body }}</p>
                                 </div>
-                                <div class="space-y-2 pl-2 flex flex-col justify-center">
-                                    <input v-if="!isPresentationMode" v-model="block.slides[block.activeSlideIndex].splitTitleRight" :style="{ color: block.slides[block.activeSlideIndex].textColor }" placeholder="Right Container Heading" class="w-full bg-transparent font-bold text-base md:text-xl outline-none" />
-                                    <h3 v-else class="font-bold text-base md:text-xl" :style="{ color: block.slides[block.activeSlideIndex].textColor }">{{ block.slides[block.activeSlideIndex].splitTitleRight || "Right Flex Row" }}</h3>
+                                <div class="space-y-2 pl-2">
+                                    <input v-if="!isPresentationMode" v-model="block.slides[block.activeSlideIndex].splitTitleRight" placeholder="Right Header" class="w-full bg-transparent font-black text-lg md:text-2xl uppercase outline-none" :style="{ color: block.slides[block.activeSlideIndex].textColor }">
+                                    <h3 v-else class="text-lg md:text-2xl font-black uppercase">{{ block.slides[block.activeSlideIndex].splitTitleRight || "Right Panel Header" }}</h3>
                                     
-                                    <textarea v-if="!isPresentationMode" v-model="block.slides[block.activeSlideIndex].splitBodyRight" :style="{ color: block.slides[block.activeSlideIndex].textColor, opacity: 0.65 }" placeholder="Alternative section data breakdown elements..." rows="3" class="w-full bg-transparent text-xs outline-none resize-none custom-scrollbar"></textarea>
-                                    <p v-else class="text-xs leading-relaxed" :style="{ color: block.slides[block.activeSlideIndex].textColor, opacity: 0.75 }">{{ block.slides[block.activeSlideIndex].splitBodyRight }}</p>
+                                    <textarea v-if="!isPresentationMode" v-model="block.slides[block.activeSlideIndex].splitBodyRight" placeholder="Right paragraph data..." rows="2" class="w-full bg-transparent text-xs opacity-70 outline-none resize-none" :style="{ color: block.slides[block.activeSlideIndex].textColor }"></textarea>
+                                    <p v-else class="text-xs opacity-70 whitespace-pre-wrap leading-relaxed">{{ block.slides[block.activeSlideIndex].splitBodyRight }}</p>
                                 </div>
                             </div>
 
-                            <div v-if="block.slides[block.activeSlideIndex].format === 'metrics'" class="flex items-center gap-6 justify-center">
-                                <div class="w-1/3 text-right">
-                                    <input v-if="!isPresentationMode" v-model="block.slides[block.activeSlideIndex].metricValue" class="w-full bg-transparent text-4xl md:text-6xl font-black tracking-tight text-right outline-none text-indigo-400" placeholder="94.2%" />
-                                    <div v-else class="text-4xl md:text-6xl font-black tracking-tight text-indigo-400">{{ block.slides[block.activeSlideIndex].metricValue || "0.0%" }}</div>
-
-                                    <input v-if="!isPresentationMode" v-model="block.slides[block.activeSlideIndex].title" :style="{ color: block.slides[block.activeSlideIndex].textColor, opacity: 0.5 }" placeholder="Metric Description Tracker" class="w-full bg-transparent text-[10px] uppercase tracking-widest text-right outline-none font-bold" />
-                                    <div v-else class="text-[10px] uppercase tracking-widest font-bold font-mono opacity-60" :style="{ color: block.slides[block.activeSlideIndex].textColor }">{{ block.slides[block.activeSlideIndex].title || "Data Index Category" }}</div>
+                            <div v-if="block.slides[block.activeSlideIndex].format === 'metric'" class="w-full text-center flex flex-col md:flex-row items-center justify-center gap-6 px-4">
+                                <div class="shrink-0">
+                                    <input v-if="!isPresentationMode" v-model="block.slides[block.activeSlideIndex].metricValue" placeholder="99.9%" class="bg-transparent text-5xl md:text-7xl font-black italic tracking-tighter outline-none w-52 text-center" :style="{ color: block.slides[block.activeSlideIndex].textColor }">
+                                    <div v-else class="text-5xl md:text-7xl font-black italic tracking-tighter leading-none">{{ block.slides[block.activeSlideIndex].metricValue || "00%" }}</div>
                                 </div>
-                                <div class="w-2/3 border-l border-white/10 pl-6 text-left">
-                                    <textarea v-if="!isPresentationMode" v-model="block.slides[block.activeSlideIndex].body" :style="{ color: block.slides[block.activeSlideIndex].textColor, opacity: 0.75 }" placeholder="Elaborate on calculation analytics profiles here..." rows="3" class="w-full bg-transparent text-xs outline-none resize-none custom-scrollbar"></textarea>
-                                    <p v-else class="text-xs md:text-sm leading-relaxed" :style="{ color: block.slides[block.activeSlideIndex].textColor, opacity: 0.85 }">{{ block.slides[block.activeSlideIndex].body }}</p>
-                                </div>
-                            </div>
-
-                            <div v-if="block.slides[block.activeSlideIndex].format === 'media-right'" class="grid grid-cols-5 gap-4 items-center h-full text-left">
-                                <div class="col-span-3 space-y-2">
-                                    <input v-if="!isPresentationMode" v-model="block.slides[block.activeSlideIndex].title" :style="{ color: block.slides[block.activeSlideIndex].textColor }" placeholder="Media Frame Context Header Title" class="w-full bg-transparent font-extrabold text-lg md:text-2xl outline-none" />
-                                    <h3 v-else class="font-extrabold text-lg md:text-2xl" :style="{ color: block.slides[block.activeSlideIndex].textColor }">{{ block.slides[block.activeSlideIndex].title || "Media Structural Block" }}</h3>
-
-                                    <textarea v-if="!isPresentationMode" v-model="block.slides[block.activeSlideIndex].body" :style="{ color: block.slides[block.activeSlideIndex].textColor, opacity: 0.7 }" placeholder="Analyze visual assets contextually directly within the presentation layer plane grid panel..." rows="3" class="w-full bg-transparent text-xs outline-none resize-none custom-scrollbar"></textarea>
-                                    <p v-else class="text-xs leading-relaxed" :style="{ color: block.slides[block.activeSlideIndex].textColor, opacity: 0.8 }">{{ block.slides[block.activeSlideIndex].body }}</p>
-                                </div>
-                                <div class="col-span-2 space-y-1.5 flex flex-col justify-center h-full" :class="!isPresentationMode ? 'bg-black/30 p-2 rounded-xl border border-white/5' : ''">
-                                    <input v-if="!isPresentationMode" v-model="block.slides[block.activeSlideIndex].mediaUrl" placeholder="Image web URL resource tracking link..." class="w-full bg-zinc-900 text-[9px] font-mono p-1 rounded text-zinc-300 outline-none border border-zinc-800" />
-                                    <div class="w-full flex-1 min-h-[80px] bg-zinc-950 rounded-xl border border-zinc-800/80 flex items-center justify-center overflow-hidden shadow-2xl">
-                                        <img v-if="block.slides[block.activeSlideIndex].mediaUrl" :src="block.slides[block.activeSlideIndex].mediaUrl" class="w-full h-full object-cover">
-                                        <span v-else class="text-[9px] font-mono text-zinc-600 uppercase">Image Layout Target Node Null</span>
-                                    </div>
+                                <div class="text-left max-w-sm space-y-1">
+                                    <input v-if="!isPresentationMode" v-model="block.slides[block.activeSlideIndex].title" placeholder="Metric target label statements..." class="w-full bg-transparent font-bold text-sm uppercase tracking-wide outline-none" :style="{ color: block.slides[block.activeSlideIndex].textColor }">
+                                    <h4 v-else class="font-bold text-sm uppercase tracking-wide">{{ block.slides[block.activeSlideIndex].title || "Data KPI Metric Identifier" }}</h4>
+                                    
+                                    <textarea v-if="!isPresentationMode" v-model="block.slides[block.activeSlideIndex].body" placeholder="Supporting contextual metadata parameters..." rows="2" class="w-full bg-transparent text-xs opacity-60 outline-none resize-none" :style="{ color: block.slides[block.activeSlideIndex].textColor }"></textarea>
+                                    <p v-else class="text-xs opacity-60 whitespace-pre-wrap leading-normal">{{ block.slides[block.activeSlideIndex].body }}</p>
                                 </div>
                             </div>
 
                         </div>
 
-                        <div class="flex justify-between items-center z-10 bg-black/20 backdrop-blur-xs p-1 rounded-lg">
-                            <button @click="block.activeSlideIndex = Math.max(0, block.activeSlideIndex - 1)" :disabled="block.activeSlideIndex === 0" class="slide-nav-btn text-white">◀ Back</button>
-                            <button @click="block.activeSlideIndex = Math.min(block.slides.length - 1, block.activeSlideIndex + 1)" :disabled="block.activeSlideIndex === block.slides.length - 1" class="slide-nav-btn text-white">Next ▶</button>
+                        <div class="flex justify-between items-center z-10 border-t border-white/5 pt-3">
+                            <span class="font-mono text-[9px] uppercase tracking-widest opacity-60">
+                                Index: {{ block.activeSlideIndex + 1 }} / {{ block.slides.length }}
+                            </span>
+                            <div class="flex items-center gap-1">
+                                <button class="slide-nav-btn text-white" :disabled="block.activeSlideIndex === 0" @click="block.activeSlideIndex--">◀ Prev</button>
+                                <button class="slide-nav-btn text-white" :disabled="block.activeSlideIndex === block.slides.length - 1" @click="block.activeSlideIndex++">Next ▶</button>
+                            </div>
                         </div>
+
                     </div>
 
-                    <div v-if="!isPresentationMode" class="flex flex-wrap gap-2 items-center border-t border-zinc-900/60 pt-3">
-                        <div v-for="(slide, sIdx) in block.slides" :key="sIdx" @click="block.activeSlideIndex = sIdx" class="w-16 aspect-[16/9] rounded border bg-zinc-900/60 flex flex-col justify-between p-1 cursor-pointer transition" :class="block.activeSlideIndex === sIdx ? 'border-amber-500 text-amber-400 bg-amber-500/5 font-bold scale-105' : 'border-zinc-800 text-zinc-600 hover:border-zinc-700'">
-                            <span class="text-[7px] font-mono leading-none">#{{ sIdx + 1 }}</span>
-                            <span class="text-[6px] font-mono uppercase tracking-tighter truncate opacity-60 block">{{ slide.format }}</span>
-                        </div>
-                        <button @click="appendBlankSlide(block)" class="px-2.5 h-7 rounded border border-dashed border-zinc-800 text-zinc-500 text-[10px] font-mono uppercase tracking-wider hover:border-amber-500/40 hover:text-amber-400 transition ml-1">+ New Slide View</button>
-                        <button v-if="block.slides.length > 0" @click="removeActiveSlide(block)" class="px-2 h-7 text-zinc-600 text-[10px] font-mono uppercase hover:text-red-400 ml-auto">Delete Selected Slide</button>
+                    <div v-else class="border border-zinc-800 rounded-xl bg-zinc-950/40 p-10 text-center flex flex-col items-center justify-center space-y-3">
+                        <span class="text-2xl">🎬</span>
+                        <p class="text-xs font-mono uppercase tracking-wider text-zinc-500">No Slide Data Allocated within current Component View Frame</p>
+                        <button v-if="!isPresentationMode" @click="appendBlankSlide(block)" class="px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-[10px] font-mono font-bold uppercase tracking-wider rounded-lg border border-zinc-700/60 transition">
+                            + Initialize First Empty Slide
+                        </button>
+                    </div>
+
+                    <div v-if="!isPresentationMode && block.slides.length > 0" class="flex gap-2">
+                        <button @click="appendBlankSlide(block)" class="px-3 py-1.5 bg-amber-600/10 hover:bg-amber-600/20 text-amber-400 border border-amber-500/20 rounded-lg text-[10px] font-mono font-bold uppercase tracking-wider transition">
+                            + Append New Slider Canvas Node
+                        </button>
                     </div>
                 </div>
 
             </div>
         </div>
 
+        <div class="h-12 w-full flex-none"></div>
     </main>
 
 </div>

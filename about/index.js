@@ -24,9 +24,13 @@
                     ]);
 
                     const socialLinks = [
-                        { name: "GitHub", label: "codyferd", url: "https://github.com/codyferd", accent: "text-indigo-400" },
-                        { name: "YouTube", label: "polycat.codyferd", url: "https://www.youtube.com/@Polycat.Codyferd", accent: "text-red-400" },
-                        { name: "Mastodon", label: "codyferd@mastodon.social", url: "https://mastodon.social/@codyferd", accent: "text-purple-400" },
+                        { name: "GitHub", label: "codyferd", url: "https://github.com/codyferd" },
+                        { name: "YouTube", label: "polycat.codyferd", url: "https://www.youtube.com/@Polycat.Codyferd" },
+                        { name: "Mastodon", label: "codyferd@mastodon.social", url: "https://mastodon.social/@codyferd" },
+                        { name: "Facebook", label: "Luca Ferdinand", url: "https://www.facebook.com/profile.php?id=61555933292391" },
+                        { name: "Instagram", label: "kodyferd", url: "https://www.instagram.com/kodyferd/" },
+                        { name: "Threads", label: "kodyferd", url: "https://www.threads.com/@kodyferd" },
+                        { name: "Reddit", label: "Ornery_Present2560", url: "https://www.reddit.com/user/Ornery_Present2560/" },
                         { name: "Discord", label: "codyferd_81960" },
                         { name: "Snapchat", label: "codyferdpolycat" },
                         { name: "Email", label: "lucarappferdinand@gmail.com" },

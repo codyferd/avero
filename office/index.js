@@ -2,27 +2,6 @@
  * Avero Web Studio Engine - Extended File Serialization & Presentation Sandboxing Core
  */
 (() => {
-    // Inject custom styling parameters dynamically to encapsulate runtime configurations safely
-    const dynamicStyleElement = document.createElement("style");
-    dynamicStyleElement.textContent = `
-        [v-cloak] { display: none; }
-        .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
-        .custom-scrollbar::-webkit-scrollbar-track { background: #020204; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: #181825; border-radius: 10px; }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #27273a; }
-        .sidebar-label { display: block; font-size: 9px; font-weight: 900; text-transform: uppercase; color: #4b5563; letter-spacing: 0.15em; margin-bottom: 8px; }
-        .add-btn { width: 100%; display: flex; align-items: center; gap: 12px; padding: 10px 14px; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; border-radius: 10px; transition: all 0.2s ease; cursor: pointer; }
-        .add-btn:hover { transform: translateX(4px); }
-        .stream-block { background: #0b0b0f; border: 1px solid rgba(255, 255, 255, 0.04); box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4); border-radius: 16px; overflow: hidden; }
-        .presentation-view .is-live-presentation-card { background: transparent !important; border-color: transparent !important; box-shadow: none !important; padding: 0 !important; }
-        .block-header { display: flex; justify-content: space-between; align-items: center; padding: 8px 16px; background: #08080c; border-bottom: 1px solid rgba(255, 255, 255, 0.03); }
-        .nav-arrow { width: 20px; height: 20px; display: inline-flex; align-items: center; justify-content: center; font-size: 9px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); border-radius: 4px; color: #4b5563; cursor: pointer; }
-        .nav-arrow:hover:not(:disabled) { color: #fff; border-color: rgba(255,255,255,0.15); }
-        .matrix-cell { border: 1px solid #18181b; height: 32px; color: #a1a1aa; }
-        .slide-nav-btn { background: rgba(0, 0, 0, 0.5); border: 1px solid rgba(255,255,255,0.1); padding: 4px 12px; font-size: 10px; font-weight: bold; border-radius: 6px; cursor: pointer; }
-    `;
-    document.head.appendChild(dynamicStyleElement);
-
     const { createApp, ref, onMounted, onUnmounted } = Vue;
 
     createApp({
@@ -56,7 +35,7 @@
             };
 
             /**
-             * EXTENSION: SERIALIZATION GATEWAY ENGINE - EXPORT TO NATIVE DISK .JS FILE
+             * SERIALIZATION GATEWAY ENGINE - EXPORT TO NATIVE DISK .JS FILE
              */
             const exportToJsFile = () => {
                 const packagePayload = {
@@ -66,13 +45,11 @@
                     stream: streamBlocks.value
                 };
 
-                // Transform structural arrays into valid transferable JavaScript constants execution scripts
                 const finalScriptOutput = `/**\n * Avero Web Studio Published Engine Artifact\n * Generated: ${packagePayload.timestamp}\n */\nconst averoStudioProjectData = ${JSON.stringify(packagePayload, null, 4)};\n`;
                 
                 const virtualBlob = new Blob([finalScriptOutput], { type: "application/javascript;charset=utf-8;" });
                 const transientAnchor = document.createElement("a");
                 
-                // Construct file identifier parameters
                 const systemFileName = (documentTitle.value || "untitled-studio-build")
                     .toLowerCase()
                     .replace(/[^a-z0-9]+/g, "-")
@@ -87,7 +64,7 @@
             };
 
             /**
-             * EXTENSION: PARSING INTERCEPTOR MODULE - IMPORT DIRECT FROM LOCAL .JS FILE
+             * PARSING INTERCEPTOR MODULE - IMPORT DIRECT FROM LOCAL .JS FILE
              */
             const triggerFileImport = () => {
                 if (fileInputBridge.value) {
@@ -104,7 +81,6 @@
                     let evaluationString = fileLoadedEvent.target.result.trim();
                     
                     try {
-                        // Strip comment documentation tracking variables cleanly
                         if (evaluationString.includes("const averoStudioProjectData =")) {
                             evaluationString = evaluationString.split("const averoStudioProjectData =")[1].trim();
                         } else if (evaluationString.includes("=")) {
@@ -120,15 +96,13 @@
                         if (structuredModelJson && Array.isArray(structuredModelJson.stream)) {
                             documentTitle.value = structuredModelJson.title || "Imported Project Blueprint";
                             streamBlocks.value = structuredModelJson.stream;
-                            alert("Avero Serialization Core: Local script read and mapped onto page arrays successfully.");
                         } else {
-                            alert("Format Collision: Asset target is clean Javascript but lacks expected Avero engine elements.");
+                            alert("Format Collision: Asset target lacks expected Avero architecture matrices.");
                         }
                     } catch (parserException) {
-                        alert("Compilation Failure: Unable to compute runtime object matrices. Check structural integrity rules.");
+                        alert("Compilation Failure: Unable to compute runtime object arrays.");
                         console.error(parserException);
                     }
-                    // Flush input nodes tracking values to allow successive reload triggers
                     event.target.value = "";
                 };
                 fileReaderEngine.readAsText(targetedDiskAsset);
@@ -147,7 +121,7 @@
                     const defaultCells = {};
                     for (let r = 1; r <= 3; r++) {
                         for (let c = 1; c <= 3; c++) {
-                            defaultCells[`${String.fromCharCode(64 + c)}${r}`] = { value: "" };
+                            defaultCells[`${String.fromCharCode(64 + c)}${r}`] = { value: "", isEditing: false };
                         }
                     }
                     streamBlocks.value.push({
@@ -204,12 +178,12 @@
                 if (axis === 'row') {
                     block.rows += count;
                     for (let c = 1; c <= block.cols; c++) {
-                        block.cells[`${getColumnLetter(c)}${block.rows}`] = { value: "" };
+                        block.cells[`${getColumnLetter(c)}${block.rows}`] = { value: "", isEditing: false };
                     }
                 } else if (axis === 'col') {
                     block.cols += count;
                     for (let r = 1; r <= block.rows; r++) {
-                        block.cells[`${getColumnLetter(block.cols)}${r}`] = { value: "" };
+                        block.cells[`${getColumnLetter(block.cols)}${r}`] = { value: "", isEditing: false };
                     }
                 }
             };

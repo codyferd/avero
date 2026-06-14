@@ -1,4 +1,3 @@
-/* Base Reset */
 body { 
     margin: 0; 
     overflow: hidden; 
@@ -9,10 +8,6 @@ body {
     touch-action: none;
 }
 
-/* Brand UI */
-#ui { position: absolute; top: 20px; left: 20px; z-index: 10; pointer-events: none; }
-
-/* Crosshair */
 #crosshair {
     position: absolute;
     top: 50%;
@@ -27,64 +22,14 @@ body {
     z-index: 100;
 }
 
-/* HUD (FPS Counter) */
-#hud {
-    position: absolute;
-    top: 70px; 
-    left: 20px;
-    padding: 10px;
-    background: rgba(0, 0, 0, 0.8);
-    color: #ffffff;
-    font-family: 'Courier New', Courier, monospace;
-    font-size: 14px;
-    border-radius: 4px;
-    pointer-events: none;
-    z-index: 100;
-    min-width: 80px;
-    border-left: 3px solid #6366f1; 
-}
+#block-color-picker::-webkit-color-swatch-wrapper { padding: 0; }
+#block-color-picker::-webkit-color-swatch { border: none; border-radius: 4px; }
 
-/* Block Picker Hotbar */
-#hotbar {
-    position: absolute;
-    bottom: 30px;
-    left: 50%;
-    transform: translateX(-50%);
-    display: flex;
-    gap: 8px;
-    background: rgba(0, 0, 0, 0.85);
-    padding: 8px;
-    border-radius: 8px;
-    border: 1px solid #333;
-    pointer-events: all; 
-    z-index: 101;
-    max-width: 90vw;
-    overflow-x: auto;
-}
+/* Custom rendering styles for range tracking layout alignment */
+#render-dist-slider::-webkit-slider-runnable-track { background: #262626; height: 4px; border-radius: 2px; }
+#render-dist-slider::-webkit-slider-thumb { margin-top: -4px; }
 
-.slot {
-    width: 44px;
-    height: 44px;
-    border: 2px solid #444;
-    border-radius: 6px;
-    cursor: pointer;
-    transition: all 0.15s ease;
-    position: relative;
-    flex-shrink: 0;
-}
-
-.slot:hover {
-    border-color: #fff;
-    transform: translateY(-5px);
-}
-
-.slot.active {
-    border-color: #6366f1;
-    box-shadow: 0 0 15px rgba(99, 102, 241, 0.4);
-    transform: scale(1.1) translateY(-5px);
-}
-
-/* --- Mobile Controls HUD System --- */
+/* --- Mobile HUD Display System --- */
 #mobile-overlay {
     position: absolute;
     inset: 0;
@@ -95,11 +40,8 @@ body {
 
 @media (pointer: coarse) {
     #mobile-overlay { display: block; }
-    #crosshair { display: block; }
-    #hotbar { bottom: 120px; }
 }
 
-/* Joystick Layer Positioning */
 #joystick-zone {
     position: absolute;
     bottom: 30px;
@@ -114,10 +56,10 @@ body {
     width: 120px;
     height: 120px;
     margin: 15px;
-    background: rgba(255, 255, 255, 0.1);
-    border: 2px solid rgba(255, 255, 255, 0.2);
+    background: rgba(255, 255, 255, 0.05);
+    border: 2px solid rgba(255, 255, 255, 0.15);
     border-radius: 50%;
-    backdrop-filter: blur(4px);
+    backdrop-filter: blur(8px);
 }
 
 #joystick-thumb {
@@ -126,13 +68,13 @@ body {
     left: 50%;
     width: 50px;
     height: 50px;
-    background: rgba(99, 102, 241, 0.6);
+    background: rgba(99, 102, 241, 0.5);
     border: 2px solid #6366f1;
     border-radius: 50%;
     transform: translate(-50%, -50%);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.4);
 }
 
-/* Actions Trigger Buttons Group */
 #action-zone {
     position: absolute;
     bottom: 25px;
@@ -146,36 +88,37 @@ body {
 .action-btn {
     width: 75px;
     height: 75px;
-    background: rgba(0, 0, 0, 0.75);
-    border: 2px solid rgba(255, 255, 255, 0.15);
+    background: rgba(0, 0, 0, 0.8);
+    border: 2px solid rgba(255, 255, 255, 0.1);
     border-radius: 50%;
     color: white;
     font-weight: 900;
-    font-size: 18px;
+    font-size: 16px;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    line-height: 1.1;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+    line-height: 1.2;
+    box-shadow: 0 6px 166px rgba(0,0,0,0.6);
+    transition: background 0.1s, transform 0.1s;
 }
 
 .action-btn:active {
-    background: rgba(99, 102, 241, 0.4);
+    background: rgba(99, 102, 241, 0.3);
     border-color: #6366f1;
     transform: scale(0.92);
 }
 
 .action-btn .label {
-    font-size: 8px;
+    font-size: 9px;
     letter-spacing: 0.05em;
-    opacity: 0.7;
-    font-family: system-ui, sans-serif;
+    opacity: 0.6;
+    margin-top: 2px;
 }
 
 #btn-jump {
     grid-column: span 2;
     width: 162px;
     height: 55px;
-    border-radius: 30px;
+    border-radius: 28px;
 }

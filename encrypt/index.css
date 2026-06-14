@@ -1,0 +1,28 @@
+/* Configuration adjustments for Custom Scrollbars inside layout blocks */
+.custom-scrollbar::-webkit-scrollbar {
+    width: 5px;
+    height: 5px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+    background: #18181b;
+    border-radius: 99px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: #27272a;
+}
+
+[v-cloak] {
+    display: none !important;
+}
+
+/* Base style resets to guarantee clean scaling loops on physical devices */
+html, body {
+    background-color: #000000;
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    width: 100%;
+}

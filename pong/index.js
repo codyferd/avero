@@ -38,7 +38,7 @@ createApp({
         };
 
         const updatePhysics = () => {
-            // Paddle Movement Metrics
+            // Paddle Movement Metrics (Handles mapped touch state and keys simultaneously)
             if (keysPressed['KeyW'] || keysPressed['w']) p1.y = Math.max(10, p1.y - 8);
             if (keysPressed['KeyS'] || keysPressed['s']) p1.y = Math.min(BASE_HEIGHT - paddleHeight - 10, p1.y + 8);
             
@@ -151,28 +151,23 @@ createApp({
         const handleResize = () => {
             if (!arenaWrapper.value || !pongCanvas.value) return;
 
-            // Read the runtime layout constraints of the parent element box container
             const availableWidth = arenaWrapper.value.clientWidth;
             const availableHeight = arenaWrapper.value.clientHeight;
 
             let finalWidth = availableWidth;
             let finalHeight = availableWidth / ASPECT_RATIO;
 
-            // If horizontal conversion overflows vertical threshold boundaries, switch scaling constraints to Y axis
             if (finalHeight > availableHeight) {
                 finalHeight = availableHeight;
                 finalWidth = availableHeight * ASPECT_RATIO;
             }
 
-            // Retain absolute 800x600 precision internal buffer mappings while applying the structural container updates
             pongCanvas.value.width = BASE_WIDTH;
             pongCanvas.value.height = BASE_HEIGHT;
 
-            // Apply explicit styles to prevent canvas stretching pixel blurring
             pongCanvas.value.style.width = `${finalWidth - 10}px`;
             pongCanvas.value.style.height = `${finalHeight - 10}px`;
             
-            // Adjust overlay window frame dimensions cleanly
             pongCanvas.value.parentElement.style.width = `${finalWidth}px`;
             pongCanvas.value.parentElement.style.height = `${finalHeight}px`;
 
@@ -207,6 +202,11 @@ createApp({
             keysPressed[e.code] = false;
         };
 
+        // Low-Latency Direct Touch Ingestion Bridge
+        const bindTouch = (keyId, isPressed) => {
+            keysPressed[keyId] = isPressed;
+        };
+
         onMounted(() => {
             ctx = pongCanvas.value.getContext('2d');
             
@@ -229,7 +229,7 @@ createApp({
         return {
             pongCanvas, arenaWrapper,
             scores, gameState, winner,
-            startMatch
+            startMatch, bindTouch
         };
     }
 }).mount('#app');

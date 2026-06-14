@@ -37,7 +37,7 @@
                     <input 
                         type="text" 
                         v-model="sequenceString" 
-                        placeholder="e.g. 5v8.8.12~0._.7d2"
+                        placeholder="e.g. 5.8v3.12~0.11.7._.8d2"
                         class="matrix-input px-4 py-3 rounded-xl flex-grow text-sm"
                         :disabled="isPlaying"
                     />
@@ -67,8 +67,8 @@
                 </div>
                 <div class="space-y-2">
                     <label class="param-label">Wave Engine Form</label>
-                    <div class="grid grid-cols-2 gap-2">
-                        <button v-for="type in ['sine', 'triangle', 'sawtooth', 'square']" :key="type" @click="waveType = type" class="border border-zinc-800 bg-zinc-950/40 text-zinc-500 rounded-lg py-1.5 text-center text-xs font-mono font-bold" :class="{ 'text-sky-400 border-sky-500/30 bg-sky-500/5': waveType === type }">
+                    <div class="grid grid-cols-2 gap-1.5 max-h-[120px] overflow-y-auto pr-1">
+                        <button v-for="type in waveEngines" :key="type" @click="waveType = type" class="border border-zinc-800 bg-zinc-950/40 text-zinc-500 rounded-lg py-1 text-center text-[9px] font-mono font-bold uppercase transition-all truncate" :title="type" :class="{ 'text-sky-400 border-sky-500/30 bg-sky-500/5': waveType === type }">
                             {{ type }}
                         </button>
                     </div>

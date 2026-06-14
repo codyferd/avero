@@ -12,8 +12,13 @@ window.gameApp = Vue.createApp({
                 { n: "Aggro", k: "enemyIntensity", min: 0, max: 100 },
                 { n: "Drift", k: "extremity", min: 0, max: 100 },
                 { n: "Speed+", k: "speedStep", min: 0, max: 100 },
+                // --- New Custom Variables ---
+                { n: "Base Speed", k: "baseSpeed", min: 200, max: 800 },
+                { n: "Player Size", k: "birdSize", min: 16, max: 64 },
+                { n: "Pipe Width", k: "pipeWidth", min: 30, max: 150 },
+                { n: "Gravity Float", k: "gravity", min: 0, max: 1500 }
             ],
-            themes: ["classic", "neon", "dark", "synth"],
+            themes: ["classic", "neon", "dark", "synth", "cyberpunk", "retroGamer", "pastel", "mono", "inferno"], // Added missing comma here
             presets: PRESETS,
         };
     },
@@ -73,12 +78,16 @@ window.gameApp = Vue.createApp({
         },
     },
     mounted: function() {
+        // Keeping your intentional 2000x1000 aspect ratio perfectly intact
         this.game = new Phaser.Game({
             type: Phaser.AUTO,
             parent: "game-container",
-            width: window.innerWidth,
-            height: window.innerHeight,
-            scale: { mode: Phaser.Scale.RESIZE },
+            width: 2000,
+            height: 1000,
+            scale: {
+                mode: Phaser.Scale.FIT,
+                autoCenter: Phaser.Scale.CENTER_BOTH
+            },
             physics: { default: "arcade" },
             scene: MainGame,
         });

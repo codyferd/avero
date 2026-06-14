@@ -4,7 +4,7 @@
     --avero-accent: #6366f1;
 }
 
-/* Custom Scrollbars */
+/* Custom Minimalist Track Layout Scrollbars */
 .custom-scrollbar::-webkit-scrollbar {
     width: 6px;
     height: 6px;
@@ -60,7 +60,7 @@
     border-color: rgba(255, 255, 255, 0.08);
 }
 
-/* Presentation Sandbox Overrides */
+/* Presentation Sandbox Mode Overrides */
 .presentation-view .is-live-presentation-card {
     background: transparent !important;
     border-color: transparent !important;

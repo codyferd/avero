@@ -1,0 +1,80 @@
+/* Card & Background Effects */
+.control-card {
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.04);
+    border-radius: 20px;
+    backdrop-filter: blur(16px);
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.control-card:hover {
+    border-color: rgba(16, 185, 129, 0.25);
+    background: rgba(255, 255, 255, 0.03);
+}
+
+/* Key-Value Terminal Styling */
+.fetch-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 6px 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.02);
+    font-family: 'Monaco', 'Courier New', monospace;
+    font-size: 12px;
+}
+
+.fetch-row:last-child {
+    border-bottom: none;
+}
+
+.fetch-key {
+    color: #64748b;
+    text-transform: uppercase;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+}
+
+.fetch-val {
+    color: #e2e8f0;
+    font-weight: 500;
+}
+
+/* Battery Visualization */
+.battery-icon {
+    width: 42px;
+    height: 20px;
+    border: 2px solid #334155;
+    border-radius: 5px;
+    padding: 1.5px;
+    position: relative;
+}
+
+.battery-icon::after {
+    content: '';
+    position: absolute;
+    right: -5px;
+    top: 5px;
+    width: 3px;
+    height: 6px;
+    background: #334155;
+    border-radius: 0 2px 2px 0;
+}
+
+.battery-fill {
+    height: 100%;
+    background: #10b981;
+    border-radius: 1.5px;
+    transition: width 0.5s ease;
+}
+
+.charging .battery-fill {
+    animation: charging-glow 1.5s infinite;
+}
+
+@keyframes charging-glow {
+    0%, 100% { opacity: 1; filter: brightness(1); }
+    50% { opacity: 0.4; filter: brightness(1.3); }
+}
+
+[v-cloak] { display: none; }
