@@ -1,0 +1,24 @@
+/* Core Styling Variables Override Context for Deep Pitch Black Theme Engine */
+[v-cloak] {
+    display: none !important;
+}
+
+body {
+    background-color: #000000;
+}
+
+/* Custom dark scrollbar optimization */
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+::-webkit-scrollbar-track {
+    background: #000000;
+}
+::-webkit-scrollbar-thumb {
+    background: #27272a;
+    border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: #3f3f46;
+}

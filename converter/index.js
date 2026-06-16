@@ -84,10 +84,11 @@ const conversionMatrix = {
         defaultSource: "USD",
         defaultTarget: "JPY",
         units: {
-            EUR: { name: "Euro Zone Base", symbol: "€", ratio: 1.0000 },
+            // --- Original 12 Currencies ---
+            EUR: { name: "Euro", symbol: "€", ratio: 1.0000 },
             USD: { name: "US Dollar", symbol: "$", ratio: 1.1608 }, 
             GBP: { name: "British Pound Sterling", symbol: "£", ratio: 0.8542 },
-            JPY: { name: "Japanese Yen", symbol: "¥", ratio: 185.649 }, 
+            JPY: { name: "Japanese Yen", symbol: "¥", ratio: 185.6490 }, 
             CAD: { name: "Canadian Dollar", symbol: "C$", ratio: 1.4811 },
             AUD: { name: "Australian Dollar", symbol: "A$", ratio: 1.6324 },
             CHF: { name: "Swiss Franc", symbol: "CHF", ratio: 0.9825 },
@@ -95,7 +96,27 @@ const conversionMatrix = {
             INR: { name: "Indian Rupee", symbol: "₹", ratio: 93.1250 },
             MXN: { name: "Mexican Peso", symbol: "$", ratio: 19.8420 },
             BRL: { name: "Brazilian Real", symbol: "R$", ratio: 5.4210 },
-            ZAR: { name: "South African Rand", symbol: "R", ratio: 20.1450 }
+            ZAR: { name: "South African Rand", symbol: "R", ratio: 20.1450 },
+
+            // --- Added 18 New Supported Currencies ---
+            AED: { name: "United Arab Emirates Dirham", symbol: "د.إ", ratio: 4.2633 },
+            ARS: { name: "Argentine Peso", symbol: "$", ratio: 1042.5000 },
+            CLP: { name: "Chilean Peso", symbol: "$", ratio: 1092.4500 },
+            COP: { name: "Colombian Peso", symbol: "$", ratio: 4520.1500 },
+            CZK: { name: "Czech Koruna", symbol: "Kč", ratio: 25.2130 },
+            DKK: { name: "Danish Krone", symbol: "kr", ratio: 7.4590 },
+            HKD: { name: "Hong Kong Dollar", symbol: "HK$", ratio: 9.0645 },
+            HUF: { name: "Hungarian Forint", symbol: "Ft", ratio: 391.8500 },
+            IDR: { name: "Indonesian Rupiah", symbol: "Rp", ratio: 18950.0000 },
+            ILS: { name: "Israeli New Shekel", symbol: "₪", ratio: 4.3120 },
+            KRW: { name: "South Korean Won", symbol: "₩", ratio: 1595.2000 },
+            MYR: { name: "Malaysian Ringgit", symbol: "RM", ratio: 5.4510 },
+            NOK: { name: "Norwegian Krone", symbol: "kr", ratio: 12.3520 },
+            NZD: { name: "New Zealand Dollar", symbol: "NZ$", ratio: 1.9124 },
+            PHP: { name: "Philippine Peso", symbol: "₱", ratio: 67.8200 },
+            PLN: { name: "Polish Zloty", symbol: "zł", ratio: 4.3110 },
+            SGD: { name: "Singapore Dollar", symbol: "S$", ratio: 1.5642 },
+            TRY: { name: "Turkish Lira", symbol: "₺", ratio: 37.8430 }
         }
     }
 };

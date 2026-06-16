@@ -1,0 +1,58 @@
+[v-cloak] { display: none !important; }
+html, body { margin: 0; background: #050505; color: white; overflow: hidden; font-family: 'Inter', system-ui, -apple-system, sans-serif; -webkit-tap-highlight-color: transparent; }
+
+/* CYBERPUNK SYNTHWAVE GRID GENERATOR */
+#bg-grid {
+    background-image: 
+        linear-gradient(to right, rgba(99, 102, 241, 0.15) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(99, 102, 241, 0.15) 1px, transparent 1px);
+    background-size: 30px 30px;
+    transform: perspective(200px) rotateX(60deg);
+    transform-origin: top;
+    bottom: -50px;
+}
+
+/* ARCADE INTERFACE ACTIONS button matrix */
+.btn-action {
+    background: #6366f1;
+    color: white;
+    border: none;
+    cursor: pointer;
+    box-shadow: 0 0 20px rgba(99, 102, 241, 0.4);
+    transition: all 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.btn-action:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 0 30px rgba(99, 102, 241, 0.6);
+}
+.btn-action:active {
+    transform: translateY(1px);
+}
+
+.animate-fade-in {
+    animation: fadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+@keyframes fadeIn {
+    from { opacity: 0; transform: scale(0.98); }
+    to { opacity: 1; transform: scale(1); }
+}
+
+input[type="range"]::-webkit-slider-thumb {
+    appearance: none;
+    -webkit-appearance: none;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: #6366f1;
+    cursor: pointer;
+    box-shadow: 0 0 10px rgba(99, 102, 241, 0.8);
+}
+input[type="range"]::-moz-range-thumb {
+    width: 14px;
+    height: 14px;
+    border: none;
+    border-radius: 50%;
+    background: #6366f1;
+    cursor: pointer;
+    box-shadow: 0 0 10px rgba(99, 102, 241, 0.8);
+}

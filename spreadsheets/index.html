@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Avero Spreadsheets</title>
+    <script libs="core" src="../share/cdn.js"></script>
+</head>
+<body class="bg-black text-gray-100 overflow-hidden select-none">
+
+    <div id="app" class="flex h-screen flex-col" v-cloak>
+        
+        <header class="bg-zinc-950 border-b border-zinc-800 px-6 py-3 flex justify-between items-center z-30">
+            <div class="flex items-center space-x-3">
+                <span class="text-xl font-black tracking-wider text-white bg-gradient-to-r from-emerald-500 to-teal-500 bg-clip-text text-transparent">AVERO</span>
+                <span class="text-xs uppercase tracking-widest text-zinc-500 font-bold bg-zinc-900 px-2 py-1 rounded">Spreadsheets</span>
+            </div>
+            
+            <div class="flex items-center space-x-3">
+                <button @click="vueMode = !vueMode" 
+                        :class="[vueMode ? 'bg-emerald-600 hover:bg-emerald-500 text-white' : 'bg-zinc-800 hover:bg-zinc-700 text-zinc-200']"
+                        class="font-medium text-sm px-4 py-2 rounded-lg transition flex items-center space-x-2">
+                    <span>{{ vueMode ? '👁 Vue Formula Active' : '📝 Sheet Editor' }}</span>
+                </button>
+                <button @click="handleExport" class="bg-zinc-900 hover:bg-zinc-800 text-zinc-300 border border-zinc-800 font-medium text-sm px-4 py-2 rounded-lg transition">Export</button>
+                <button @click="triggerImport" class="bg-emerald-600 hover:bg-emerald-500 text-black font-bold text-sm px-4 py-2 rounded-lg transition">Import</button>
+            </div>
+        </header>
+
+        <div class="flex flex-1 overflow-hidden relative">
+            
+            <aside v-if="!vueMode" class="w-64 bg-zinc-950 border-r border-zinc-800 flex flex-col justify-between z-20">
+                <div class="p-4 overflow-y-auto flex-1 space-y-4">
+                    
+                    <div class="space-y-1">
+                        <h2 class="font-bold text-zinc-500 uppercase text-xs tracking-widest">Active Workbook</h2>
+                        <input type="text" v-model="sheetSettings.title" class="w-full bg-zinc-900 border border-zinc-800 rounded px-2 py-1.5 text-xs text-white font-medium focus:outline-none focus:border-emerald-500">
+                    </div>
+
+                    <hr class="border-zinc-800">
+
+                    <div class="space-y-2 text-xs">
+                        <h3 class="font-bold text-zinc-500 uppercase text-xs tracking-widest">Global Options</h3>
+                        
+                        <div class="flex justify-between items-center bg-zinc-900/40 border border-zinc-800/60 p-2 rounded-lg">
+                            <span class="text-zinc-400">Total Rows:</span>
+                            <input type="number" v-model.number="rows" min="1" max="100" class="w-16 bg-zinc-950 text-center border border-zinc-800 rounded p-0.5 text-white focus:outline-none focus:border-emerald-500">
+                        </div>
+
+                        <div class="flex justify-between items-center bg-zinc-900/40 border border-zinc-800/60 p-2 rounded-lg">
+                            <span class="text-zinc-400">Total Columns:</span>
+                            <input type="number" :value="cols.length" @input="updateColumnCount($event.target.value)" min="1" max="26" class="w-16 bg-zinc-950 text-center border border-zinc-800 rounded p-0.5 text-white focus:outline-none focus:border-emerald-500">
+                        </div>
+
+                        <div class="flex justify-between items-center bg-zinc-900/40 border border-zinc-800/60 p-2 rounded-lg">
+                            <span class="text-zinc-400">Column Width:</span>
+                            <input type="number" v-model.number="sheetSettings.columnWidth" min="80" max="220" class="w-16 bg-zinc-950 text-center border border-zinc-800 rounded p-0.5 text-white focus:outline-none focus:border-emerald-500">
+                        </div>
+                        
+                        <button @click="clearEntireSheet" class="w-full py-2 bg-red-950/20 hover:bg-red-950/40 text-red-400 border border-red-900/40 rounded-xl font-medium transition text-xs">🧼 Purge Workbook Data</button>
+                    </div>
+
+                </div>
+                
+                <div class="p-4 border-t border-zinc-800 bg-zinc-950 text-[11px] font-mono text-zinc-500 space-y-1">
+                    <div class="flex justify-between">
+                        <span>Populated Nodes:</span>
+                        <span class="text-zinc-300 font-bold">{{ Object.keys(cells).length }} elements</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span>Grid Dimension:</span>
+                        <span class="text-zinc-400 font-bold">{{ cols.length }}W × {{ rows }}H</span>
+                    </div>
+                </div>
+            </aside>
+
+            <main class="flex-1 p-6 overflow-auto bg-zinc-900 flex flex-col relative">
+                
+                <div class="w-full mb-4 bg-zinc-950 border border-zinc-800 shadow-2xl rounded-xl p-3 flex items-center space-x-3 z-20 text-xs">
+                    <div class="bg-zinc-900 px-3 py-1.5 border border-zinc-800 rounded-lg text-zinc-400 font-mono font-bold uppercase tracking-wider">
+                        💡 Cell Target: <span class="text-emerald-400">{{ activeCellKey || '--' }}</span>
+                    </div>
+                    
+                    <span class="text-zinc-600 font-bold font-sans text-base">ƒ<sub>x</sub></span>
+                    
+                    <input type="text" 
+                           :value="activeCellKey ? (cells[activeCellKey]?.raw || '') : ''"
+                           @input="updateActiveCellRawValue($event.target.value)"
+                           :disabled="!activeCellKey || vueMode"
+                           placeholder="Select a cell structure node... Type text, numeric constants, or call math macros like =SUM(A1:A3) or =AVG(B1:B2)"
+                           class="flex-1 bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-1.5 text-white font-mono placeholder-zinc-600 focus:outline-none focus:border-emerald-500/80 disabled:opacity-50">
+
+                    <div v-if="activeCellKey && !vueMode" class="flex items-center space-x-2 border-l border-zinc-800 pl-3">
+                        <button @click="toggleStyleAttr('bold')" :class="[cells[activeCellKey]?.bold ? 'bg-emerald-950 text-emerald-400 border-emerald-800' : 'bg-zinc-900 text-zinc-400 border-zinc-800']" class="p-1 px-2 border rounded font-bold" title="Toggle Weight Bold">B</button>
+                        <input type="color" :value="cells[activeCellKey]?.color || '#ffffff'" @input="updateStyleAttr('color', $event.target.value)" class="w-6 h-6 rounded bg-transparent cursor-pointer border border-zinc-800" title="Text Color Profile">
+                        <input type="number" :value="cells[activeCellKey]?.fontSize || 13" @input="updateStyleAttr('fontSize', parseInt($event.target.value))" min="10" max="24" class="w-12 bg-zinc-900 text-center border border-zinc-800 rounded p-1 text-white" title="Cell Core Size">
+                    </div>
+                </div>
+
+                <div class="flex-1 overflow-auto border border-zinc-800 bg-zinc-950 rounded-xl shadow-2xl relative">
+                    <table class="w-full border-collapse text-left font-sans table-fixed">
+                        
+                        <thead>
+                            <tr class="bg-zinc-950 border-b border-zinc-800">
+                                <th class="w-12 border-r border-zinc-800 bg-zinc-950 p-1.5 text-center text-[10px] font-mono text-zinc-600 uppercase font-black tracking-widest sticky top-0 z-10">#</th>
+                                <th v-for="col in cols" :key="col" 
+                                    :style="{ width: sheetSettings.columnWidth + 'px' }"
+                                    class="border-r border-zinc-800 p-1.5 text-center text-xs font-mono text-zinc-400 font-bold sticky top-0 bg-zinc-950 z-10 shadow-[inset_0_-1px_0_rgba(39,39,42,1)]">
+                                    {{ col }}
+                                </th>
+                            </tr>
+                        </thead>
+
+                        <tbody>
+                            <tr v-for="row in rows" :key="row" class="border-b border-zinc-900 hover:bg-zinc-900/10 transition-colors">
+                                
+                                <td class="border-r border-zinc-800 bg-zinc-950 text-center text-xs font-mono text-zinc-500 font-medium sticky left-0 z-10 shadow-[inset_-1px_0_0_rgba(39,39,42,1)]">{{ row }}</td>
+                                
+                                <td v-for="col in cols" :key="col"
+                                    @click="activeCellKey = col + row"
+                                    :class="[activeCellKey === (col + row) ? 'ring-2 ring-emerald-500/50 bg-zinc-900/40 z-20' : '']"
+                                    class="border-r border-zinc-800 p-0 relative min-h-[32px] group transition-all">
+                                    
+                                    <div class="w-full h-full">
+                                        
+                                        <div v-if="vueMode" 
+                                             :style="getCellInlineStyles(col + row)"
+                                             class="w-full min-h-[32px] px-2 py-1.5 font-mono text-xs overflow-hidden truncate select-text">
+                                            {{ evaluateCellOutputValue(col + row) }}
+                                        </div>
+
+                                        <div v-else class="w-full h-full flex items-center">
+                                            <input type="text"
+                                                   :value="cells[col + row]?.raw || ''"
+                                                   @input="mutateCellValue(col + row, $event.target.value)"
+                                                   @focus="activeCellKey = col + row"
+                                                   :style="getCellInlineStyles(col + row)"
+                                                   class="w-full h-full min-h-[32px] bg-transparent font-mono text-xs px-2 py-1.5 focus:outline-none text-white border-b border-transparent focus:border-zinc-700 placeholder-transparent group-hover:placeholder-zinc-800"
+                                                   placeholder="...">
+                                        </div>
+
+                                    </div>
+
+                                </td>
+                            </tr>
+                        </tbody>
+
+                    </table>
+                </div>
+
+            </main>
+        </div>
+    </div>
+    
+    <script src="index.js"></script>
+</body>
+</html>

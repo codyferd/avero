@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Avero Charts</title>
+    <script libs="core" src="../share/cdn.js"></script>
+</head>
+<body class="bg-black text-gray-100 overflow-hidden select-none">
+
+    <div id="app" class="flex h-screen flex-col" v-cloak>
+        
+        <header class="bg-zinc-950 border-b border-zinc-800 px-6 py-3 flex justify-between items-center z-30">
+            <div class="flex items-center space-x-3">
+                <span class="text-xl font-black tracking-wider text-white bg-gradient-to-r from-emerald-500 to-teal-500 bg-clip-text text-transparent">AVERO</span>
+                <span class="text-xs uppercase tracking-widest text-zinc-500 font-bold bg-zinc-900 px-2 py-1 rounded">Charts Engine</span>
+            </div>
+            
+            <div class="flex items-center space-x-3">
+                <button @click="vueMode = !vueMode" 
+                        :class="[vueMode ? 'bg-emerald-600 hover:bg-emerald-500 text-white' : 'bg-zinc-800 hover:bg-zinc-700 text-zinc-200']"
+                        class="font-medium text-sm px-4 py-2 rounded-lg transition flex items-center space-x-2">
+                    <span>{{ vueMode ? '👁 Presenting Chart Canvas' : '📝 Layout Editor Mode' }}</span>
+                </button>
+                <button @click="saveChartAsImage" class="bg-zinc-900 hover:bg-zinc-800 text-emerald-400 border border-zinc-800 font-medium text-sm px-4 py-2 rounded-lg transition flex items-center space-x-2">
+                    <span>📸 Save PNG Image</span>
+                </button>
+                <button @click="handleExport" class="bg-zinc-900 hover:bg-zinc-800 text-zinc-300 border border-zinc-800 font-medium text-sm px-4 py-2 rounded-lg transition">Export Data</button>
+                <button @click="triggerImport" class="bg-emerald-600 hover:bg-emerald-500 text-black font-bold text-sm px-4 py-2 rounded-lg transition">Import Data</button>
+            </div>
+        </header>
+
+        <div class="flex flex-1 overflow-hidden relative">
+            
+            <aside v-if="!vueMode" class="w-80 bg-zinc-950 border-r border-zinc-800 flex flex-col justify-between z-20">
+                <div class="p-4 overflow-y-auto flex-1 space-y-4">
+                    
+                    <div class="space-y-1">
+                        <h2 class="font-bold text-zinc-500 uppercase text-xs tracking-widest">Workspace Properties</h2>
+                        <input type="text" v-model="chartSettings.title" @input="queueRenderUpdate" class="w-full bg-zinc-900 border border-zinc-800 rounded px-2 py-1.5 text-xs text-white font-medium focus:outline-none focus:border-emerald-500">
+                    </div>
+
+                    <hr class="border-zinc-800">
+
+                    <div class="space-y-2">
+                        <h3 class="font-bold text-zinc-500 uppercase text-xs tracking-widest">Chart Visualization Type</h3>
+                        <div class="grid grid-cols-2 gap-2">
+                            <button v-for="type in chartTypes" :key="type.value"
+                                    @click="selectChartType(type.value)"
+                                    :class="[chartSettings.type === type.value ? 'bg-emerald-950/40 text-emerald-400 border-emerald-500' : 'bg-zinc-900/60 text-zinc-400 border-zinc-800/80 hover:border-zinc-700']"
+                                    class="border p-2 rounded-xl text-center transition flex flex-col items-center justify-center space-y-1">
+                                <span class="text-base">{{ type.icon }}</span>
+                                <span class="text-[9px] uppercase font-bold tracking-wider leading-none">{{ type.label }}</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <hr class="border-zinc-800">
+
+                    <div v-if="chartSettings.type === 'time'" class="space-y-2 bg-zinc-900/20 border border-zinc-800/60 p-3 rounded-xl">
+                        <h3 class="font-bold text-zinc-400 uppercase text-[10px] tracking-widest">Timeline Keyframe Axis</h3>
+                        <div class="grid grid-cols-4 gap-1 text-[10px]">
+                            <div v-for="(label, i) in chartSettings.timeLabels" :key="i" class="flex flex-col space-y-1">
+                                <span class="text-zinc-600 font-mono text-center">T{{i+1}}</span>
+                                <input type="text" v-model="chartSettings.timeLabels[i]" @input="queueRenderUpdate" class="w-full bg-zinc-950 text-center border border-zinc-800 rounded p-1 text-white focus:outline-none focus:border-emerald-500">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="space-y-2">
+                        <div class="flex justify-between items-center">
+                            <h3 class="font-bold text-zinc-500 uppercase text-xs tracking-widest">Metric Data Series</h3>
+                            <button @click="addNewDataNodePoint" class="text-[11px] text-emerald-400 font-bold hover:underline">+ Add Entry</button>
+                        </div>
+                        
+                        <div class="space-y-3 max-h-72 overflow-y-auto pr-1">
+                            <div v-for="(node, idx) in chartDataNodes" :key="node.id" class="flex flex-col space-y-2 bg-zinc-900/40 border border-zinc-800/80 p-3 rounded-xl relative group">
+                                <div class="flex items-center space-x-2">
+                                    <input type="color" v-model="node.color" @input="queueRenderUpdate" class="w-5 h-5 rounded bg-transparent cursor-pointer border border-zinc-700">
+                                    <input type="text" v-model="node.label" @input="queueRenderUpdate" placeholder="Series Label" class="flex-1 bg-zinc-950 border border-zinc-800 rounded px-2 py-1 text-[11px] text-white focus:outline-none focus:border-zinc-600">
+                                    <button @click="deleteDataNodePoint(node.id)" class="text-zinc-600 hover:text-red-400 text-sm pl-1 font-bold" title="Delete Entry">&times;</button>
+                                </div>
+                                
+                                <div v-if="chartSettings.type === 'time'" class="grid grid-cols-4 gap-1.5 pt-1 border-t border-zinc-900/60">
+                                    <div v-for="(val, i) in node.history" :key="i" class="flex flex-col">
+                                        <span class="text-[8px] text-zinc-500 uppercase font-mono truncate text-center">{{ chartSettings.timeLabels[i] }}</span>
+                                        <input type="number" v-model.number="node.history[i]" @input="queueRenderUpdate" class="w-full bg-zinc-950 border border-zinc-800 rounded text-[10px] p-1 text-center text-white focus:outline-none">
+                                    </div>
+                                </div>
+                                <div v-else class="flex items-center justify-between pt-1 border-t border-zinc-900/60">
+                                    <span class="text-[10px] text-zinc-500">Scalar Input Value:</span>
+                                    <input type="number" v-model.number="node.value" @input="queueRenderUpdate" placeholder="0" class="w-24 bg-zinc-950 border border-zinc-800 rounded px-1.5 py-1 text-[11px] text-white text-center focus:outline-none">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+                
+                <div class="p-4 border-t border-zinc-800 bg-zinc-950 text-[11px] font-mono text-zinc-500 space-y-1">
+                    <div class="flex justify-between">
+                        <span>Total Tracked Vectors:</span>
+                        <span class="text-zinc-300 font-bold">{{ chartDataNodes.length }} segments</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span>Active Layout Blueprint:</span>
+                        <span class="text-zinc-400 font-bold uppercase">{{ chartSettings.type }} mode</span>
+                    </div>
+                </div>
+            </aside>
+
+            <main class="flex-1 p-6 bg-zinc-900 flex flex-col justify-center items-center relative overflow-hidden">
+                
+                <div class="w-full max-w-4xl bg-zinc-950 border border-zinc-800 p-8 rounded-2xl shadow-2xl flex flex-col justify-center items-center space-y-4 relative min-h-[500px]">
+                    
+                    <div class="text-center space-y-1">
+                        <h2 class="text-lg font-bold text-zinc-100 tracking-wide">{{ chartSettings.title || 'Untitled Dataset Report' }}</h2>
+                        <p class="text-xs text-zinc-500 font-mono uppercase tracking-widest">Avero Visualizer Workspace Pattern &bull; {{ chartSettings.type }} architecture</p>
+                    </div>
+
+                    <div class="flex-1 w-full flex items-center justify-center py-4">
+                        <canvas ref="chartCanvas" width="580" height="360" class="bg-zinc-950 rounded-lg max-w-full"></canvas>
+                    </div>
+
+                    <div class="flex flex-wrap items-center justify-center gap-4 px-4 py-2 bg-zinc-900/30 border border-zinc-800/40 rounded-xl w-full">
+                        <div v-for="node in chartDataNodes" :key="node.id" class="flex items-center space-x-1.5 text-xs font-mono">
+                            <span class="w-2.5 h-2.5 rounded-full inline-block" :style="{ backgroundColor: node.color }"></span>
+                            <span class="text-zinc-400 font-medium">{{ node.label || 'Unnamed' }}</span>
+                            <span class="text-zinc-600 font-bold">
+                                {{ chartSettings.type === 'time' ? `[${node.history.join(', ')}]` : `(${node.value || 0})` }}
+                            </span>
+                        </div>
+                        <div v-if="chartDataNodes.length === 0" class="text-xs text-zinc-600 italic">No dataset inputs populated in workspace matrix.</div>
+                    </div>
+
+                </div>
+
+            </main>
+        </div>
+    </div>
+    
+    <script src="index.js"></script>
+</body>
+</html>

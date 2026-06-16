@@ -1,0 +1,29 @@
+/* Core Layout Adjustments for Avero Pitch Black Theme Engine */
+[v-cloak] {
+    display: none !important;
+}
+
+body {
+    background-color: #000000;
+}
+
+/* Custom smooth transition styling loops for answers */
+.answer-transition {
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Dark scrollbar optimization controls */
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+::-webkit-scrollbar-track {
+    background: #000000;
+}
+::-webkit-scrollbar-thumb {
+    background: #27272a;
+    border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: #3f3f46;
+}

@@ -27,11 +27,21 @@
 
     <!-- UI Level 1 & 2: Header (Starts after the fixed button) -->
     <header v-show="uiLevel >= 1" class="h-12 ui-solid flex items-center pl-16 pr-4 z-[100] gap-4 shadow-xl">
-        <div class="flex flex-1 items-center overflow-x-auto no-scrollbar h-full">
-            <div v-for="d in desktops" :key="d.id"
+        <div class="flex flex-1 items-center overflow-x-auto no-scrollbar h-full gap-1">
+            <div v-for="(d, index) in desktops" :key="d.id"
                  @click="activeDesktopId = d.id"
+                 
+                 draggable="true"
+                 @dragstart="handleTabDragStart($event, index)"
+                 @dragover.prevent="handleTabDragOver($event, index)"
+                 @dragleave="handleTabDragLeave($event)"
+                 @drop="handleTabDrop($event, index)"
+                 
                  class="hypr-tab"
-                 :class="{ active: activeDesktopId === d.id }">
+                 :class="{ 
+                    active: activeDesktopId === d.id,
+                    'is-dragover': dragOverTabIndex === index 
+                 }">
                 <span class="text-[9px] font-black uppercase tracking-[0.15em] whitespace-nowrap">{{ d.name }}</span>
             </div>
         </div>

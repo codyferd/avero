@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Avero Presentations</title>
+    <script libs="core" src="../share/cdn.js"></script>
+</head>
+<body class="bg-black text-gray-100 overflow-hidden select-none">
+
+    <div id="app" class="flex h-screen flex-col" v-cloak>
+        
+        <header v-if="!presentationMode" class="bg-zinc-950 border-b border-zinc-800 px-6 py-3 flex justify-between items-center z-30">
+            <div class="flex items-center space-x-3">
+                <span class="text-xl font-black tracking-wider text-white bg-gradient-to-r from-red-500 to-amber-500 bg-clip-text text-transparent">AVERO</span>
+                <span class="text-xs uppercase tracking-widest text-zinc-500 font-bold bg-zinc-900 px-2 py-1 rounded">Presentations</span>
+            </div>
+            
+            <div class="flex items-center space-x-3">
+                <button @click="enterPresentationMode" class="bg-zinc-800 hover:bg-zinc-700 text-white font-medium text-sm px-4 py-2 rounded-lg transition flex items-center space-x-2">
+                    <span>▶ Play Presentation</span>
+                </button>
+                <button @click="handleExport" class="bg-zinc-900 hover:bg-zinc-800 text-zinc-300 border border-zinc-800 font-medium text-sm px-4 py-2 rounded-lg transition">Export</button>
+                <button @click="triggerImport" class="bg-amber-600 hover:bg-amber-500 text-black font-bold text-sm px-4 py-2 rounded-lg transition">Import</button>
+            </div>
+        </header>
+
+        <div class="flex flex-1 overflow-hidden relative">
+            
+            <aside v-if="!presentationMode" class="w-64 bg-zinc-950 border-r border-zinc-800 flex flex-col justify-between z-20">
+                <div class="p-4 overflow-y-auto flex-1 space-y-4">
+                    <div class="flex justify-between items-center">
+                        <h2 class="font-bold text-zinc-500 uppercase text-xs tracking-widest">Slides</h2>
+                        <span class="text-xs text-zinc-600 font-mono">{{ slides.length }} total</span>
+                    </div>
+                    
+                    <div class="space-y-2.5">
+                        <div v-for="(slide, index) in slides" :key="slide.id" 
+                             @click="currentSlideIndex = index"
+                             :class="['group p-3 rounded-xl border cursor-pointer transition relative flex flex-col justify-between h-24 bg-zinc-900/50', currentSlideIndex === index ? 'border-amber-500 bg-zinc-900 ring-1 ring-amber-500/20' : 'border-zinc-800/60 hover:border-zinc-700']">
+                            <div class="flex justify-between items-start">
+                                <span class="text-xs font-mono text-zinc-500">#{{ index + 1 }}</span>
+                                <button @click.stop="deleteSlide(index)" class="opacity-0 group-hover:opacity-100 text-zinc-500 hover:text-red-400 text-xs transition p-1">✕</button>
+                            </div>
+                            <div class="text-xs font-medium truncate text-zinc-300">
+                                {{ slide.elements[0]?.content || 'Empty Slide' }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="p-4 border-t border-zinc-800 bg-zinc-950">
+                    <button @click="addSlide" class="w-full bg-zinc-900 hover:bg-zinc-800 border border-zinc-700 text-white py-2.5 rounded-xl font-medium transition text-sm">+ Add Blank Slide</button>
+                </div>
+            </aside>
+
+            <main :class="['flex-1 p-8 overflow-auto flex flex-col items-center justify-center relative transition-all duration-300', presentationMode ? 'bg-black' : 'bg-zinc-900']">
+                
+                <div v-if="presentationMode" class="absolute top-4 left-4 text-xs font-mono text-zinc-700 pointer-events-none uppercase tracking-widest bg-zinc-950/40 px-3 py-1.5 rounded border border-zinc-900/50">
+                    Press <kbd class="bg-zinc-900 px-1 rounded text-zinc-400">ESC</kbd> to exit full layout presentation
+                </div>
+
+                <div v-if="!presentationMode" class="absolute top-4 left-4 bg-zinc-950 border border-zinc-800 shadow-2xl rounded-xl p-3 flex items-center space-x-4 z-20">
+                    <div class="flex items-center space-x-2 border-r border-zinc-800 pr-4">
+                        <button @click="addElement('text')" class="bg-zinc-900 hover:bg-zinc-800 text-xs px-2.5 py-1.5 rounded text-zinc-200 border border-zinc-800 font-medium">+ Text</button>
+                        <button @click="addElement('image')" class="bg-zinc-900 hover:bg-zinc-800 text-xs px-2.5 py-1.5 rounded text-zinc-200 border border-zinc-800 font-medium">+ Image</button>
+                        <button @click="addElement('shape')" class="bg-zinc-900 hover:bg-zinc-800 text-xs px-2.5 py-1.5 rounded text-zinc-200 border border-zinc-800 font-medium">+ Shape</button>
+                    </div>
+
+                    <div class="flex items-center space-x-3 text-xs">
+                        <span class="text-zinc-500 font-bold uppercase tracking-wider">Slide Bg:</span>
+                        <input type="color" v-model="currentSlide.background" class="w-6 h-6 rounded bg-transparent cursor-pointer border border-zinc-700">
+                    </div>
+                </div>
+
+                <div v-if="selectedElement && !presentationMode" class="absolute top-4 right-4 bg-zinc-950 border border-zinc-800 shadow-2xl rounded-xl p-3 flex items-center space-x-4 z-20 text-xs">
+                    <span class="text-zinc-500 font-mono uppercase font-bold">{{ selectedElement.type }} attributes</span>
+                    
+                    <div v-if="selectedElement.type === 'text'" class="flex items-center space-x-3 border-l border-zinc-800 pl-4">
+                        <label class="text-zinc-400">Font Size:</label>
+                        <input type="number" v-model.number="selectedElement.fontSize" class="w-14 bg-zinc-900 border border-zinc-800 rounded px-1.5 py-1 text-center text-white">
+                        
+                        <div class="flex items-center space-x-1">
+                            <label class="text-zinc-400">Box W:</label>
+                            <input type="number" v-model.number="selectedElement.width" class="w-16 bg-zinc-900 border border-zinc-800 rounded px-1 py-1 text-center text-white">
+                        </div>
+
+                        <div class="flex items-center space-x-1">
+                            <label class="text-zinc-400">Box H:</label>
+                            <input type="number" v-model.number="selectedElement.height" class="w-16 bg-zinc-900 border border-zinc-800 rounded px-1 py-1 text-center text-white" placeholder="auto">
+                        </div>
+
+                        <label class="text-zinc-400">Color:</label>
+                        <input type="color" v-model="selectedElement.color" class="w-6 h-6 rounded bg-transparent border border-zinc-700 cursor-pointer">
+                    </div>
+
+                    <div v-if="selectedElement.type === 'shape'" class="flex items-center space-x-3 border-l border-zinc-800 pl-4">
+                        <label class="text-zinc-400">Color:</label>
+                        <input type="color" v-model="selectedElement.color" class="w-6 h-6 rounded bg-transparent border border-zinc-700 cursor-pointer">
+                        
+                        <label class="text-zinc-400">Radius:</label>
+                        <input type="number" v-model.number="selectedElement.radius" class="w-12 bg-zinc-900 border border-zinc-800 rounded px-1 py-0.5 text-center text-white">
+                    </div>
+
+                    <div class="flex items-center space-x-1.5 border-l border-zinc-800 pl-4">
+                        <button @click="changeLayer('up')" class="bg-zinc-900 hover:bg-zinc-800 text-zinc-400 p-1 rounded" title="Bring Forward">▲</button>
+                        <button @click="changeLayer('down')" class="bg-zinc-900 hover:bg-zinc-800 text-zinc-400 p-1 rounded" title="Send Backward">▼</button>
+                    </div>
+
+                    <button @click="deleteElement" class="bg-red-950/60 text-red-400 border border-red-900/60 px-2 py-1 rounded-lg hover:bg-red-900 transition">Delete</button>
+                </div>
+
+                <div v-if="currentSlide" 
+                     :style="{ backgroundColor: currentSlide.background }"
+                     :class="['w-[960px] h-[540px] shadow-[0_0_50px_rgba(0,0,0,0.8)] relative overflow-hidden transition-all duration-300 border', presentationMode ? 'border-transparent scale-110' : 'border-zinc-800 rounded-2xl']">
+                    
+                    <div v-for="el in currentSlide.elements" :key="el.id"
+                         @mousedown="!presentationMode && startDrag($event, el)"
+                         @click.stop="!presentationMode && (selectedElement = el)"
+                         :style="{ top: el.top + 'px', left: el.left + 'px', zIndex: el.zIndex || 1 }"
+                         :class="['absolute p-2 select-none group', !presentationMode ? 'cursor-move border border-transparent hover:border-dashed hover:border-zinc-600' : '', selectedElement === el && !presentationMode ? 'border-amber-500 ring-1 ring-amber-500/30' : '']">
+                        
+                        <div v-if="el.type === 'text'" 
+                             :style="{ 
+                                 fontSize: el.fontSize + 'px', 
+                                 color: el.color || '#ffffff',
+                                 width: el.width + 'px',
+                                 height: el.height ? el.height + 'px' : 'auto',
+                                 overflow: el.height ? 'hidden' : 'visible'
+                             }"
+                             class="word-break break-words">
+                            <span v-if="presentationMode" class="font-sans whitespace-pre-wrap block w-full h-full">{{ el.content }}</span>
+                            <textarea v-else v-model="el.content" :style="{ color: el.color || '#ffffff' }" class="bg-transparent focus:outline-none w-full h-full font-sans resize-none border-b border-transparent focus:border-zinc-700 m-0 p-0 line-none"></textarea>
+                            
+                            <div v-if="!presentationMode && selectedElement === el" class="flex space-x-1 mt-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <input type="number" v-model.number="el.width" class="w-10 bg-zinc-950 text-[9px] border border-zinc-800 text-center text-zinc-400" title="Box Width">
+                                <span class="text-zinc-600 text-[9px]">×</span>
+                                <input type="number" v-model.number="el.height" class="w-10 bg-zinc-950 text-[9px] border border-zinc-800 text-center text-zinc-400" title="Box Height (0 for auto)" placeholder="auto">
+                            </div>
+                        </div>
+
+                        <div v-if="el.type === 'image'" class="w-64">
+                            <img :src="el.content" class="w-full h-auto pointer-events-none object-cover rounded shadow-lg" alt="Slide Assets">
+                            <input v-if="!presentationMode" type="text" v-model="el.content" placeholder="Image CDN Link" class="text-[10px] text-zinc-500 mt-2 w-full bg-zinc-950 border border-zinc-800 p-1 rounded focus:outline-none opacity-0 group-hover:opacity-100 transition-opacity">
+                        </div>
+
+                        <div v-if="el.type === 'shape'">
+                            <div :style="{ backgroundColor: el.color || '#d97706', width: el.width + 'px', height: el.height + 'px', borderRadius: (el.radius || 0) + 'px' }" class="shadow-md"></div>
+                            <div v-if="!presentationMode && selectedElement === el" class="flex space-x-1 mt-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <input type="number" v-model.number="el.width" class="w-10 bg-zinc-950 text-[9px] border border-zinc-800 text-center text-zinc-400">
+                                <span class="text-zinc-600 text-[9px]">×</span>
+                                <input type="number" v-model.number="el.height" class="w-10 bg-zinc-950 text-[9px] border border-zinc-800 text-center text-zinc-400">
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+
+                <div v-if="presentationMode" class="absolute bottom-6 flex items-center space-x-6 bg-zinc-950/80 border border-zinc-800/80 backdrop-blur-md px-4 py-2 rounded-xl z-50">
+                    <button @click="navigateSlide(-1)" class="text-zinc-400 hover:text-white font-bold transition text-sm">◀ Prev</button>
+                    <span class="text-xs font-mono text-zinc-500">Slide {{ currentSlideIndex + 1 }} / {{ slides.length }}</span>
+                    <button @click="navigateSlide(1)" class="text-zinc-400 hover:text-white font-bold transition text-sm">Next ▶</button>
+                </div>
+
+            </main>
+        </div>
+    </div>
+    <script src="index.js"></script>
+</body>
+</html>

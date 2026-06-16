@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Avero Quizzes</title>
+    <script libs="core" src="../share/cdn.js"></script>
+</head>
+<body class="bg-black text-gray-100 overflow-hidden select-none">
+
+    <div id="app" class="flex h-screen flex-col" v-cloak>
+        
+        <header class="bg-zinc-950 border-b border-zinc-800 px-6 py-3 flex justify-between items-center z-30">
+            <div class="flex items-center space-x-3">
+                <span class="text-xl font-black tracking-wider text-white bg-gradient-to-r from-emerald-500 to-teal-500 bg-clip-text text-transparent">AVERO</span>
+                <span class="text-xs uppercase tracking-widest text-zinc-500 font-bold bg-zinc-900 px-2 py-1 rounded">Quizzes Engine</span>
+            </div>
+            
+            <div class="flex items-center space-x-3">
+                <div v-if="!testSubmitted && workspaceMode === 'test'" class="text-xs font-mono bg-zinc-900 border border-zinc-800 text-zinc-400 px-3 py-2 rounded-lg flex items-center space-x-2">
+                    <span class="w-1.5 h-1.5 bg-red-500 rounded-full animate-pulse"></span>
+                    <span>ELAPSED: {{ formatTimer }}</span>
+                </div>
+
+                <button v-if="workspaceMode === 'edit'" @click="enterTestMode" class="bg-emerald-600 hover:bg-emerald-500 text-black font-bold text-sm px-4 py-2 rounded-lg transition flex items-center space-x-2">
+                    <span>🚀 Launch Test Mode</span>
+                </button>
+                <button v-if="workspaceMode === 'test' && testSubmitted" @click="returnToEditMode" class="bg-zinc-800 hover:bg-zinc-700 text-zinc-200 font-medium text-sm px-4 py-2 rounded-lg transition">
+                    Return to Workspace
+                </button>
+                
+                <template v-if="workspaceMode === 'edit'">
+                    <button @click="handleExport" class="bg-zinc-900 hover:bg-zinc-800 text-zinc-300 border border-zinc-800 font-medium text-sm px-4 py-2 rounded-lg transition">Export Quiz</button>
+                    <button @click="triggerImportModal" class="bg-zinc-900 hover:bg-zinc-800 text-emerald-400 border border-zinc-800 font-medium text-sm px-4 py-2 rounded-lg transition">Import Data</button>
+                </template>
+            </div>
+        </header>
+
+        <div class="flex flex-1 overflow-hidden relative">
+            
+            <template v-if="workspaceMode === 'edit'">
+                <aside class="w-80 bg-zinc-950 border-r border-zinc-800 flex flex-col justify-between z-20">
+                    <div class="p-4 overflow-y-auto flex-1 space-y-4">
+                        
+                        <div class="space-y-1">
+                            <h2 class="font-bold text-zinc-500 uppercase text-xs tracking-widest">Quiz Properties</h2>
+                            <input type="text" v-model="quizMeta.title" class="w-full bg-zinc-900 border border-zinc-800 rounded px-2.5 py-2 text-xs text-white font-medium focus:outline-none focus:border-emerald-500">
+                        </div>
+
+                        <hr class="border-zinc-800">
+
+                        <div class="space-y-2">
+                            <div class="flex justify-between items-center">
+                                <h3 class="font-bold text-zinc-500 uppercase text-xs tracking-widest">Questions Matrix</h3>
+                                <button @click="addNewQuestionNode" class="text-[11px] text-emerald-400 font-bold hover:underline">+ Add Question</button>
+                            </div>
+                            
+                            <div class="space-y-1 max-h-[280px] overflow-y-auto pr-1">
+                                <div v-for="(q, idx) in questions" :key="q.id" 
+                                     @click="activeQuestionIndex = idx"
+                                     :class="[activeQuestionIndex === idx ? 'bg-zinc-900 border-zinc-700 text-white' : 'bg-zinc-950 border-zinc-900 text-zinc-400 hover:bg-zinc-900/40']"
+                                     class="flex items-center justify-between border p-2 rounded-lg cursor-pointer transition">
+                                    <span class="text-xs font-mono truncate flex-1 pr-2">#{{ idx + 1 }}: {{ q.text || 'Empty Question String' }}</span>
+                                    <button @click.stop="deleteQuestionNode(idx)" class="text-zinc-600 hover:text-red-400 font-bold text-xs">&times;</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <hr class="border-zinc-800">
+
+                        <div v-if="activeQuestion" class="space-y-3">
+                            <h3 class="font-bold text-zinc-500 uppercase text-xs tracking-widest">Node Inspector (#{{ activeQuestionIndex + 1 }})</h3>
+                            
+                            <div class="space-y-1">
+                                <label class="text-[10px] uppercase text-zinc-400 font-mono">Prompt Input</label>
+                                <textarea v-model="activeQuestion.text" rows="3" class="w-full bg-zinc-900 border border-zinc-800 rounded p-2 text-xs text-white focus:outline-none focus:border-zinc-600 resize-none"></textarea>
+                            </div>
+
+                            <div class="space-y-1.5">
+                                <label class="text-[10px] uppercase text-zinc-400 font-mono flex justify-between">
+                                    <span>Options Topology Array</span>
+                                    <span class="text-zinc-600 text-[9px]">Select Dot for Correct Path</span>
+                                </label>
+                                
+                                <div v-for="(opt, oIdx) in activeQuestion.options" :key="oIdx" class="flex items-center space-x-2">
+                                    <input type="radio" :name="'correct-' + activeQuestion.id" :checked="activeQuestion.correctIndex === oIdx" @change="activeQuestion.correctIndex = oIdx" class="accent-emerald-500 w-3.5 h-3.5 cursor-pointer">
+                                    <input type="text" v-model="activeQuestion.options[oIdx]" class="w-full bg-zinc-900 border border-zinc-800 rounded px-2 py-1 text-xs text-zinc-200 focus:outline-none focus:border-zinc-700">
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                    
+                    <div class="p-4 border-t border-zinc-800 bg-zinc-950 text-[11px] font-mono text-zinc-500 flex justify-between">
+                        <span>Total Items Polled:</span>
+                        <span class="text-zinc-300 font-bold">{{ questions.length }} prompts</span>
+                    </div>
+                </aside>
+
+                <main class="flex-1 p-6 bg-zinc-900 flex flex-col items-center justify-center relative overflow-hidden">
+                    <div class="w-full max-w-2xl bg-zinc-950 border border-zinc-800 p-8 rounded-2xl shadow-2xl flex flex-col space-y-6">
+                        
+                        <div class="border-b border-zinc-800 pb-4">
+                            <span class="text-[10px] font-mono uppercase bg-zinc-900 border border-zinc-800 px-2 py-1 rounded text-zinc-500">Live Editor Preview</span>
+                            <h2 class="text-xl font-bold tracking-tight text-zinc-100 mt-2">{{ quizMeta.title }}</h2>
+                        </div>
+
+                        <div v-if="activeQuestion" class="space-y-4">
+                            <p class="text-sm text-zinc-300 font-medium bg-zinc-900/40 p-4 border border-zinc-850 rounded-xl">
+                                <span class="text-emerald-500 font-mono mr-1">Q{{ activeQuestionIndex + 1 }}.</span>
+                                {{ activeQuestion.text || 'Configure a question prompt inside the inspector panel layer...' }}
+                            </p>
+                            
+                            <div class="grid grid-cols-1 gap-2">
+                                <div v-for="(opt, oIdx) in activeQuestion.options" :key="oIdx"
+                                     :class="[activeQuestion.correctIndex === oIdx ? 'border-emerald-800/80 bg-emerald-950/20 text-emerald-400' : 'border-zinc-800 bg-zinc-900/30 text-zinc-400']"
+                                     class="p-3 border rounded-xl text-xs font-mono flex justify-between items-center">
+                                    <span>{{ opt || 'Empty Variant Target Option Field' }}</span>
+                                    <span v-if="activeQuestion.correctIndex === oIdx" class="text-[10px] font-bold tracking-widest uppercase bg-emerald-900/40 px-1.5 py-0.5 rounded text-emerald-400">Correct Value</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div v-else class="text-zinc-500 text-xs text-center py-12 font-mono">
+                            No question element index mapped. Append one to step through layouts.
+                        </div>
+
+                    </div>
+                </main>
+            </template>
+
+            <template v-else-if="workspaceMode === 'test'">
+                <main class="flex-1 bg-zinc-900 p-6 overflow-y-auto flex justify-center items-start">
+                    <div class="w-full max-w-2xl bg-zinc-950 border border-zinc-800 p-8 my-4 rounded-2xl shadow-2xl space-y-6">
+                        
+                        <div class="border-b border-zinc-800 pb-4 flex justify-between items-start">
+                            <div>
+                                <h1 class="text-xl font-black text-white tracking-wide">{{ quizMeta.title }}</h1>
+                                <p class="text-xs text-zinc-500 font-mono mt-1">Evaluation Cluster Block Sequence &bull; {{ questions.length }} Questions Total</p>
+                            </div>
+                            <span v-if="testSubmitted" class="bg-zinc-900 text-zinc-400 border border-zinc-800 font-mono text-xs px-3 py-1.5 rounded-lg">
+                                SCORING PROCESS FINALIZED
+                            </span>
+                        </div>
+
+                        <div class="space-y-6 divider-y border-zinc-800">
+                            <div v-for="(q, idx) in questions" :key="q.id" class="space-y-3 bg-zinc-900/20 p-4 border border-zinc-900 rounded-xl">
+                                <h3 class="text-sm font-bold text-zinc-200">
+                                    <span class="text-zinc-600 font-mono mr-1.5">[{{ idx + 1 }}]</span>
+                                    {{ q.text }}
+                                </h3>
+
+                                <div class="grid grid-cols-1 gap-2">
+                                    <button v-for="(opt, oIdx) in q.options" :key="oIdx"
+                                            :disabled="testSubmitted"
+                                            @click="recordUserAnswer(idx, oIdx)"
+                                            :class="getAnswerTestingStyles(idx, oIdx)"
+                                            class="p-3 text-left border rounded-xl text-xs answer-transition flex justify-between items-center font-mono">
+                                        <span>{{ opt }}</span>
+                                        
+                                        <div v-if="testSubmitted" class="text-[9px] uppercase font-bold tracking-wider px-2 py-0.5 rounded">
+                                            <span v-if="q.correctIndex === oIdx" class="bg-emerald-950 text-emerald-400 border border-emerald-800">Correct Target</span>
+                                            <span v-else-if="userAnswers[idx] === oIdx && q.correctIndex !== oIdx" class="bg-red-950 text-red-400 border border-red-800">User Mismatch</span>
+                                        </div>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div v-if="!testSubmitted" class="pt-4 border-t border-zinc-800 flex justify-end">
+                            <button @click="submitFinalizedTestArray" class="bg-emerald-600 hover:bg-emerald-500 text-black font-extrabold text-sm px-6 py-3 rounded-xl transition shadow-lg shadow-emerald-950/20">
+                                Submit Assessment Array
+                            </button>
+                        </div>
+
+                        <div v-else class="pt-6 border-t border-zinc-800 bg-zinc-950/40 p-6 border border-zinc-900 rounded-xl space-y-4 font-mono">
+                            <h4 class="text-xs uppercase tracking-widest text-zinc-400 font-bold">Diagnostic Evaluation Telemetry Log</h4>
+                            <div class="grid grid-cols-3 gap-4 text-xs">
+                                <div class="bg-zinc-900/80 border border-zinc-850 p-3 rounded-lg">
+                                    <span class="text-zinc-500 block text-[10px]">RAW ACCURACY SCORE</span>
+                                    <span class="text-lg font-black text-white block mt-1">{{ scoreReport.correct }} / {{ questions.length }}</span>
+                                </div>
+                                <div class="bg-zinc-900/80 border border-zinc-850 p-3 rounded-lg">
+                                    <span class="text-zinc-500 block text-[10px]">COMPUTED PERCENTAGE</span>
+                                    <span class="text-lg font-black text-emerald-400 block mt-1">{{ scoreReport.percentage }}%</span>
+                                </div>
+                                <div class="bg-zinc-900/80 border border-zinc-850 p-3 rounded-lg">
+                                    <span class="text-zinc-500 block text-[10px]">BURNDOWN RESOLUTION TIME</span>
+                                    <span class="text-lg font-black text-zinc-300 block mt-1">{{ scoreReport.timeTaken }}</span>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </main>
+            </template>
+
+        </div>
+
+        <div v-if="importModalActive" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+            <div class="bg-zinc-950 border border-zinc-800 max-w-md w-full rounded-2xl p-6 shadow-2xl space-y-4">
+                <div class="space-y-1">
+                    <h3 class="text-sm font-bold text-white uppercase tracking-wider font-mono">Select Loading Direct Mode Layer</h3>
+                    <p class="text-xs text-zinc-500">Determine runtime orchestration environments layout profiles assignment vectors.</p>
+                </div>
+                
+                <div class="grid grid-cols-2 gap-3">
+                    <button @click="executeFilePickerStream('edit')" class="bg-zinc-900 hover:bg-zinc-850 border border-zinc-800 p-4 rounded-xl text-center space-y-1 group transition">
+                        <span class="text-xl block group-hover:scale-110 transition">📝</span>
+                        <span class="text-xs font-bold text-zinc-300 block">Edit Mode Workspace</span>
+                        <span class="text-[10px] text-zinc-600 block leading-tight">Allows modifying values & prompt parameters layout</span>
+                    </button>
+                    <button @click="executeFilePickerStream('test')" class="bg-emerald-950/20 hover:bg-emerald-950/40 border border-emerald-900/80 p-4 rounded-xl text-center space-y-1 group transition">
+                        <span class="text-xl block group-hover:scale-110 transition">🔒</span>
+                        <span class="text-xs font-bold text-emerald-400 block">Locked Test Mode</span>
+                        <span class="text-[10px] text-emerald-600/80 block leading-tight">Locks system instantly into exam environment pass</span>
+                    </button>
+                </div>
+
+                <div class="flex justify-end pt-2">
+                    <button @click="importModalActive = false" class="text-xs font-mono text-zinc-500 hover:text-zinc-300 transition">Cancel Pipeline</button>
+                </div>
+            </div>
+        </div>
+
+    </div>
+    
+    <script src="index.js"></script>
+</body>
+</html>

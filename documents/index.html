@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Avero Documents</title>
+    <script libs="core" src="../share/cdn.js"></script>
+</head>
+<body class="bg-black text-gray-100 overflow-hidden select-none">
+
+    <div id="app" class="flex h-screen flex-col" v-cloak>
+        
+        <header class="bg-zinc-950 border-b border-zinc-800 px-6 py-3 flex justify-between items-center z-30">
+            <div class="flex items-center space-x-3">
+                <span class="text-xl font-black tracking-wider text-white bg-gradient-to-r from-blue-500 to-indigo-500 bg-clip-text text-transparent">AVERO</span>
+                <span class="text-xs uppercase tracking-widest text-zinc-500 font-bold bg-zinc-900 px-2 py-1 rounded">Documents</span>
+            </div>
+            
+            <div class="flex items-center space-x-3">
+                <button @click="vueMode = !vueMode" 
+                        :class="[vueMode ? 'bg-emerald-600 hover:bg-emerald-500 text-white' : 'bg-zinc-800 hover:bg-zinc-700 text-zinc-200']"
+                        class="font-medium text-sm px-4 py-2 rounded-lg transition flex items-center space-x-2">
+                    <span>{{ vueMode ? '👁 Vue Preview Active' : '📝 Standard Editor' }}</span>
+                </button>
+                <button @click="handleExport" class="bg-zinc-900 hover:bg-zinc-800 text-zinc-300 border border-zinc-800 font-medium text-sm px-4 py-2 rounded-lg transition">Export</button>
+                <button @click="triggerImport" class="bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-sm px-4 py-2 rounded-lg transition">Import</button>
+            </div>
+        </header>
+
+        <div class="flex flex-1 overflow-hidden relative">
+            
+            <aside v-if="!vueMode" class="w-64 bg-zinc-950 border-r border-zinc-800 flex flex-col justify-between z-20">
+                <div class="p-4 overflow-y-auto flex-1 space-y-4">
+                    <div class="flex justify-between items-center">
+                        <h2 class="font-bold text-zinc-500 uppercase text-xs tracking-widest">Document Elements</h2>
+                        <span class="text-xs text-zinc-600 font-mono">{{ elements.length }} nodes</span>
+                    </div>
+                    
+                    <div class="space-y-2.5">
+                        <div v-for="(el, index) in elements" :key="el.id" 
+                             @click="selectedElement = el"
+                             :class="['group p-3 rounded-xl border cursor-pointer transition relative flex flex-col justify-between h-20 bg-zinc-900/50', selectedElement?.id === el.id ? 'border-indigo-500 bg-zinc-900 ring-1 ring-indigo-500/20' : 'border-zinc-800/60 hover:border-zinc-700']">
+                            <div class="flex justify-between items-start">
+                                <span class="text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded font-mono font-bold" 
+                                      :class="{'bg-amber-950 text-amber-400': el.type === 'heading', 'bg-blue-950 text-blue-400': el.type === 'image', 'bg-zinc-800 text-zinc-400': el.type !== 'heading' && el.type !== 'image'}">
+                                    {{ el.type }}
+                                </span>
+                                <button @click.stop="deleteElement(el.id)" class="opacity-0 group-hover:opacity-100 text-zinc-500 hover:text-red-400 text-xs transition p-1">✕</button>
+                            </div>
+                            <div class="text-xs font-medium truncate text-zinc-300 mt-1">
+                                {{ el.type === 'image' ? el.contentUrl : el.content || 'Empty content...' }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="p-4 border-t border-zinc-800 bg-zinc-950 space-y-2">
+                    <div class="flex justify-between text-xs text-zinc-500 font-mono">
+                        <span>Words:</span>
+                        <span class="text-zinc-300 font-bold">{{ readingMetrics.words }}</span>
+                    </div>
+                    <div class="flex justify-between text-xs text-zinc-500 font-mono">
+                        <span>Characters:</span>
+                        <span class="text-zinc-300 font-bold">{{ readingMetrics.chars }}</span>
+                    </div>
+                    <div class="flex justify-between text-xs text-zinc-500 font-mono">
+                        <span>Read Time:</span>
+                        <span class="text-indigo-400 font-bold">~{{ readingMetrics.time }} min</span>
+                    </div>
+                </div>
+            </aside>
+
+            <main class="flex-1 p-8 overflow-auto flex flex-col items-center bg-zinc-900 relative">
+                
+                <div v-if="!vueMode" class="mb-6 bg-zinc-950 border border-zinc-800 shadow-2xl rounded-xl p-3 flex flex-wrap items-center gap-4 z-20">
+                    <div class="flex items-center space-x-2 border-r border-zinc-800 pr-4">
+                        <button @click="addElement('heading')" class="bg-zinc-900 hover:bg-zinc-800 text-xs px-2.5 py-1.5 rounded text-zinc-200 border border-zinc-800 font-medium">+ Heading</button>
+                        <button @click="addElement('paragraph')" class="bg-zinc-900 hover:bg-zinc-800 text-xs px-2.5 py-1.5 rounded text-zinc-200 border border-zinc-800 font-medium">+ Paragraph</button>
+                        <button @click="addElement('blockquote')" class="bg-zinc-900 hover:bg-zinc-800 text-xs px-2.5 py-1.5 rounded text-zinc-200 border border-zinc-800 font-medium">+ Quote</button>
+                        <button @click="addElement('image')" class="bg-zinc-900 hover:bg-zinc-800 text-xs px-2.5 py-1.5 rounded text-indigo-400 border border-zinc-800 font-medium">+ Image Block</button>
+                    </div>
+
+                    <div class="flex items-center space-x-3 text-xs">
+                        <span class="text-zinc-500 font-bold uppercase tracking-wider">Theme Matrix:</span>
+                        <select @change="applyThemePreset($event.target.value)" class="bg-zinc-900 text-white border border-zinc-800 rounded p-1 text-xs">
+                            <option value="custom">Custom Canvas Color</option>
+                            <option value="pitch">Pitch Black</option>
+                            <option value="cyber">Cyberpunk Amber</option>
+                            <option value="ocean">Deep Ocean</option>
+                            <option value="nordic">Nordic Frost</option>
+                        </select>
+                        <input type="color" v-model="docSettings.background" class="w-6 h-6 rounded bg-transparent cursor-pointer border border-zinc-700">
+                    </div>
+                </div>
+
+                <div v-if="selectedElement && !vueMode" class="mb-6 bg-zinc-950 border border-zinc-800 shadow-2xl rounded-xl p-3 flex flex-wrap items-center gap-4 z-20 text-xs">
+                    <span class="text-zinc-500 font-mono uppercase font-bold">{{ selectedElement.type }} attributes</span>
+                    
+                    <div v-if="selectedElement.type !== 'image'" class="flex items-center space-x-3 border-l border-zinc-800 pl-4">
+                        <label class="text-zinc-400">Font Size (px):</label>
+                        <input type="number" v-model.number="selectedElement.fontSize" class="w-14 bg-zinc-900 border border-zinc-800 rounded px-1.5 py-1 text-center text-white">
+                        
+                        <label class="text-zinc-400">Color:</label>
+                        <input type="color" v-model="selectedElement.color" class="w-6 h-6 rounded bg-transparent border border-zinc-700 cursor-pointer">
+
+                        <label class="text-zinc-400">Alignment:</label>
+                        <select v-model="selectedElement.align" class="bg-zinc-900 text-white border border-zinc-800 rounded p-1">
+                            <option value="left">Left</option>
+                            <option value="center">Center</option>
+                            <option value="right">Right</option>
+                            <option value="justify">Justify</option>
+                        </select>
+                    </div>
+
+                    <div v-if="selectedElement.type === 'image'" class="flex items-center space-x-3 border-l border-zinc-800 pl-4">
+                        <label class="text-zinc-400">Display Width (%):</label>
+                        <input type="number" v-model.number="selectedElement.widthPercent" min="10" max="100" class="w-14 bg-zinc-900 border border-zinc-800 rounded px-1.5 py-1 text-center text-white">
+                        
+                        <label class="text-zinc-400">Rounded Radius (px):</label>
+                        <input type="number" v-model.number="selectedElement.radius" min="0" max="50" class="w-14 bg-zinc-900 border border-zinc-800 rounded px-1.5 py-1 text-center text-white">
+                    </div>
+
+                    <div class="flex items-center space-x-1.5 border-l border-zinc-800 pl-4">
+                        <button @click="moveElement(selectedElement.id, 'up')" class="bg-zinc-900 hover:bg-zinc-800 text-zinc-400 p-1 px-2 rounded" title="Move Section Up">▲</button>
+                        <button @click="moveElement(selectedElement.id, 'down')" class="bg-zinc-900 hover:bg-zinc-800 text-zinc-400 p-1 px-2 rounded" title="Move Section Down">▼</button>
+                        <button @click="duplicateElement(selectedElement)" class="bg-zinc-900 hover:bg-indigo-950 text-indigo-400 border border-zinc-800 p-1 px-2 rounded" title="Clone Element">📋 Duplicate</button>
+                    </div>
+
+                    <button @click="deleteElement(selectedElement.id)" class="bg-red-950/60 text-red-400 border border-red-900/60 px-2 py-1 rounded-lg hover:bg-red-900 transition">Delete Element</button>
+                </div>
+
+                <div v-if="vueMode" class="w-[816px] mb-4 bg-emerald-950/40 text-emerald-400 border border-emerald-900 px-4 py-2 rounded-xl text-xs font-mono tracking-wide flex justify-between items-center animate-pulse">
+                    <span>⚡ VIEW MODE ACTIVE: Displaying direct dynamic node outputs context. Inputs are isolated.</span>
+                    <button @click="vueMode = false" class="bg-emerald-900/60 hover:bg-emerald-800 px-2 py-1 rounded text-white font-bold">Return to Editor</button>
+                </div>
+
+                <div :style="{ backgroundColor: docSettings.background }"
+                     class="w-[816px] min-h-[1056px] shadow-[0_0_50px_rgba(0,0,0,0.8)] border border-zinc-800 rounded-2xl p-16 transition-all duration-300 flex flex-col space-y-4">
+                    
+                    <div v-for="el in elements" :key="el.id"
+                         @click.stop="!vueMode && (selectedElement = el)"
+                         :style="{ textAlign: el.align || 'left' }"
+                         :class="['w-full rounded-lg transition-all p-2 group relative border border-transparent', !vueMode && selectedElement?.id === el.id ? 'bg-zinc-900/20 border-zinc-700/50 shadow-inner' : '', !vueMode ? 'hover:border-dashed hover:border-zinc-800 cursor-pointer' : '']">
+                        
+                        <div v-if="el.type === 'heading'">
+                            <div v-if="vueMode" :style="{ fontSize: el.fontSize + 'px', color: el.color || '#ffffff' }" class="font-sans font-bold tracking-tight w-full whitespace-pre-wrap">{{ el.content }}</div>
+                            <input v-else v-model="el.content" 
+                                   :style="{ fontSize: el.fontSize + 'px', color: el.color || '#ffffff' }" 
+                                   class="bg-transparent focus:outline-none w-full font-sans font-bold tracking-tight border-b border-transparent focus:border-zinc-700 m-0 p-0"
+                                   placeholder="Heading Level Block Title">
+                        </div>
+
+                        <div v-if="el.type === 'paragraph'">
+                            <div v-if="vueMode" :style="{ fontSize: el.fontSize + 'px', color: el.color || '#a1a1aa' }" class="font-sans leading-relaxed w-full whitespace-pre-wrap text-justify">{{ el.content }}</div>
+                            <textarea v-else v-model="el.content" 
+                                      :style="{ fontSize: el.fontSize + 'px', color: el.color || '#a1a1aa' }" 
+                                      class="bg-transparent focus:outline-none w-full font-sans leading-relaxed resize-none border-b border-transparent focus:border-zinc-700 m-0 p-0 overflow-hidden"
+                                      rows="2"
+                                      @input="autoResizeTextarea($event)"
+                                      placeholder="Start writing regular workspace documentation body text..."></textarea>
+                        </div>
+
+                        <div v-if="el.type === 'blockquote'" class="border-l-4 border-indigo-500 pl-4 my-2 italic">
+                            <div v-if="vueMode" :style="{ fontSize: el.fontSize + 'px', color: el.color || '#d1d1d6' }" class="font-mono w-full whitespace-pre-wrap">{{ el.content }}</div>
+                            <textarea v-else v-model="el.content" 
+                                      :style="{ fontSize: el.fontSize + 'px', color: el.color || '#d1d1d6' }" 
+                                      class="bg-transparent focus:outline-none w-full font-mono resize-none border-b border-transparent focus:border-zinc-700 m-0 p-0 overflow-hidden"
+                                      rows="1"
+                                      @input="autoResizeTextarea($event)"
+                                      placeholder="Callout emphasis block content standard quote container..."></textarea>
+                        </div>
+
+                        <div v-if="el.type === 'image'" class="flex flex-col items-center py-2">
+                            <div :style="{ width: (el.widthPercent || 80) + '%' }" class="relative">
+                                <img :src="el.contentUrl" 
+                                     :style="{ borderRadius: (el.radius || 8) + 'px' }" 
+                                     class="w-full h-auto object-cover shadow-xl border border-zinc-800 transition-all" 
+                                     alt="Avero Embedded Document Asset Asset">
+                            </div>
+                            <div v-if="!vueMode" class="w-full mt-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                                <input type="text" v-model="el.contentUrl" 
+                                       class="w-full text-[11px] font-mono bg-zinc-950 border border-zinc-800 px-2 py-1 rounded text-zinc-500 focus:text-zinc-200 focus:outline-none" 
+                                       placeholder="Provide image CDN source hyper-reference link location...">
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+
+            </main>
+        </div>
+    </div>
+    
+    <script src="index.js"></script>
+</body>
+</html>

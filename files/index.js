@@ -98,6 +98,9 @@ createApp({
         /**
          * STANDARD TOOL SYSTEM EXTENSION: DYNAMIC ITEM RENAMING ARRAYS
          */
+                /**
+         * STANDARD TOOL SYSTEM EXTENSION: DYNAMIC ITEM RENAMING ARRAYS
+         */
         const renameItem = () => {
             if (!selectedFile.value) return;
             const target = selectedFile.value;
@@ -106,20 +109,39 @@ createApp({
                 if (!newName || newName === target.name) return;
                 try {
                     if (target.kind === 'file') {
+                        // 1. Fetch file object wrapper
                         const originalFile = await target.getFile();
+                        // 2. Extract contents as an ArrayBuffer safely containing all raw bytes
+                        const fileContents = await originalFile.arrayBuffer();
+                        
+                        // 3. Mount new structural target handle and write everything out cleanly
                         const newFileHandle = await currentHandle.value.getFileHandle(newName, { create: true });
                         const writableStream = await newFileHandle.createWritable();
-                        await writableStream.write(originalFile);
+                        await writableStream.write(fileContents);
                         await writableStream.close();
                     } else {
-                        // Directory structural migration framework
+                        // Directory deep migration framework helper
+                        const deepCopyDirectory = async (sourceHandle, destinationHandle) => {
+                            for await (const entry of sourceHandle.values()) {
+                                if (entry.kind === 'file') {
+                                    const file = await entry.getFile();
+                                    const content = await file.arrayBuffer();
+                                    const newFile = await destinationHandle.getFileHandle(entry.name, { create: true });
+                                    const writer = await newFile.createWritable();
+                                    await writer.write(content);
+                                    await writer.close();
+                                } else if (entry.kind === 'directory') {
+                                    const newSubDir = await destinationHandle.getDirectoryHandle(entry.name, { create: true });
+                                    await deepCopyDirectory(entry, newSubDir);
+                                }
+                            }
+                        };
+
                         const newDirectoryHandle = await currentHandle.value.getDirectoryHandle(newName, { create: true });
-                        // Native File System limitations require deep iteration for recursive copy loops, 
-                        // fallback alerting structural generation guidelines to client execution models.
-                        alert("Folder container root initialized. Embedded files should be migrated directly via drag parameters.");
+                        await deepCopyDirectory(target, newDirectoryHandle);
                     }
 
-                    // Remove reference target context parameters
+                    // Remove original structural entry map clean footprint tracking nodes
                     await currentHandle.value.removeEntry(target.name, { recursive: true });
                     selectedFile.value = null;
                     await loadFiles(currentHandle.value);
@@ -129,6 +151,7 @@ createApp({
                 }
             }, target.name);
         };
+
 
         /**
          * NATIVE INTERACTION EXTENSION: DRAG AND DROP RUNTIME CONTROLLERS

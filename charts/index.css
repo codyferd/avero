@@ -1,0 +1,30 @@
+/* Core Structural Adjustments for Avero Pitch Black Theme Engine */
+[v-cloak] {
+    display: none !important;
+}
+
+body {
+    background-color: #000000;
+}
+
+/* Custom canvas rendering optimization smoothing presets */
+canvas {
+    image-rendering: -webkit-optimize-contrast;
+    image-rendering: crisp-edges;
+}
+
+/* Dark scrollbar optimization controls */
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+::-webkit-scrollbar-track {
+    background: #000000;
+}
+::-webkit-scrollbar-thumb {
+    background: #27272a;
+    border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: #3f3f46;
+}

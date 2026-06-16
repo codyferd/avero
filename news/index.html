@@ -9,21 +9,46 @@
     <div id="app" v-cloak>
         <div v-if="!activeArticle">
             <header class="app-bar">
-                <h1>AVERO<span>NEWS</span></h1>
+                <div class="flex-container">
+                    <h1>AVERO<span>NEWS</span></h1>
+                    <div class="feed-actions">
+                        <button @click="showMgmt = !showMgmt" class="btn-utility">⚙️ Manage Feeds</button>
+                        <button @click="exportFeedsFile" class="btn-utility">📤 Export feeds</button>
+                        <label class="btn-utility cursor-pointer">
+                            📥 Import feeds
+                            <input type="file" @change="importFeedsFile" accept=".js" class="hidden" style="display:none;">
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Feed Management Tray Dropdown -->
+                <div v-if="showMgmt" class="feed-mgmt-panel">
+                    <div class="input-group">
+                        <input type="text" v-model="newFeedKey" placeholder="feed-id (e.g., techcrunch)">
+                        <input type="text" v-model="newFeedUrl" placeholder="https://example.com/rss" class="w-64">
+                        <button @click="addCustomFeed" class="btn-utility btn-accent">+ Add Feed</button>
+                    </div>
+                </div>
+
                 <nav class="categories">
-                    <button v-for="cat in categories" @click="fetchNews(cat)" :class="{active: currentCat === cat}">
-                        {{ cat.toUpperCase() }}
-                    </button>
+                    <div v-for="cat in categories" :key="cat" class="relative inline-block group" style="display: inline-flex; align-items: center; gap: 4px;">
+                        <button @click="fetchNews(cat)" :class="{active: currentCat === cat}">
+                            {{ cat.toUpperCase() }}
+                        </button>
+                        <!-- Inline delete chip for custom feeds -->
+                        <span v-if="isCustomFeed(cat)" @click.stop="deleteFeed(cat)" class="cursor-pointer opacity-40 hover:opacity-100 text-xs text-red-400 px-1">✕</span>
+                    </div>
                 </nav>
             </header>
 
             <main class="news-grid">
                 <div v-if="loading" class="loader">Loading latest news...</div>
-                <div v-else v-for="article in articles" :key="article.url" class="news-card" @click="openArticle(article)">
+                <div v-else-if="articles.length === 0" class="text-sm text-slate-400 p-6">No news articles resolved for target pipeline. Check structural stream data or proxy routing boundaries.</div>
+                <div v-else v-for="article in articles" :key="article.link" class="news-card" @click="openArticle(article)">
                     <div class="content">
                         <h3>{{ article.title }}</h3>
                         <p>{{ article.description }}</p>
-                        <small>{{ article.source.name }}</small>
+                        <small>{{ article.source }}</small>
                     </div>
                 </div>
             </main>

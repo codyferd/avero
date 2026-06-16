@@ -1,73 +1,115 @@
-[v-cloak] { display: none; }
-html, body, #app { height: 100%; width: 100%; margin: 0; background: #000; overflow: hidden; color: white; font-family: 'Inter', sans-serif; }
+[v-cloak] { display: none !important; }
+html, body, #app { height: 100%; width: 100%; margin: 0; background: #050505; overflow: hidden; color: white; font-family: 'Inter', sans-serif; }
 
 #map { height: 100vh; width: 100vw; z-index: 1; }
 
-/* Avero Dark Map Filter */
-.leaflet-tile-container { filter: invert(100%) hue-rotate(180deg) brightness(0.8) contrast(0.9); }
-.leaflet-marker-icon, .leaflet-marker-shadow, .leaflet-routing-icon { filter: invert(0) !important; }
-.leaflet-container { background: #050505 !important; }
+/* CRISP DOCK/DARK CONTRAST MAP LAYER (Preserves rich blues, greens, and street lights) */
+.leaflet-tile-container { 
+    filter: invert(0%) hue-rotate(0deg) brightness(0.75) contrast(1.25) saturate(0.9); 
+}
+.leaflet-marker-icon, .leaflet-marker-shadow, .leaflet-routing-icon, .leaflet-popup-content-wrapper { 
+    filter: invert(0) !important; 
+}
+.leaflet-container { background: #0b0b0e !important; }
 
-/* UI Overlays */
+/* Custom Overrides on Leaflet Vector Elements */
+.leaflet-popup-content-wrapper, .leaflet-popup-content {
+    background: #0d0d11 !important;
+    color: #fff !important;
+    border: 1px solid #27272a;
+    border-radius: 12px;
+    font-family: 'Inter', sans-serif;
+    font-size: 11px;
+    padding: 4px 8px;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5);
+}
+.leaflet-popup-tip { background: #0d0d11 !important; border: 1px solid #27272a; }
+
+/* UI Structural Elements Overlay Controls */
 .map-overlay { position: absolute; z-index: 1000; pointer-events: auto; }
 
 .side-panel {
     top: 20px; left: 20px; width: 340px; max-height: calc(100vh - 40px);
-    background: rgba(10, 10, 10, 0.9); backdrop-filter: blur(20px);
-    border: 1px solid rgba(255,255,255,0.1); border-radius: 24px;
-    padding: 24px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.7);
-    display: flex; flex-direction: column; gap: 20px;
-    overflow-y: auto; scrollbar-width: none;
+    background: rgba(8, 8, 8, 0.94); backdrop-filter: blur(24px);
+    border: 1px solid rgba(255,255,255,0.06); border-radius: 20px;
+    padding: 20px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.8);
+    display: flex; flex-direction: column; gap: 16px;
 }
 
-.input-group { margin-bottom: 12px; }
-.label { font-size: 9px; font-weight: 900; text-transform: uppercase; opacity: 0.4; letter-spacing: 0.15em; margin-bottom: 6px; display: block; }
+/* Custom Scrollbar configuration layout targets */
+.custom-scrollbar::-webkit-scrollbar { width: 4px; height: 4px; }
+.custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+.custom-scrollbar::-webkit-scrollbar-thumb { background: #27272a; border-radius: 10px; }
+.custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #3f3f46; }
+
+.info-inspector-card {
+    bottom: 20px; left: 20px; width: 340px;
+    box-shadow: 0 30px 60px -15px rgba(0,0,0,0.9);
+}
+
+.input-group { margin-bottom: 4px; }
+.label { font-size: 9px; font-weight: 900; text-transform: uppercase; opacity: 0.4; letter-spacing: 0.12em; margin-bottom: 6px; display: block; font-family: monospace; }
 
 .map-input {
-    width: 100%; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);
-    border-radius: 12px; padding: 12px 14px; color: white; font-size: 13px; outline: none; transition: all 0.2s;
+    width: 100%; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 10px; padding: 10px 12px; color: white; font-size: 12px; outline: none; transition: all 0.2s;
 }
-.map-input:focus { border-color: var(--avero-accent); background: rgba(255,255,255,0.1); }
+.map-input:focus { border-color: var(--avero-accent); background: rgba(255,255,255,0.07); }
 
-.poi-chips { display: flex; gap: 8px; flex-wrap: wrap; }
+.poi-chips { display: flex; gap: 6px; flex-wrap: wrap; align-content: flex-start; }
 .chip {
-    padding: 6px 12px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);
-    border-radius: 20px; font-size: 10px; font-weight: 700; cursor: pointer; transition: 0.2s;
+    padding: 6px 12px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 99px; font-size: 10px; font-weight: 600; cursor: pointer; transition: 0.2s; margin-bottom: 2px;
 }
-.chip:hover, .chip.active { background: var(--avero-accent); border-color: var(--avero-accent); }
+.chip:hover, .chip.active { background: var(--avero-accent); border-color: var(--avero-accent); color: white; }
 
 .route-summary {
-    background: linear-gradient(135deg, rgba(99, 102, 241, 0.2), rgba(0,0,0,0));
-    border-radius: 16px; padding: 16px; border: 1px solid rgba(99, 102, 241, 0.3);
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.15), rgba(0,0,0,0));
+    border-radius: 12px; padding: 14px; border: 1px solid rgba(99, 102, 241, 0.25);
 }
 
-/* Routing UI Customization */
-.leaflet-routing-container { display: none !important; } /* We build our own UI */
-
-.zoom-controls { bottom: 30px; right: 20px; display: flex; flex-direction: column; gap: 10px; }
+.zoom-controls { bottom: 20px; right: 20px; display: flex; flex-direction: column; gap: 8px; }
 .map-btn {
-    width: 48px; height: 48px; background: #111; border: 1px solid rgba(255,255,255,0.1);
-    color: white; border-radius: 16px; cursor: pointer; display: flex;
-    align-items: center; justify-content: center; font-size: 20px; box-shadow: 0 10px 20px rgba(0,0,0,0.4);
+    width: 42px; height: 42px; background: #0a0a0a; border: 1px solid rgba(255,255,255,0.08);
+    color: white; border-radius: 12px; cursor: pointer; display: flex;
+    align-items: center; justify-content: center; font-size: 16px; box-shadow: 0 10px 20px rgba(0,0,0,0.5);
+    transition: all 0.15s;
 }
-.map-btn:hover { background: var(--avero-accent); transform: translateY(-2px); }
+.map-btn:hover { background: var(--avero-accent); transform: translateY(-1px); }
 
 .btn-action {
     width: 100%; background: var(--avero-accent); color: white; border: none;
-    padding: 14px; border-radius: 12px; font-size: 11px; font-weight: 900;
-    text-transform: uppercase; cursor: pointer; letter-spacing: 0.1em;
+    padding: 12px; border-radius: 10px; font-size: 11px; font-weight: 800;
+    text-transform: uppercase; cursor: pointer; letter-spacing: 0.08em; transition: opacity 0.2s;
 }
+.btn-action:hover { opacity: 0.9; }
+
+.btn-secondary {
+    flex: 1; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08);
+    color: #dadada; padding: 8px; border-radius: 8px; font-size: 10px; font-weight: 700;
+    cursor: pointer; text-align: center; transition: all 0.15s;
+}
+.btn-secondary:hover:not(:disabled) { background: var(--avero-accent); border-color: var(--avero-accent); color: white; }
+
 :root { --avero-accent: #6366f1; }
 
 .search-results {
-    position: absolute; width: 100%; background: #111; border: 1px solid rgba(255,255,255,0.1);
-    border-radius: 12px; margin-top: 4px; z-index: 2000; max-height: 200px; overflow-y: auto;
+    position: absolute; width: 100%; background: #0e0e11; border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 10px; margin-top: 4px; z-index: 2000; max-height: 160px; overflow-y: auto;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.6);
 }
 .search-item {
-    padding: 10px 14px; font-size: 11px; border-bottom: 1px solid rgba(255,255,255,0.05);
-    cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    padding: 8px 12px; font-size: 11px; border-bottom: 1px solid rgba(255,255,255,0.03);
+    cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #cdcdcd;
 }
-.search-item:hover { background: var(--avero-accent); }
+.search-item:hover { background: var(--avero-accent); color: white; }
 
-/* Weather/Summary adjustments */
-.border-emerald-500\/30 { border-color: rgba(16, 185, 129, 0.3); background: rgba(16, 185, 129, 0.05); }
+.animate-fade-in { animation: fadeIn 0.25s ease-out forwards; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+@media (max-w: 768px) {
+    .side-panel { top: 10px; left: 10px; width: calc(100vw - 20px); max-height: 40vh; border-radius: 16px; padding: 16px; gap: 12px; }
+    .info-inspector-card { bottom: 75px; left: 10px; width: calc(100vw - 20px); z-index: 1001; }
+    .zoom-controls { bottom: 15px; right: 10px; }
+    .map-btn { width: 36px; height: 36px; font-size: 14px; }
+}

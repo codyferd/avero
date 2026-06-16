@@ -1,13 +1,38 @@
 const appsList = [
 {
+    name: "Addicting Games",
+    url: "https://www.addictinggames.com/",
+    image: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTXzgQLsOvQw5iCdTtAnvCH5oAqssOsKPw497rDwXzBgQ&s=10",
+},
+{
+    name: "Agame",
+    url: "https://www.agame.com/",
+    image: "https://agamecdn.com/assets/agame/logos/default/agame.en.desktop-9827f86047d4227465195af2db23d673275aa0482b25080ce1f2c0f2c8756d4d.png",
+},
+{
     name: "Amazon",
     url: "https://amazon.com",
     image: "https://m.media-amazon.com/images/I/31epF-8N9LL.png",
 },
 {
+    name: "Armor Games",
+    url: "https://armorgames.com/",
+    image: "https://e.snmc.io/lk/fv/x/e01d61849f64c24e41ffb51b1a83044c/5278283",
+},
+{
     name: "Chesscom",
     url: "https://chess.com",
     image: "https://play-lh.googleusercontent.com/PMZjdJevtibcTxD1nIRbDvdsy6a-dJ1oUwODVaufNnjxzKhd4dDFiL67u2jldXtGBwvB",
+},
+{
+    name: "Coolmathgames",
+    url: "https://www.coolmathgames.com/",
+    image: "https://play-lh.googleusercontent.com/I3hW7sKSGtOKeTpmsBxka7Eyul5HXTZUD4H3EbJEWyW-4vDlpyEG5Jtu9D8JgR0__g",
+},
+{
+    name: "Crazygames",
+    url: "https://crazygames.com",
+    image: "https://imgs.crazygames.com/crazygames/share.png?metadata=none&width=1200&height=630&fit=crop",
 },
 {
     name: "Discord",
@@ -40,6 +65,16 @@ const appsList = [
     image: "https://img.magnific.com/premium-vector/instagram-logo-vector_768467-330.jpg?semt=ais_hybrid&w=740&q=80",
 },
 {
+    name: "Kbhgames",
+    url: "https://kbhgames.com/",
+    image: "https://res.cloudinary.com/jerrick/image/upload/d_642250b563292b35f27461a7.png,f_jpg,fl_progressive,q_auto,w_1024/6798e32ad70c74001deffd40.jpg",
+},
+{
+    name: "Kongregate",
+    url: "https://www.kongregate.com/en",
+    image: "https://platform.theverge.com/wp-content/uploads/sites/2/chorus/uploads/chorus_asset/file/20064330/GamingSite_4_Kongregate_1536x865.jpg?quality=90&strip=all&crop=0,3.5151166661623,100,92.969766667675",
+},
+{
     name: "Lichess",
     url: "https://lichess.org",
     image: "https://lichess1.org/assets/logo/lichess-tile-wide.png",
@@ -48,6 +83,11 @@ const appsList = [
     name: "Mastodon",
     url: "https://mastodon.social",
     image: "https://www.cnet.com/a/img/resize/f9e39cfe1a7795c000580b4e10ce1ebb8e29d161/hub/2022/11/09/c10eb2aa-320a-481a-8cd1-61304494e48f/mastodon-logo-16x9.jpg?auto=webp&fit=crop&height=675&width=1200",
+},
+{
+    name: "Poki",
+    url: "https://poki.com",
+    image: "https://logos-world.net/wp-content/uploads/2024/10/Poki-Logo.png",
 },
 {
     name: "Roblox",
@@ -80,9 +120,19 @@ const appsList = [
     image: "https://imgproxy.divecdn.com/zPhYMe8yDOkX6kLXCJrkeEh_dxs3jaQT0yZHjtAQZVM/g:ce/rs:fit:1600:0/Z3M6Ly9kaXZlc2l0ZS1zdG9yYWdlL2RpdmVpbWFnZS90aHJlYWRzX25ld19sb2dvLnBuZw==.webp",
 },
 {
+    name: "Twoplayergames",
+    url: "https://twoplayergames.org",
+    image: "https://images.opencollective.com/twoplayergames-org/1c60065/logo/256.png",
+},
+{
     name: "Wikimedia",
     url: "https://wikimedia.org",
     image: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQ2j1QRuH657dP3ERHfrKeEUquEuu0ra_4XaA&s",
+},
+{
+    name: "",
+    url: "",
+    image: "",
 },
 ];
 const gamesList = [

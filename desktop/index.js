@@ -17,9 +17,42 @@ createApp({
         const activeDesktopId = ref(null);
         const focusedAppId = ref(null);
 
+        // Drag and Drop Tab Tracking State nodes
+        const draggedTabIndex = ref(null);
+        const dragOverTabIndex = ref(null);
+
         const otherDesktops = computed(() =>
         desktops.value.filter(d => d.id !== activeDesktopId.value)
         );
+
+        // Tab Drag and Drop Event Handlers
+        const handleTabDragStart = (event, index) => {
+            draggedTabIndex.value = index;
+            event.dataTransfer.effectAllowed = "move";
+        };
+
+        const handleTabDragOver = (event, index) => {
+            if (draggedTabIndex.value !== index) {
+                dragOverTabIndex.value = index;
+            }
+        };
+
+        const handleTabDragLeave = (event) => {
+            // Clear hover active layouts if cursor wanders outside item boundary
+            dragOverTabIndex.value = null;
+        };
+
+        const handleTabDrop = (event, targetIndex) => {
+            const sourceIndex = draggedTabIndex.value;
+            dragOverTabIndex.value = null;
+            draggedTabIndex.value = null;
+
+            if (sourceIndex === null || sourceIndex === targetIndex) return;
+
+            // Reorder the core responsive desktops list array directly
+            const movedItem = desktops.value.splice(sourceIndex, 1)[0];
+            desktops.value.splice(targetIndex, 0, movedItem);
+        };
 
         // Core UI Logic
         const cycleUI = () => {
@@ -122,93 +155,95 @@ createApp({
             if (desktop.apps.length === 0) closeDesktop(desktopId);
         };
 
-            const closeDesktop = (id) => {
-                desktops.value = desktops.value.filter(d => d.id !== id);
-                if (activeDesktopId.value === id) {
-                    activeDesktopId.value = desktops.value.length ? desktops.value[0].id : null;
-                }
+        const closeDesktop = (id) => {
+            desktops.value = desktops.value.filter(d => d.id !== id);
+            if (activeDesktopId.value === id) {
+                activeDesktopId.value = desktops.value.length ? desktops.value[0].id : null;
+            }
+        };
+
+        const navAction = (id, action) => {
+            const frame = document.getElementById('frame-' + id);
+            if (!frame) return;
+            if (action === 'reload') frame.src = frame.src;
+        };
+
+        // Gutter resizer controller interaction engine loop
+        const startTileResize = (mouseDownEvent, desktopTarget) => {
+            mouseDownEvent.preventDefault();
+
+            const gridContainer = mouseDownEvent.target.parentElement;
+            gridContainer.classList.add('desktop-grid-resizing');
+
+            const startX = mouseDownEvent.clientX;
+            const containerWidth = gridContainer.clientWidth;
+            const initialRatio = desktopTarget.splitRatio || 50;
+
+            const onMouseMove = (moveEvent) => {
+                const deltaX = moveEvent.clientX - startX;
+                const deltaPercentage = (deltaX / containerWidth) * 100;
+
+                let newPercentage = initialRatio + deltaPercentage;
+                if (newPercentage < 15) newPercentage = 15;
+                if (newPercentage > 85) newPercentage = 85;
+
+                desktopTarget.splitRatio = Math.round(newPercentage);
             };
 
-            const navAction = (id, action) => {
-                const frame = document.getElementById('frame-' + id);
-                if (!frame) return;
-                if (action === 'reload') frame.src = frame.src;
+            const onMouseUp = () => {
+                gridContainer.classList.remove('desktop-grid-resizing');
+                window.removeEventListener('mousemove', onMouseMove);
+                window.removeEventListener('mouseup', onMouseUp);
             };
 
-                // Gutter resizer controller interaction engine loop
-                const startTileResize = (mouseDownEvent, desktopTarget) => {
-                    mouseDownEvent.preventDefault();
+            window.addEventListener('mousemove', onMouseMove);
+            window.addEventListener('mouseup', onMouseUp);
+        };
 
-                    const gridContainer = mouseDownEvent.target.parentElement;
-                    gridContainer.classList.add('desktop-grid-resizing');
+        const updateClock = () => {
+            const now = new Date();
+            currentTime.value = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
+            currentDate.value = now.toISOString().split('T')[0];
+        };
 
-                    const startX = mouseDownEvent.clientX;
-                    const containerWidth = gridContainer.clientWidth;
-                    const initialRatio = desktopTarget.splitRatio || 50;
+        onMounted(() => {
+            updateClock();
+            setInterval(updateClock, 1000);
+            setTimeout(() => { isLoading.value = false; }, 800);
 
-                    const onMouseMove = (moveEvent) => {
-                        const deltaX = moveEvent.clientX - startX;
-                        const deltaPercentage = (deltaX / containerWidth) * 100;
+            window.addEventListener('message', (event) => {
+                if (event.data.type === 'AVERO_OPEN_TAB') {
+                    const { title, content } = event.data;
+                    const blob = new Blob([content], { type: 'text/html' });
+                    const blobUrl = URL.createObjectURL(blob);
 
-                        let newPercentage = initialRatio + deltaPercentage;
-                        if (newPercentage < 15) newPercentage = 15;
-                        if (newPercentage > 85) newPercentage = 85;
-
-                        desktopTarget.splitRatio = Math.round(newPercentage);
-                    };
-
-                    const onMouseUp = () => {
-                        gridContainer.classList.remove('desktop-grid-resizing');
-                        window.removeEventListener('mousemove', onMouseMove);
-                        window.removeEventListener('mouseup', onMouseUp);
-                    };
-
-                    window.addEventListener('mousemove', onMouseMove);
-                    window.addEventListener('mouseup', onMouseUp);
-                };
-
-                const updateClock = () => {
-                    const now = new Date();
-                    currentTime.value = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
-                    currentDate.value = now.toISOString().split('T')[0];
-                };
-
-                onMounted(() => {
-                    updateClock();
-                    setInterval(updateClock, 1000);
-                    setTimeout(() => { isLoading.value = false; }, 800);
-
-                    window.addEventListener('message', (event) => {
-                        if (event.data.type === 'AVERO_OPEN_TAB') {
-                            const { title, content } = event.data;
-                            const blob = new Blob([content], { type: 'text/html' });
-                            const blobUrl = URL.createObjectURL(blob);
-
-                            const id = Date.now();
-                            desktops.value.push({
-                                id,
-                                name: title || 'Live Preview',
-                                splitRatio: 50,
-                                apps: [{
-                                    title: title || 'Live Preview',
-                                    icon: '⚡',
-                                    path: blobUrl,
-                                    instanceId: id
-                                }]
-                            });
-                            activeDesktopId.value = id;
-                            focusedAppId.value = id;
-                            uiLevel.value = 1; // Show taskbar to reveal the new tab
-                        }
+                    const id = Date.now();
+                    desktops.value.push({
+                        id,
+                        name: title || 'Live Preview',
+                        splitRatio: 50,
+                        apps: [{
+                            title: title || 'Live Preview',
+                            icon: '⚡',
+                            path: blobUrl,
+                            instanceId: id
+                        }]
                     });
-                });
+                    activeDesktopId.value = id;
+                    focusedAppId.value = id;
+                    uiLevel.value = 1; // Show taskbar to reveal the new tab
+                }
+            });
+        });
 
-                return {
-                    isLoading, appList, desktops, activeDesktopId,
-                    uiLevel, isSearchOpen, isSplitMenuOpen, otherDesktops, urlInput,
-                    currentTime, currentDate, bgUrl, focusedAppId,
-                    launchNewDesktop, launchUrl, closeDesktop, closeApp, mergeTabs, navAction,
-                    smartClose, smartRefresh, cycleUI, startTileResize
-                };
+        return {
+            isLoading, appList, desktops, activeDesktopId,
+            uiLevel, isSearchOpen, isSplitMenuOpen, otherDesktops, urlInput,
+            currentTime, currentDate, bgUrl, focusedAppId,
+            dragOverTabIndex, // Expose interactive styling reference node
+            launchNewDesktop, launchUrl, closeDesktop, closeApp, mergeTabs, navAction,
+            smartClose, smartRefresh, cycleUI, startTileResize,
+            handleTabDragStart, handleTabDragOver, handleTabDragLeave, handleTabDrop
+        };
     }
 }).mount('#app');

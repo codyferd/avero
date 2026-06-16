@@ -52,6 +52,13 @@
             background: rgba(255, 255, 255, 0.03); margin: 0 4px;
         }
         .hypr-tab.active { border-color: var(--avero-accent); background: rgba(99, 102, 241, 0.15); }
+        
+        /* Drag and Drop Active Target Modifier */
+        .hypr-tab.is-dragover {
+            border-color: var(--avero-accent, #6366f1) !important;
+            background: rgba(99, 102, 241, 0.3) !important;
+            transform: scale(1.05);
+        }
 
         .desktop-grid { display: grid; gap: 6px; height: 100%; width: 100%; background: #000000; padding: 6px; box-sizing: border-box; }
         .grid-1 { grid-template-columns: 1fr; }
@@ -82,12 +89,10 @@
             color: black
         }
 
-        /* ... Keep existing desktop styles intact ... */
-
         /* Dynamic Layout Adjustments override logic rules */
         .desktop-grid.grid-2 {
             position: relative;
-            grid-template-columns: 1fr 1fr; /* Fallback baseline rule layout */
+            grid-template-columns: 1fr 1fr;
         }
 
         /* Master Gutter Resizer Interactive Interface Element */
