@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Avero Paint</title>
+    <script libs="core" src="../share/cdn.js"></script>
+</head>
+<body class="bg-black text-zinc-100 overflow-hidden select-none font-sans">
+
+    <div id="app" class="flex h-screen flex-col" v-cloak>
+        
+        <header class="bg-zinc-950 border-b border-zinc-800 px-4 py-3 flex justify-between items-center z-30 shrink-0">
+            <div class="flex items-center space-x-3">
+                <span class="text-xl font-black tracking-wider text-white bg-gradient-to-r from-purple-500 to-pink-500 bg-clip-text text-transparent">AVERO</span>
+                <span class="text-xs uppercase tracking-widest text-zinc-500 font-bold bg-zinc-900 px-2 py-1 rounded">Paint Engine</span>
+            </div>
+            
+            <div class="flex items-center space-x-2">
+                <button @click="undo" :disabled="!canUndo" class="bg-zinc-900 hover:bg-zinc-800 disabled:opacity-40 disabled:hover:bg-zinc-900 text-zinc-300 border border-zinc-800 font-bold text-xs px-2.5 py-2 rounded-lg transition" title="Undo (Ctrl+Z)">⟲</button>
+                <button @click="redo" :disabled="!canRedo" class="bg-zinc-900 hover:bg-zinc-800 disabled:opacity-40 disabled:hover:bg-zinc-900 text-zinc-300 border border-zinc-800 font-bold text-xs px-2.5 py-2 rounded-lg transition" title="Redo (Ctrl+Y)">⟳</button>
+                <div class="border-r border-zinc-800 h-5 mx-1"></div>
+                <button @click="exportPng" class="bg-zinc-900 hover:bg-zinc-800 text-zinc-300 border border-zinc-800 font-medium text-xs px-3 py-2 rounded-lg transition">Export PNG</button>
+                <button @click="exportLayersJs" class="bg-zinc-900 hover:bg-zinc-800 text-zinc-300 border border-zinc-800 font-medium text-xs px-3 py-2 rounded-lg transition">Export JS</button>
+                <button @click="triggerImport" class="bg-pink-600 hover:bg-pink-500 text-white font-bold text-xs px-3 py-2 rounded-lg transition">Import JS</button>
+            </div>
+        </header>
+
+        <div class="flex flex-1 overflow-hidden relative">
+            
+            <aside class="w-16 md:w-20 bg-zinc-950 border-r border-zinc-800 flex flex-col items-center py-4 justify-between z-20 shrink-0">
+                <div class="space-y-2 w-full px-2 overflow-y-auto max-h-[80vh]">
+                    <div v-for="tool in tools" :key="tool.id"
+                         @click="setTool(tool.id)"
+                         :title="tool.name"
+                         :class="['w-full aspect-square rounded-xl flex flex-col items-center justify-center cursor-pointer transition border', currentTool === tool.id ? 'bg-pink-500/10 border-pink-500 text-pink-400' : 'bg-zinc-900/50 border-zinc-800/60 text-zinc-400 hover:border-zinc-700']">
+                        <span class="text-base md:text-lg">{{ tool.icon }}</span>
+                        <span class="text-[8px] md:text-[9px] font-black uppercase tracking-tight opacity-60 mt-0.5">{{ tool.label || tool.id }}</span>
+                    </div>
+                </div>
+
+                <div class="w-full px-2 space-y-4 text-center mt-auto pt-4">
+                    <div class="relative group aspect-square rounded-xl border border-zinc-800 bg-zinc-900 overflow-hidden flex items-center justify-center cursor-pointer">
+                        <input type="color" v-model="brushColor" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer">
+                        <div class="w-6 h-6 rounded-md shadow-inner border border-white/10" :style="{ backgroundColor: brushColor }"></div>
+                    </div>
+                </div>
+            </aside>
+
+            <main class="flex-1 bg-zinc-900 overflow-hidden flex items-center justify-center relative p-4" 
+                  @wheel.prevent="handleZoomWheel"
+                  @contextmenu.prevent>
+                
+                <div class="absolute top-4 left-4 z-10 bg-zinc-950/80 border border-zinc-800 backdrop-blur px-3 py-2 rounded-xl flex items-center space-x-3 max-w-xs sm:max-w-none flex-wrap gap-2 sm:gap-0">
+                    <div class="flex items-center space-x-2 text-xs">
+                        <span class="text-zinc-500 font-bold uppercase tracking-wider text-[10px]">Size/Stroke:</span>
+                        <input type="range" min="1" max="100" v-model.number="brushSize" class="w-20 md:w-24 accent-pink-500">
+                        <span class="font-mono text-zinc-400 text-[10px] w-6 text-right">{{ brushSize }}px</span>
+                    </div>
+                    <div class="hidden sm:block border-r border-zinc-800 h-4 mx-2"></div>
+                    <div class="flex items-center space-x-2 text-xs">
+                        <span class="text-zinc-500 font-bold uppercase tracking-wider text-[10px]">Opacity:</span>
+                        <input type="range" min="1" max="100" v-model.number="brushOpacity" class="w-16 accent-pink-500">
+                        <span class="font-mono text-zinc-400 text-[10px] w-6 text-right">{{ brushOpacity }}%</span>
+                    </div>
+                    
+                    <div v-if="currentTool === 'text'" class="contents">
+                        <div class="hidden sm:block border-r border-zinc-800 h-4 mx-2"></div>
+                        <div class="flex items-center space-x-1">
+                            <input type="text" v-model="textString" placeholder="Type here..." class="bg-zinc-900 border border-zinc-800 text-xs px-2 py-1 rounded text-white focus:outline-none focus:border-pink-500 w-28">
+                            <select v-model="textFont" class="bg-zinc-900 border border-zinc-800 text-[11px] px-1 py-1 rounded text-zinc-300">
+                                <option value="sans-serif">Sans-Serif</option>
+                                <option value="serif">Serif</option>
+                                <option value="monospace">Monospace</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="hidden sm:block border-r border-zinc-800 h-4 mx-2"></div>
+                    <div class="flex items-center space-x-2 text-[10px] font-mono text-zinc-500">
+                        <span>ZOOM:</span>
+                        <span class="text-zinc-300 font-bold">{{ Math.round(zoomScale * 100) }}%</span>
+                        <button @click="resetViewport" class="bg-zinc-900 hover:bg-zinc-800 text-zinc-400 px-1.5 py-0.5 rounded border border-zinc-800 ml-1">Reset</button>
+                    </div>
+                </div>
+
+                <div id="canvas-view-wrapper" 
+                     :class="['relative shrink-0 select-none bg-white', currentTool === 'select' ? 'cursor-move' : '']"
+                     :style="{ 
+                         width: canvasWidth + 'px', 
+                         height: canvasHeight + 'px',
+                         transform: `translate(${panX}px, ${panY}px) scale(${zoomScale})`,
+                         transformOrigin: 'center center'
+                     }">
+                    
+                    <div id="canvas-container" class="absolute inset-0 w-full h-full pointer-events-none">
+                        <canvas v-for="(layer, index) in layers" 
+                                :key="layer.id"
+                                :id="'layer-' + layer.id"
+                                :style="{ zIndex: index, display: layer.visible ? 'block' : 'none' }"
+                                class="absolute top-0 left-0 w-full h-full pointer-events-none bg-transparent">
+                        </canvas>
+                    </div>
+
+                    <canvas id="interaction-canvas"
+                            class="absolute top-0 left-0 w-full h-full cursor-crosshair z-50"
+                            @mousedown="canvasStartPointer"
+                            @mousemove="canvasMovePointer"
+                            @mouseup="canvasEndPointer"
+                            @mouseleave="canvasEndPointer"
+                            @touchstart.prevent="canvasStartPointer"
+                            @touchmove.prevent="canvasMovePointer"
+                            @touchend.prevent="canvasEndPointer">
+                    </canvas>
+                </div>
+            </main>
+
+            <aside class="w-56 md:w-64 bg-zinc-950 border-l border-zinc-800 flex flex-col justify-between z-20 shrink-0">
+                <div class="p-4 overflow-y-auto flex-1 space-y-4">
+                    <div class="flex justify-between items-center">
+                        <h2 class="font-bold text-zinc-500 uppercase text-xs tracking-widest">Layers Matrix</h2>
+                        <button @click="addNewLayer" class="text-xs bg-zinc-900 hover:bg-zinc-800 text-pink-400 font-bold px-2 py-1 rounded border border-zinc-800">+ Add</button>
+                    </div>
+                    
+                    <div class="space-y-2">
+                        <div v-for="(layer, idx) in reversedLayers" :key="layer.id"
+                             @click="setActiveLayer(layer.id)"
+                             :class="['p-3 rounded-xl border cursor-pointer transition relative flex items-center justify-between', activeLayerId === layer.id ? 'border-pink-500 bg-zinc-900 ring-1 ring-pink-500/20' : 'border-zinc-800/60 hover:border-zinc-700 bg-zinc-900/30']">
+                            <div class="flex items-center space-x-2 overflow-hidden">
+                                <button @click.stop="layer.visible = !layer.visible" class="text-sm text-zinc-500 hover:text-zinc-200">
+                                    {{ layer.visible ? '👁️' : '❌' }}
+                                </button>
+                                <span class="text-xs font-medium text-zinc-300 truncate">{{ layer.name }}</span>
+                            </div>
+                            <div class="flex items-center space-x-1 shrink-0">
+                                <button @click.stop="moveLayerOrder(getActualLayerIndex(layer.id), 'up')" class="text-[10px] bg-zinc-950 text-zinc-400 hover:text-white p-1 rounded border border-zinc-800">▲</button>
+                                <button @click.stop="moveLayerOrder(getActualLayerIndex(layer.id), 'down')" class="text-[10px] bg-zinc-950 text-zinc-400 hover:text-white p-1 rounded border border-zinc-800">▼</button>
+                                <button @click.stop="deleteLayer(layer.id)" class="text-xs text-zinc-600 hover:text-red-400 p-1">✕</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="p-4 border-t border-zinc-800 bg-zinc-950 flex space-x-2">
+                    <button @click="clearCurrentLayer" class="flex-1 bg-zinc-900 hover:bg-zinc-800 text-zinc-400 border border-zinc-800 py-2 rounded-xl text-xs transition">Clear Layer</button>
+                    <button @click="resetEntireCanvas" class="flex-1 bg-red-950/40 hover:bg-red-900/40 text-red-400 border border-red-900/40 py-2 rounded-xl text-xs transition">Reset All</button>
+                </div>
+            </aside>
+
+        </div>
+    </div>
+    <script src="index.js"></script>
+</body>
+</html>

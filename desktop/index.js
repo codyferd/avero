@@ -5,13 +5,13 @@ createApp({
         const isLoading = ref(true);
         const currentTime = ref('');
         const currentDate = ref('');
+        const versionNumber = ref('Unknown'); // Fallback default text
+        const searchQuery = ref('');
 
-        // 3-Layer UI State: 0 = hidden, 1 = taskbar, 2 = full
-        const uiLevel = ref(0);
-
-        const isSearchOpen = ref(false);
+        // Sidebar Dashboard Panel visibility state node 
+        const isSidebarOpen = ref(false);
         const isSplitMenuOpen = ref(false);
-        const urlInput = ref('');
+        
         const bgUrl = ref("background.avif");
         const desktops = ref([]);
         const activeDesktopId = ref(null);
@@ -21,9 +21,22 @@ createApp({
         const draggedTabIndex = ref(null);
         const dragOverTabIndex = ref(null);
 
+        // Computed Alphabetical Arrangement sorting matching user structural parameters
+        const sortedAppList = computed(() => {
+            // Check window context or global scope explicitly
+            const apps = window.appList || (typeof appList !== 'undefined' ? appList : null);
+            if (!apps) return [];
+            return [...apps].sort((a, b) => a.title.localeCompare(b.title));
+        });
+
         const otherDesktops = computed(() =>
-        desktops.value.filter(d => d.id !== activeDesktopId.value)
+            desktops.value.filter(d => d.id !== activeDesktopId.value)
         );
+
+        // Sidebar Open/Close Toggle Action 
+        const toggleSidebar = () => {
+            isSidebarOpen.value = !isSidebarOpen.value;
+        };
 
         // Tab Drag and Drop Event Handlers
         const handleTabDragStart = (event, index) => {
@@ -38,7 +51,6 @@ createApp({
         };
 
         const handleTabDragLeave = (event) => {
-            // Clear hover active layouts if cursor wanders outside item boundary
             dragOverTabIndex.value = null;
         };
 
@@ -49,14 +61,18 @@ createApp({
 
             if (sourceIndex === null || sourceIndex === targetIndex) return;
 
-            // Reorder the core responsive desktops list array directly
             const movedItem = desktops.value.splice(sourceIndex, 1)[0];
             desktops.value.splice(targetIndex, 0, movedItem);
         };
 
-        // Core UI Logic
-        const cycleUI = () => {
-            uiLevel.value = (uiLevel.value + 1) % 3;
+        const toggleSplitView = () => {
+            isSplitMenuOpen.value = !isSplitMenuOpen.value;
+        };
+
+        // Target split menu specifically relative to the requested active tab instance
+        const toggleSplitViewTab = (desktopId) => {
+            activeDesktopId.value = desktopId;
+            isSplitMenuOpen.value = !isSplitMenuOpen.value;
         };
 
         const smartClose = () => {
@@ -65,6 +81,10 @@ createApp({
             } else if (activeDesktopId.value) {
                 closeDesktop(activeDesktopId.value);
             }
+        };
+
+        const closeTabDirect = (desktopId) => {
+            closeDesktop(desktopId);
         };
 
         const smartRefresh = () => {
@@ -76,55 +96,62 @@ createApp({
             }
         };
 
+        // Tab-specific targeted refresh execution
+        const smartRefreshTab = (desktopInstance) => {
+            if (desktopInstance && desktopInstance.apps) {
+                desktopInstance.apps.forEach(a => navAction(a.instanceId, 'reload'));
+            }
+        };
+
         const launchNewDesktop = (app) => {
             const id = Date.now();
             desktops.value.push({
                 id,
                 name: app.title,
-                splitRatio: 50, // Added initialization state baseline
+                splitRatio: 50,
                 apps: [{ ...app, instanceId: id }]
             });
             activeDesktopId.value = id;
             focusedAppId.value = id;
-
-            // Auto-collapse to Level 1 (Taskbar) after launching
-            uiLevel.value = 1;
+            
+            // Auto close drawer workspace selector on application boot context load
+            isSidebarOpen.value = false;
         };
 
-        const launchUrl = () => {
-            let query = urlInput.value.trim();
+        // Intelligent omni-search navigation logic processor
+        const handleSearchSubmit = () => {
+            const query = searchQuery.value.trim();
             if (!query) return;
 
-            let finalUrl = query.includes('.') && !query.includes(' ')
-            ? (query.startsWith('http') ? query : `https://${query}`)
-            : `https://www.google.com/search?q=${encodeURIComponent(query)}&igu=1`;
+            let targetUrl = '';
+            let targetTitle = query;
 
-            let siteName = 'Web';
+            targetUrl = /^https?:\/\//i.test(query) ? query : `https://${query}`;
             try {
-                const urlObj = new URL(finalUrl);
-                const hostParts = urlObj.hostname.replace('www.', '').split('.');
-                if (hostParts.length > 0) {
-                    siteName = hostParts[0].charAt(0).toUpperCase() + hostParts[0].slice(1);
-                }
-            } catch (e) {
-                siteName = 'Web';
+                const parsed = new URL(targetUrl);
+                targetTitle = parsed.hostname.replace('www.', '');
+            } catch(e) {
+                targetTitle = 'Web Browser';
             }
 
+            // Spawn inside an automated clean virtual container tab environment frame
             const id = Date.now();
             desktops.value.push({
                 id,
-                name: siteName,
-                splitRatio: 50, // Added initialization state baseline
-                apps: [{ title: 'Browser', icon: '🌐', path: finalUrl, instanceId: id }]
+                name: targetTitle,
+                splitRatio: 50,
+                apps: [{
+                    title: targetTitle,
+                    icon: '🌐',
+                    path: targetUrl,
+                    instanceId: id
+                }]
             });
 
             activeDesktopId.value = id;
             focusedAppId.value = id;
-            urlInput.value = "";
-            isSearchOpen.value = false;
-
-            // Auto-collapse to Level 1 (Taskbar) after launching
-            uiLevel.value = 1;
+            searchQuery.value = '';
+            isSidebarOpen.value = false;
         };
 
         const mergeTabs = (sourceId, targetId) => {
@@ -138,13 +165,14 @@ createApp({
                 if (target.apps.length + source.apps.length <= 4) {
                     target.apps.push(...source.apps);
                     target.name = "Split View";
-                    target.splitRatio = 50; // Dynamic baseline configuration layout split tracking
+                    target.splitRatio = 50; 
                     desktops.value.splice(sIdx, 1);
                     activeDesktopId.value = targetId;
                     focusedAppId.value = null;
                 }
             }
             isSplitMenuOpen.value = false;
+            isSidebarOpen.value = false;
         };
 
         const closeApp = (instanceId, desktopId) => {
@@ -206,8 +234,25 @@ createApp({
             currentDate.value = now.toISOString().split('T')[0];
         };
 
+        // Reads README file content and grabs only line 1
+        const fetchVersionNumber = async () => {
+            try {
+                const response = await fetch('../README.md');
+                if (response.ok) {
+                    const text = await response.text();
+                    const firstLine = text.split(/\r?\n/)[0];
+                    if (firstLine.trim()) {
+                        versionNumber.value = firstLine.trim();
+                    }
+                }
+            } catch (error) {
+                console.error("Failed to fetch version tag descriptor from README context:", error);
+            }
+        };
+
         onMounted(() => {
             updateClock();
+            fetchVersionNumber();
             setInterval(updateClock, 1000);
             setTimeout(() => { isLoading.value = false; }, 800);
 
@@ -231,18 +276,18 @@ createApp({
                     });
                     activeDesktopId.value = id;
                     focusedAppId.value = id;
-                    uiLevel.value = 1; // Show taskbar to reveal the new tab
                 }
             });
         });
 
         return {
-            isLoading, appList, desktops, activeDesktopId,
-            uiLevel, isSearchOpen, isSplitMenuOpen, otherDesktops, urlInput,
+            isLoading, desktops, activeDesktopId,
+            isSidebarOpen, isSplitMenuOpen, otherDesktops,
             currentTime, currentDate, bgUrl, focusedAppId,
-            dragOverTabIndex, // Expose interactive styling reference node
-            launchNewDesktop, launchUrl, closeDesktop, closeApp, mergeTabs, navAction,
-            smartClose, smartRefresh, cycleUI, startTileResize,
+            dragOverTabIndex, sortedAppList, versionNumber, searchQuery,
+            launchNewDesktop, closeDesktop, closeApp, mergeTabs, navAction,
+            smartClose, smartRefresh, smartRefreshTab, startTileResize, toggleSidebar, 
+            toggleSplitView, toggleSplitViewTab, closeTabDirect, handleSearchSubmit,
             handleTabDragStart, handleTabDragOver, handleTabDragLeave, handleTabDrop
         };
     }
