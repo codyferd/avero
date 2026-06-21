@@ -254,7 +254,7 @@ createApp({
             updateClock();
             fetchVersionNumber();
             setInterval(updateClock, 1000);
-            setTimeout(() => { isLoading.value = false; }, 800);
+            setTimeout(() => { isLoading.value = false; });
 
             window.addEventListener('message', (event) => {
                 if (event.data.type === 'AVERO_OPEN_TAB') {

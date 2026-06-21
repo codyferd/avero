@@ -129,11 +129,6 @@ const appsList = [
     url: "https://wikimedia.org",
     image: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQ2j1QRuH657dP3ERHfrKeEUquEuu0ra_4XaA&s",
 },
-{
-    name: "",
-    url: "",
-    image: "",
-},
 ];
 const gamesList = [
 {
@@ -313,3 +308,10 @@ const gamesList = [
     image: "https://dlcn7yodlhcnn.cloudfront.net/optimized/4X/b/6/e/b6e81877dda1c3e4ec21edaf6379c1483877c797_2_1024x619.png",
 }
 ];
+/*
+{
+    name: "",
+    url: "",
+    image: "",
+},
+*/
