@@ -1,6 +1,6 @@
 /**
  * Avero Send // Network Pipeline Core Engine
- * True Split-Role Peer Mesh (No Collisions)
+ * Decentralized Full Mesh P2P Architecture
  */
 (() => {
     const { createApp, ref } = Vue;
@@ -9,7 +9,6 @@
         setup() {
             const roomCodeInput = ref("");
             const localPeerId = ref("");
-            const nodeRole = ref(""); // "HOST" or "GUEST"
             const textBuffer = ref("");
             const isNodeActive = ref(false);
             const isDragging = ref(false);
@@ -17,119 +16,79 @@
             const transferHistory = ref([]);
             
             let peerInstance = null;
+            let currentIdIndex = 0;
+            let roomBaseName = "";
             const roomPrefix = "AVERO_SEND_RM_";
 
             /**
-             * ROLE METHOD A: ESTABLISH AS THE CENTRAL WORKSPACE HOST
+             * INITIALIZE DECENTRALIZED MESH VECTOR PROBING
              */
-            const establishAsHost = () => {
+            const initMesh = () => {
                 const cleanSlug = roomCodeInput.value.trim().toUpperCase().replace(/[\s-]/g, "_");
                 if (!cleanSlug) return;
 
-                nodeRole.value = "HOST";
-                // Register using the absolute Room Name directly as the unique connection broker address
-                const absoluteHostRoomAddress = roomPrefix + cleanSlug;
-                localPeerId.value = absoluteHostRoomAddress;
+                roomBaseName = roomPrefix + cleanSlug;
+                currentIdIndex = 0;
+                tryConnect();
+            };
 
-                peerInstance = new Peer(absoluteHostRoomAddress);
+            const tryConnect = () => {
+                const attemptId = `${roomBaseName}_${currentIdIndex}`;
+                peerInstance = new Peer(attemptId);
 
                 peerInstance.on("open", (id) => {
                     isNodeActive.value = true;
-                });
+                    localPeerId.value = id;
 
-                peerInstance.on("connection", (inboundGuestConnection) => {
-                    setupConnectionListeners(inboundGuestConnection);
+                    // 1. Listen for connection vectors from future nodes entering this track
+                    peerInstance.on("connection", (c) => setupConnectionListeners(c));
+
+                    // 2. Loop backwards and bridge pipelines to all earlier active instances
+                    const maxSearch = Math.max(currentIdIndex + 5, 15);
+                    for (let i = 0; i < maxSearch; i++) {
+                        if (i === currentIdIndex) continue;
+                        const targetId = `${roomBaseName}_${i}`;
+                        const outboundLink = peerInstance.connect(targetId);
+                        setupConnectionListeners(outboundLink);
+                    }
                 });
 
                 peerInstance.on("error", (err) => {
+                    // Unique ID allocation check: if slot is claimed, step up index index
                     if (err.type === "unavailable-id") {
-                        alert("Hosting Blocked: That room code is currently active. Try a different name or Join instead.");
-                    } else {
+                        peerInstance.destroy();
+                        currentIdIndex++;
+                        tryConnect();
+                    } 
+                    // Safely ignore lookup responses for inactive backward nodes
+                    else if (err.type === "peer-unavailable") {
+                        // Quietly intercept to prevent log pollution
+                    } 
+                    else {
                         alert(`Network Protocol Exception: ${err.type}`);
+                        disconnectPipeline();
                     }
-                    disconnectPipeline();
                 });
             };
 
             /**
-             * ROLE METHOD B: CONNECT AS A FLOATING RE-BROADCAST GUEST NODE
-             */
-            const establishAsGuest = () => {
-                const cleanSlug = roomCodeInput.value.trim().toUpperCase().replace(/[\s-]/g, "_");
-                if (!cleanSlug) return;
-
-                nodeRole.value = "GUEST";
-                // Generate a randomized unique client token string so we never encounter peer-unavailable
-                localPeerId.value = "NODE_" + Math.random().toString(36).substring(2, 7).toUpperCase();
-                
-                peerInstance = new Peer(localPeerId.value);
-
-                peerInstance.on("open", () => {
-                    isNodeActive.value = true;
-                    
-                    const targetHostAddress = roomPrefix + cleanSlug;
-                    const outboundLink = peerInstance.connect(targetHostAddress);
-                    setupConnectionListeners(outboundLink);
-                });
-
-                peerInstance.on("connection", (interGuestLink) => {
-                    setupConnectionListeners(interGuestLink);
-                });
-
-                peerInstance.on("error", (err) => {
-                    if (err.type === "peer-not-found") {
-                        alert("Routing Error: Target Room Code does not exist or has no active Host online.");
-                    } else {
-                        alert(`Network Protocol Exception: ${err.type}`);
-                    }
-                    disconnectPipeline();
-                });
-            };
-
-            /**
-             * INTER-MESH TOPOLOGY ROUTER LISTENERS
+             * CONNECTIONS TOPOLOGY REGISTRY
              */
             const setupConnectionListeners = (conn) => {
+                // Prevent duplicate listener bounds
                 if (activeConnections.value.some(c => c.peer === conn.peer)) return;
 
                 conn.on("open", () => {
                     activeConnections.value.push(conn);
                     
-                    // Host execution step: automatically introduce the new client to all existing peers in the room
-                    if (nodeRole.value === "HOST") {
-                        const peerRosterList = activeConnections.value
-                            .map(c => c.peer)
-                            .filter(id => id !== conn.peer);
+                    conn.on("data", (dataPackage) => {
+                        if (dataPackage.targetRoomId !== roomCodeInput.value.trim().toUpperCase()) return;
+                        processIncomingData(dataPackage, conn.peer);
+                    });
 
-                        if (peerRosterList.length > 0) {
-                            conn.send({
-                                systemInstruction: "MESH_INTRODUCE_PEERS",
-                                targetRoomId: roomCodeInput.value.trim().toUpperCase(),
-                                peers: peerRosterList
-                            });
-                        }
-                    }
+                    conn.on("close", () => removeMeshNode(conn.peer));
+                    conn.on("error", () => removeMeshNode(conn.peer));
                 });
-
-                conn.on("data", (dataPackage) => {
-                    if (dataPackage.targetRoomId !== roomCodeInput.value.trim().toUpperCase()) return;
-
-                    // Intercept automatic network handshakes passed down by the system mesh introduction engine
-                    if (dataPackage.systemInstruction === "MESH_INTRODUCE_PEERS" && nodeRole.value === "GUEST") {
-                        dataPackage.peers.forEach(remotePeerId => {
-                            if (remotePeerId !== localPeerId.value && !activeConnections.value.some(c => c.peer === remotePeerId)) {
-                                const meshBridgeLink = peerInstance.connect(remotePeerId);
-                                setupConnectionListeners(meshBridgeLink);
-                            }
-                        });
-                        return;
-                    }
-
-                    processIncomingData(dataPackage, conn.peer);
-                });
-
-                conn.on("close", () => removeMeshNode(conn.peer));
-                conn.on("error", () => removeMeshNode(conn.peer));
             };
 
             const removeMeshNode = (peerId) => {
@@ -141,7 +100,7 @@
                 activeConnections.value = [];
                 isNodeActive.value = false;
                 localPeerId.value = "";
-                nodeRole.value = "";
+                currentIdIndex = 0;
             };
 
             /**
@@ -222,7 +181,7 @@
             };
 
             /**
-             * REAL-TIME DATA LOG EXTRACTION & PROPAGATION VIA CHANNELS
+             * PROCESSING & PROPAGATION
              */
             const processIncomingData = (frame, incomingSourcePeer) => {
                 if (transferHistory.value.some(h => h.id === frame.id)) return;
@@ -249,13 +208,10 @@
                         url: generatedUrl
                     });
                 }
-
-                // Automatic Mesh Synchronization: propagate the transmission packet immediately to every other open line
-                relayToAllMeshNodes(frame, incomingSourcePeer);
             };
 
             /**
-             * LOGISTICAL SYSTEM CONVERSIONS
+             * LOGISTICAL UI SYSTEM CONVERSIONS
              */
             const handleFileSelection = (e) => {
                 pipelineFileArray(e.target.files);
@@ -294,8 +250,8 @@
             };
 
             return {
-                roomCodeInput, localPeerId, nodeRole, textBuffer, isNodeActive, isDragging, activeConnections, transferHistory,
-                establishAsHost, establishAsGuest, disconnectPipeline, dispatchTextBuffer, handleFileSelection, handleDrop, extractClipboardData, copyToClipboard
+                roomCodeInput, localPeerId, textBuffer, isNodeActive, isDragging, activeConnections, transferHistory,
+                initMesh, disconnectPipeline, dispatchTextBuffer, handleFileSelection, handleDrop, extractClipboardData, copyToClipboard
             };
         }
     }).mount("#app");

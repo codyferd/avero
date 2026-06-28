@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Avero Randomizer</title>
+    <script libs="core" src="../share/cdn.js"></script>
+</head>
+<body class="bg-zinc-950 text-zinc-100 font-sans select-none overflow-y-auto min-h-screen p-4">
+
+<div id="app" v-cloak class="max-w-2xl mx-auto space-y-6">
+    
+    <div class="flex items-center gap-3 border-b border-zinc-800 pb-4">
+        <span class="text-3xl">🎲</span>
+        <div>
+            <h1 class="text-lg font-bold tracking-wide">Avero Randomizer Matrix</h1>
+            <p class="text-xs text-zinc-500">Advanced stochastic generation engine</p>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-3 gap-2 bg-zinc-900/50 p-1 rounded-lg border border-zinc-800/80">
+        <button @click="activeTab = 'number'" :class="['tab-btn text-xs font-semibold uppercase tracking-wider py-2 rounded-md border border-transparent text-zinc-400 transition-all', { active: activeTab === 'number' }]">Numbers</button>
+        <button @click="activeTab = 'list'" :class="['tab-btn text-xs font-semibold uppercase tracking-wider py-2 rounded-md border border-transparent text-zinc-400 transition-all', { active: activeTab === 'list' }]">Weighted List</button>
+        <button @click="activeTab = 'utility'" :class="['tab-btn text-xs font-semibold uppercase tracking-wider py-2 rounded-md border border-transparent text-zinc-400 transition-all', { active: activeTab === 'utility' }]">Quick Tools</button>
+    </div>
+
+    <main class="bg-zinc-900 border border-zinc-800/60 rounded-xl p-5 shadow-2xl">
+        
+        <div v-if="activeTab === 'number'" class="space-y-4">
+            <div class="grid grid-cols-3 gap-4">
+                <div>
+                    <label class="block text-[10px] font-bold text-zinc-500 uppercase tracking-wider mb-1">Minimum Bound</label>
+                    <input type="number" v-model.number="numMin" class="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2 text-sm outline-none focus:border-indigo-500">
+                </div>
+                <div>
+                    <label class="block text-[10px] font-bold text-zinc-500 uppercase tracking-wider mb-1">Maximum Bound</label>
+                    <input type="number" v-model.number="numMax" class="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2 text-sm outline-none focus:border-indigo-500">
+                </div>
+                <div>
+                    <label class="block text-[10px] font-bold text-zinc-500 uppercase tracking-wider mb-1">Quantity Count</label>
+                    <input type="number" v-model.number="numCount" min="1" max="50" class="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2 text-sm outline-none focus:border-indigo-500">
+                </div>
+            </div>
+            
+            <button @click="generateRandomNumbers" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs uppercase tracking-widest py-3 rounded-lg transition-all active:scale-[0.99]">
+                Roll Random Sequence
+            </button>
+
+            <div class="mt-6 bg-zinc-950/60 border border-zinc-800/40 rounded-xl p-6 flex flex-col items-center justify-center min-h-[140px]">
+                <span class="text-[10px] font-bold uppercase tracking-widest text-zinc-600 mb-3">Generated Value Outputs</span>
+                <div class="flex flex-wrap gap-2 justify-center max-w-full">
+                    <div v-for="(num, idx) in numResults" :key="idx" class="px-4 py-2 bg-zinc-900 border border-zinc-800 text-2xl font-black text-indigo-400 rounded-lg tracking-tight transition-transform duration-150" :class="{ 'scale-105': isRolling }">
+                        {{ num }}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div v-if="activeTab === 'list'" class="space-y-4">
+            <div class="flex justify-between items-center">
+                <p class="text-xs text-zinc-400">Add dynamic items and modify structural weight distribution arrays:</p>
+                <div class="flex gap-1.5">
+                    <button @click="loadPreset('binary')" class="bg-zinc-800/60 hover:bg-zinc-800 border border-zinc-700/40 text-[9px] uppercase tracking-wider font-bold px-2 py-1 rounded">Yes/No</button>
+                    <button @click="loadPreset('priorities')" class="bg-zinc-800/60 hover:bg-zinc-800 border border-zinc-700/40 text-[9px] uppercase tracking-wider font-bold px-2 py-1 rounded">Priority</button>
+                </div>
+            </div>
+            
+            <div class="flex gap-2">
+                <input type="text" v-model="newItemName" placeholder="Outcome item text label..." @keydown.enter="addListItem" class="flex-1 bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2 text-sm outline-none focus:border-indigo-500">
+                <input type="number" v-model.number="newItemWeight" min="1" placeholder="Weight" class="w-20 bg-zinc-950 border border-zinc-800 rounded-lg px-2 py-2 text-sm outline-none text-center focus:border-indigo-500">
+                <button @click="addListItem" class="bg-zinc-800 hover:bg-zinc-700 px-4 rounded-lg text-sm font-bold">+</button>
+            </div>
+
+            <div class="border border-zinc-800/60 rounded-lg overflow-hidden max-h-[180px] overflow-y-auto">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="bg-zinc-950 border-b border-zinc-800 text-[9px] uppercase tracking-wider text-zinc-500">
+                            <th class="p-2 pl-3">Item Label</th>
+                            <th class="p-2 w-24 text-center">Relative Weight</th>
+                            <th class="p-2 w-20 text-center">Probability</th>
+                            <th class="p-2 w-12 text-center"></th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-zinc-800/40 text-xs">
+                        <tr v-for="(item, idx) in listItems" :key="item.id" class="hover:bg-zinc-950/40">
+                            <td class="p-2 pl-3 text-zinc-300 font-medium">{{ item.name }}</td>
+                            <td class="p-2 text-center">
+                                <input type="number" v-model.number="item.weight" min="1" @input="sanitizeWeight(item)" class="w-16 bg-zinc-950/80 border border-zinc-800 rounded text-center py-0.5 text-zinc-300">
+                            </td>
+                            <td class="p-2 text-center text-zinc-500 font-mono text-[11px]">{{ calculateProbability(item.weight) }}%</td>
+                            <td class="p-2 text-center">
+                                <button @click="removeListItem(idx)" class="text-zinc-600 hover:text-red-400 transition-colors">✕</button>
+                            </td>
+                        </tr>
+                        <tr v-if="listItems.length === 0">
+                            <td colspan="4" class="p-4 text-center italic text-zinc-600 text-xs">No entries loaded in current list configuration</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="grid grid-cols-2 gap-2">
+                <button @click="pickWeightedOutcome" :disabled="listItems.length === 0" class="bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40 text-white font-bold text-xs uppercase tracking-widest py-3 rounded-lg transition-all active:scale-[0.99]">
+                    Execute Selection
+                </button>
+                <button @click="shuffleListItems" :disabled="listItems.length === 0" class="bg-zinc-800 hover:bg-zinc-700 disabled:opacity-40 text-zinc-200 font-bold text-xs uppercase tracking-widest py-3 rounded-lg transition-all active:scale-[0.99]">
+                    Shuffle Array Positions
+                </button>
+            </div>
+
+            <div class="mt-2 bg-zinc-950/60 border border-zinc-800/40 rounded-xl p-6 flex flex-col items-center justify-center min-h-[100px]">
+                <span class="text-[10px] font-bold uppercase tracking-widest text-zinc-600 mb-1">Evaluated Selection</span>
+                <div class="text-2xl font-bold text-emerald-400 tracking-wide text-center">
+                    {{ listResult || '—' }}
+                </div>
+            </div>
+        </div>
+
+        <div v-if="activeTab === 'utility'" class="space-y-4">
+            <div class="grid grid-cols-2 gap-4">
+                <div class="bg-zinc-950/40 border border-zinc-800/60 rounded-xl p-4 flex flex-col items-center space-y-3">
+                    <span class="text-[10px] font-bold text-zinc-500 uppercase tracking-wider">Binary Coin Flip</span>
+                    <div class="w-20 h-20 bg-zinc-900 border-2 border-zinc-700/60 rounded-full flex items-center justify-center text-xl font-black text-amber-400 shadow-md">
+                        {{ coinResult }}
+                    </div>
+                    <button @click="flipCoin" class="w-full bg-zinc-800 hover:bg-zinc-700 py-1.5 text-xs font-bold rounded-lg uppercase tracking-wider">Flip</button>
+                </div>
+
+                <div class="bg-zinc-950/40 border border-zinc-800/60 rounded-xl p-4 flex flex-col items-center space-y-3">
+                    <span class="text-[10px] font-bold text-zinc-500 uppercase tracking-wider">Standard D6 Die</span>
+                    <div class="w-20 h-20 bg-zinc-900 border-2 border-zinc-700/60 rounded-xl flex items-center justify-center text-4xl shadow-md">
+                        {{ diceEmoji }}
+                    </div>
+                    <button @click="rollDice" class="w-full bg-zinc-800 hover:bg-zinc-700 py-1.5 text-xs font-bold rounded-lg uppercase tracking-wider">Roll</button>
+                </div>
+            </div>
+
+            <div class="bg-zinc-950/30 border border-zinc-800/60 rounded-xl p-4 space-y-3">
+                <div class="flex justify-between items-center">
+                    <span class="text-[10px] font-bold text-zinc-500 uppercase tracking-wider">Polyhedral Multi-Die Roller (RPG)</span>
+                    <div class="flex items-center gap-2">
+                        <label class="text-[9px] font-bold text-zinc-600 uppercase">Modifier</label>
+                        <input type="number" v-model.number="rpgModifier" class="w-12 bg-zinc-950 border border-zinc-800 rounded px-1.5 py-0.5 text-xs text-center">
+                    </div>
+                </div>
+                <div class="grid grid-cols-5 gap-2">
+                    <button v-for="sides in [4, 8, 10, 12, 20]" :key="sides" @click="rollRpgDice(sides)" class="bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-[11px] font-bold py-2 rounded-md transition-colors text-indigo-400">
+                        D{{ sides }}
+                    </button>
+                </div>
+                <div v-if="rpgRollResult" class="text-center text-xs text-zinc-400 pt-1">
+                    Calculated Result Matrix: <span class="text-sm font-black text-white ml-1">{{ rpgRollResult }}</span>
+                </div>
+            </div>
+
+            <div class="bg-zinc-950/30 border border-zinc-800/60 rounded-xl p-4 space-y-3">
+                <span class="block text-[10px] font-bold text-zinc-500 uppercase tracking-wider">Secure Token String Generator</span>
+                <div class="flex gap-4 items-center">
+                    <div class="flex-1 flex items-center gap-4">
+                        <label class="flex items-center gap-1 text-xs text-zinc-400">
+                            <input type="checkbox" v-model="tokenConfig.uppercase"> A-Z
+                        </label>
+                        <label class="flex items-center gap-1 text-xs text-zinc-400">
+                            <input type="checkbox" v-model="tokenConfig.numbers"> 0-9
+                        </label>
+                        <label class="flex items-center gap-1 text-xs text-zinc-400">
+                            <input type="checkbox" v-model="tokenConfig.specials"> !@#
+                        </label>
+                    </div>
+                    <div class="flex items-center gap-1.5">
+                        <label class="text-[9px] text-zinc-500 uppercase font-bold">Len</label>
+                        <input type="number" v-model.number="tokenConfig.length" min="4" max="64" class="w-12 bg-zinc-950 border border-zinc-800 rounded px-1.5 py-0.5 text-xs text-center">
+                    </div>
+                </div>
+                <div class="flex gap-2">
+                    <div class="flex-1 bg-zinc-950 px-3 py-2 rounded-lg text-xs font-mono tracking-wider truncate text-indigo-300 border border-zinc-900/60 flex items-center min-h-[34px]">
+                        {{ tokenStringOutput || 'Click generate to calculate security sequence' }}
+                    </div>
+                    <button @click="generateSecureToken" class="bg-zinc-800 hover:bg-zinc-700 font-bold px-4 rounded-lg text-xs uppercase tracking-wide">Generate</button>
+                </div>
+            </div>
+        </div>
+
+    </main>
+</div>
+
+<script src="index.js"></script>
+</body>
+</html>

@@ -120,30 +120,34 @@ createApp({
 
         // Intelligent omni-search navigation logic processor
         const handleSearchSubmit = () => {
-            const query = searchQuery.value.trim();
-            if (!query) return;
+    const query = searchQuery.value.trim();
+    if (!query) return;
 
-            let targetUrl = '';
-            let targetTitle = query;
+    // 1. If it doesn't include a dot, try to launch a local Avero app or fallback to search
+    if (!query.includes('.')) {
+        // Look through your sorted application list for a match (case-insensitive)
+        const localAppMatch = sortedAppList.value.find(
+            app => app.title.toLowerCase() === query.toLowerCase()
+        );
 
-            targetUrl = /^https?:\/\//i.test(query) ? query : `https://${query}`;
-            try {
-                const parsed = new URL(targetUrl);
-                targetTitle = parsed.hostname.replace('www.', '');
-            } catch(e) {
-                targetTitle = 'Web Browser';
-            }
-
-            // Spawn inside an automated clean virtual container tab environment frame
+        if (localAppMatch) {
+            // Found a local application -> Launch it natively inside Avero
+            launchNewDesktop(localAppMatch);
+            searchQuery.value = '';
+            return;
+        } else {
+            // Local app not found -> Treat as a search string query and fallback to the web tab engine
+            const searchUrl = `https://www.google.com/search?q=${encodeURIComponent(query)}`;
             const id = Date.now();
+            
             desktops.value.push({
                 id,
-                name: targetTitle,
+                name: `Search: ${query}`,
                 splitRatio: 50,
                 apps: [{
-                    title: targetTitle,
+                    title: `Search: ${query}`,
                     icon: '🌐',
-                    path: targetUrl,
+                    path: searchUrl,
                     instanceId: id
                 }]
             });
@@ -152,7 +156,40 @@ createApp({
             focusedAppId.value = id;
             searchQuery.value = '';
             isSidebarOpen.value = false;
-        };
+            return;
+        }
+    }
+
+    // 2. Original web navigation path (if it includes a dot)
+    let targetUrl = /^https?:\/\//i.test(query) ? query : `https://${query}`;
+    let targetTitle = query;
+
+    try {
+        const parsed = new URL(targetUrl);
+        targetTitle = parsed.hostname.replace('www.', '');
+    } catch(e) {
+        targetTitle = 'Web Browser';
+    }
+
+    const id = Date.now();
+    desktops.value.push({
+        id,
+        name: targetTitle,
+        splitRatio: 50,
+        apps: [{
+            title: targetTitle,
+            icon: '🌐',
+            path: targetUrl,
+            instanceId: id
+        }]
+    });
+
+    activeDesktopId.value = id;
+    focusedAppId.value = id;
+    searchQuery.value = '';
+    isSidebarOpen.value = false;
+};
+
 
         const mergeTabs = (sourceId, targetId) => {
             const sIdx = desktops.value.findIndex(d => d.id === sourceId);

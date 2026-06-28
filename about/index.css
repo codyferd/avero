@@ -1,56 +1,152 @@
-           [v-cloak] { display: none; }
+:root {
+    /* Deep Obsidian Palette */
+    --avero-bg: #020205;
+    --avero-surface: rgba(13, 13, 18, 0.7);
+    --avero-surface-hover: rgba(30, 30, 40, 0.8);
+    --avero-border: rgba(255, 255, 255, 0.08);
 
-           .animate-fade-in {
-               animation: fadeIn 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-           }
+    /* Vibrant Indigo Accent */
+    --avero-accent: #6366f1;
+    --avero-accent-glow: rgba(99, 102, 241, 0.2);
 
-           @keyframes fadeIn {
-               from { opacity: 0; transform: scale(0.98); }
-               to { opacity: 1; transform: scale(1); }
-           }
+    /* Typography */
+    --avero-text: #f8fafc;
+    --avero-text-muted: #94a3b8;
 
-           .avero-nav {
-               background: var(--avero-surface);
-               border-bottom: 1px solid var(--avero-border);
-               backdrop-filter: blur(20px);
-           }
+    /* Effects */
+    --avero-radius: 24px;
+    --avero-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+}
 
-           .nav-btn {
-               background: transparent;
-               border: 1px solid var(--avero-border);
-               color: var(--avero-text-muted);
-           }
+/* --- Global & Base Styles --- */
+body.avero-app {
+    margin: 0;
+    background-color: var(--avero-bg);
+    color: var(--avero-text);
+    font-family: 'Inter', -apple-system, system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+}
 
-           .nav-btn.active {
-               background: var(--avero-accent);
-               color: white;
-               border-color: transparent;
-               box-shadow: 0 0 20px var(--avero-accent-glow);
-           }
+[v-cloak] { 
+    display: none; 
+}
 
-           /* 88x31 Button Styling */
-           .web-button {
-               width: 88px;
-               height: 31px;
-               cursor: pointer;
-               transition: transform 0.2s, filter 0.2s;
-               image-rendering: pixelated; /* Keeps that retro crispness */
-               display: block;
-           }
+/* --- Typography & Utilities --- */
+.ttf-description {
+    line-height: 1.8;
+    font-family: 'Inter', sans-serif;
+}
 
-           .web-button:hover {
-               transform: scale(1.1);
-               filter: drop-shadow(0 0 8px var(--avero-accent));
-           }
+/* --- Animations & Transitions --- */
+.animate-fade-in {
+    animation: fadeIn 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
 
-           .button-grid {
-               display: flex;
-               flex-wrap: wrap;
-               gap: 15px;
-               justify-content: center;
-           }
+@keyframes fadeIn {
+    from { opacity: 0; transform: scale(0.98); }
+    to { opacity: 1; transform: scale(1); }
+}
 
-           .ttf-description {
-               line-height: 1.8;
-               font-family: 'Inter', sans-serif;
-           }
+.fade-enter-active, .fade-leave-active { 
+    transition: opacity 0.3s ease; 
+}
+
+.fade-enter-from, .fade-leave-to { 
+    opacity: 0; 
+}
+
+/* --- Layout Components --- */
+.avero-nav {
+    background: var(--avero-surface);
+    border-bottom: 1px solid var(--avero-border);
+    backdrop-filter: blur(20px);
+}
+
+.button-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+    justify-content: center;
+}
+
+/* --- Avero Component Library --- */
+
+/* The Glass Card */
+.avero-card {
+    background: var(--avero-surface);
+    backdrop-filter: blur(40px) saturate(150%);
+    border: 1px solid var(--avero-border);
+    border-radius: var(--avero-radius);
+    box-shadow: var(--avero-shadow);
+}
+
+/* Standard Buttons & Nav Buttons */
+.avero-btn {
+    background: var(--avero-accent);
+    color: white;
+    border: none;
+    border-radius: 12px;
+    padding: 10px 20px;
+    font-weight: 700;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 4px 15px var(--avero-accent-glow);
+}
+
+.avero-btn:hover {
+    transform: translateY(-2px);
+    filter: brightness(1.1);
+    box-shadow: 0 8px 25px var(--avero-accent-glow);
+}
+
+.avero-btn:active {
+    transform: translateY(0) scale(0.95);
+}
+
+.nav-btn {
+    background: transparent;
+    border: 1px solid var(--avero-border);
+    color: var(--avero-text-muted);
+}
+
+.nav-btn.active {
+    background: var(--avero-accent);
+    color: white;
+    border-color: transparent;
+    box-shadow: 0 0 20px var(--avero-accent-glow);
+}
+
+/* Retro 88x31 Web Button Styling */
+.web-button {
+    width: 88px;
+    height: 31px;
+    cursor: pointer;
+    transition: transform 0.2s, filter 0.2s;
+    image-rendering: pixelated; /* Keeps that retro crispness */
+    display: block;
+}
+
+.web-button:hover {
+    transform: scale(1.1);
+    filter: drop-shadow(0 0 8px var(--avero-accent));
+}
+
+/* Inputs */
+.avero-input {
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid var(--avero-border);
+    border-radius: 12px;
+    padding: 12px 16px;
+    color: white;
+    font-size: 14px;
+    outline: none;
+    transition: border-color 0.2s;
+}
+
+.avero-input:focus {
+    border-color: var(--avero-accent);
+    background: rgba(0, 0, 0, 0.5);
+}

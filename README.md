@@ -1,4 +1,4 @@
-Avero 1.16
+Avero 1.17
 
 Avero is an open source, web-based operating environment that is based on Vue and TailwindCSS as
 its core libraries. Avero is meant to be easy and user-friendly, allowing for people to use the

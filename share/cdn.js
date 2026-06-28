@@ -2,7 +2,6 @@ const LIB_MAP = {
     core: [
         "index.css",
         "../share/logo.avif",
-        "../share/theme.css",
         "https://cdn.jsdelivr.net/npm/@tailwindcss/browser/dist/index.global.js",
         "https://cdn.jsdelivr.net/npm/vue@3.5.38/dist/vue.global.prod.js",
     ],

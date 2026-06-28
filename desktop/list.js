@@ -28,6 +28,7 @@ const appList = [
     { title: 'Presentations', icon: '📑', path: '../presentations/index.html' },
     { title: 'Qr', icon: '🔳', path: '../qr/index.html' },
     { title: 'Quizzes', icon: '❓', path: '../quizzes/index.html' },
+    { title: 'Randomize', icon: '🎲', path: '../randomize/index.html' },
     { title: 'Recorder', icon: '🎥', path: '../recorder/index.html' },
     { title: 'Send', icon: '📥', path: '../send/index.html' },
     { title: 'Snake', icon: '🐍', path: '../snake/index.html' },

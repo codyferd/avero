@@ -15,7 +15,8 @@
 
             <div class="space-y-2">
                 <input v-model="roomId" :disabled="isJoined" placeholder="Room ID" class="w-full bg-white/5 p-3 rounded-lg text-xs font-mono border border-white/10">
-                <button @click="init" class="w-full bg-emerald-500 text-black font-bold py-2 rounded-lg text-sm">CONNECT</button>
+                <button @click="init(false)" :disabled="isJoined" class="w-full bg-emerald-500 text-black font-bold py-2 rounded-lg text-sm disabled:opacity-50">JOIN ROOM</button>
+                <button @click="init(true)" :disabled="isJoined" class="w-full bg-blue-600 text-white font-bold py-2 rounded-lg text-sm disabled:opacity-50">GLOBAL CHAT</button>
             </div>
 
             <div class="space-y-1">
@@ -24,8 +25,8 @@
             </div>
 
             <div class="flex-grow overflow-y-auto hidden md:block">
-                <label class="text-[9px] uppercase font-bold opacity-30">Online</label>
-                <div v-for="user in onlineUsers" class="text-xs mt-2 opacity-70">• {{ user }}</div>
+                <label class="text-[9px] uppercase font-bold opacity-30">Online Users</label>
+                <div v-for="user in onlineUsers" :key="user" class="text-xs mt-2 opacity-70">• {{ user }}</div>
             </div>
 
             <div class="flex flex-col gap-2 border-t border-white/10 pt-4">
@@ -53,7 +54,7 @@
                 <label class="cursor-pointer p-3 bg-white/5 rounded-full hover:bg-white/10">
                     📷 <input type="file" @change="sendImage" class="hidden" accept="image/*">
                 </label>
-                <input v-model="input" @keyup.enter="send" class="flex-grow bg-white/5 p-3 rounded-full border border-white/10 focus:outline-none text-sm" placeholder="Message...">
+                <input v-model="input" @keyup.enter="send()" class="flex-grow bg-white/5 p-3 rounded-full border border-white/10 focus:outline-none text-sm" placeholder="Message...">
                 <button @click="send()" class="bg-emerald-500 text-black px-6 py-3 rounded-full font-bold text-sm">SEND</button>
             </div>
         </main>
@@ -61,4 +62,3 @@
     <script src="index.js"></script>
 </body>
 </html>
-

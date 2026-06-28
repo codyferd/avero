@@ -1,4 +1,4 @@
-const { createApp, ref } = Vue;
+const { createApp, ref, nextTick } = Vue;
 
 createApp({
     setup() {
@@ -8,133 +8,152 @@ createApp({
         const messages = ref([]);
         const onlineUsers = ref([]);
         const isJoined = ref(false);
-        const isHost = ref(false);
 
         let peer = null;
         let connections = []; 
-        let hostConn = null;  
+        let currentIdIndex = 0;
+        let roomBaseName = '';
 
-        const init = () => {
-            if (!roomId.value) return alert("Enter a Room ID");
+        // Helper to auto scroll chat down
+        const scrollToBottom = () => {
+            nextTick(() => {
+                const container = document.getElementById('msg-container');
+                if (container) container.scrollTop = container.scrollHeight;
+            });
+        };
 
-            peer = new Peer(roomId.value);
+        const init = (isGlobal = false) => {
+            if (isGlobal) {
+                roomBaseName = 'avero_global_public_room';
+            } else {
+                if (!roomId.value.trim()) return alert("Enter a Room ID");
+                roomBaseName = roomId.value.trim();
+            }
 
-            peer.on('open', () => {
+            currentIdIndex = 0;
+            tryConnect();
+        };
+
+        const tryConnect = () => {
+            const attemptId = `${roomBaseName}_${currentIdIndex}`;
+            peer = new Peer(attemptId);
+
+            peer.on('open', (id) => {
                 isJoined.value = true;
-                isHost.value = true;
-                
+                onlineUsers.value = [username.value];
+
+                // 1. Listen for newer peers joining down the road
                 peer.on('connection', (c) => handleConnection(c));
-                updateUsers();
+
+                // 2. Proactively connect backwards to all existing indices before us
+                // We test up to currentIdIndex + 5 to safely bridge any unexpected dead slots
+                const maxSearch = Math.max(currentIdIndex + 5, 15);
+                for (let i = 0; i < maxSearch; i++) {
+                    if (i === currentIdIndex) continue;
+                    const targetId = `${roomBaseName}_${i}`;
+                    const c = peer.connect(targetId, {
+                        metadata: { username: username.value }
+                    });
+                    handleConnection(c);
+                }
             });
 
             peer.on('error', (err) => {
-                if (err.type === 'unavailable-id') {
-                    peer.destroy(); 
-                    peer = new Peer();
-                    
-                    peer.on('open', () => {
-                        hostConn = peer.connect(roomId.value, {
-                            metadata: { username: username.value } 
-                        });
-                        
-                        hostConn.on('open', () => {
-                            isJoined.value = true;
-                        });
-                        
-                        hostConn.on('data', (d) => handleData(d));
-                        
-                        hostConn.on('close', () => {
-                            alert("Disconnected from host room.");
-                            isJoined.value = false;
-                        });
-                    });
-                }
-            });
+    // 1. Slot is taken: shift up by 1 and try claiming the next sequential slot
+    if (err.type === 'unavailable-id') {
+        peer.destroy();
+        currentIdIndex++;
+        tryConnect();
+    } 
+    // 2. We tried connecting to a slot that nobody is using: ignore it safely!
+    else if (err.type === 'peer-unavailable') {
+        // Quietly do nothing. This is normal during mesh discovery probing.
+    } 
+    // 3. Log any actual critical errors
+    else {
+        console.error("Critical PeerJS error:", err);
+    }
+});
+
         };
 
         const handleConnection = (c) => {
+            // Guard against duplicate connection setups
+            if (connections.some(x => x.peer === c.peer)) return;
+
             c.on('open', () => {
                 connections.push(c);
+                c.username = c.metadata?.username || `Guest_${c.peer.split('_').pop()}`;
                 
-                c.username = c.metadata?.username || `Guest_${c.peer.slice(0,4)}`;
-                
-                c.on('data', (d) => handleData(d, c.peer));
+                // Immediately reply back with our name so they can update their local UI lists
+                c.send({ type: 'name-announcement', username: username.value });
+                updateUsersList();
+
+                c.on('data', (d) => handleData(d, c));
                 
                 c.on('close', () => {
                     connections = connections.filter(x => x.peer !== c.peer);
-                    updateUsers();
+                    updateUsersList();
                 });
-                
-                updateUsers();
+            });
+
+            // Catch errors if some backward IDs are blank/inactive
+            c.on('error', () => {
+                connections = connections.filter(x => x.peer !== c.peer);
+                updateUsersList();
             });
         };
 
-        const handleData = (d, senderPeerId) => {
+        const handleData = (d, senderConn) => {
             if (d.type === 'msg' || d.type === 'image') {
                 messages.value.push(d.payload);
-                
-                if (isHost.value) {
-                    broadcast(d, senderPeerId);
-                }
+                scrollToBottom();
             } 
-            else if (d.type === 'user-update') {
-                onlineUsers.value = d.users;
-            }
-            else if (d.type === 'name-change') {
-                if (isHost.value) {
-                    const target = connections.find(c => c.peer === senderPeerId);
-                    if (target) target.username = d.username;
-                    updateUsers();
-                }
+            else if (d.type === 'name-announcement') {
+                senderConn.username = d.username;
+                updateUsersList();
             }
         };
 
-        const broadcast = (data, excludePeerId) => {
-            connections.forEach(c => {
-                if (c.peer !== excludePeerId && c.open) {
-                    c.send(data);
-                }
-            });
-        };
-
-        const updateUsers = () => {
-            if (isHost.value) {
-                onlineUsers.value = [username.value, ...connections.map(c => c.username)];
-                
-                // FIX: Broadcast the updated structural array down to all connected peers
-                const data = { type: 'user-update', users: onlineUsers.value };
-                broadcast(data);
-            }
+        const updateUsersList = () => {
+            // Compile every unique active peer connection's configured username
+            const activeNames = connections.filter(c => c.open).map(c => c.username);
+            onlineUsers.value = [username.value, ...new Set(activeNames)];
         };
 
         const broadcastUserUpdate = () => {
             if (!isJoined.value) return;
+            updateUsersList();
             
-            if (isHost.value) {
-                updateUsers();
-            } else if (hostConn && hostConn.open) {
-                hostConn.send({ type: 'name-change', username: username.value });
-            }
+            // Push updated metadata directly to every connection
+            connections.forEach(c => {
+                if (c.open) {
+                    c.send({ type: 'name-announcement', username: username.value });
+                }
+            });
         };
 
-        const send = (payload = { text: input.value, type: 'msg' }) => {
-            if (!payload.text && !payload.image) return;
+        const send = (payload = null) => {
+            if (!payload) {
+                if (!input.value.trim()) return;
+                payload = { text: input.value, type: 'msg' };
+            }
 
             const msg = {
                 sender: username.value,
-                id: Date.now(),
+                id: Date.now() + Math.random(),
                 ...payload
             };
 
             messages.value.push({ ...msg, self: true });
+            scrollToBottom();
 
-            const data = { type: payload.type, payload: msg };
-
-            if (isHost.value) {
-                broadcast(data);
-            } else if (hostConn && hostConn.open) {
-                hostConn.send(data);
-            }
+            // Fire data payload across all individual open pipes concurrently
+            connections.forEach(c => {
+                if (c.open) {
+                    c.send({ type: payload.type, payload: msg });
+                }
+            });
 
             input.value = '';
         };
@@ -155,6 +174,7 @@ createApp({
                 try {
                     const imported = JSON.parse(ev.target.result);
                     messages.value = [...messages.value, ...imported];
+                    scrollToBottom();
                 } catch (err) { alert("Invalid chat file"); }
             };
             reader.readAsText(file);
@@ -170,7 +190,7 @@ createApp({
         };
 
         return {
-            roomId, username, input, messages, onlineUsers, isJoined, isHost,
+            roomId, username, input, messages, onlineUsers, isJoined,
             init, send, sendImage, exportChat, broadcastUserUpdate, importChat
         };
     }
